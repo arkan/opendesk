@@ -116,7 +116,12 @@ func (o *OpenAI) body(req Request, stream bool, mode int32) map[string]any {
 		}
 		msgs = append(msgs, oaMessage{Role: role, Content: strings.Join(parts, "\n\n")})
 	}
-	body := map[string]any{"model": req.Model, "messages": msgs, "max_tokens": max(req.MaxTokens, 256)}
+	body := map[string]any{"model": req.Model, "messages": msgs}
+	if o.name == "openai" && strings.HasPrefix(req.Model, "gpt-6") {
+		body["max_completion_tokens"] = max(req.MaxTokens, 256)
+	} else {
+		body["max_tokens"] = max(req.MaxTokens, 256)
+	}
 	if stream {
 		body["stream"] = true
 		body["stream_options"] = map[string]any{"include_usage": true}
