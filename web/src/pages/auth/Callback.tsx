@@ -1,4 +1,3 @@
-import { diagnosticText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { getRouteApi, Link, useRouter } from "@tanstack/react-router";
 import { Link2 } from "lucide-react";
@@ -7,7 +6,7 @@ import { AuthHeading } from "@/app/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { MfaStep } from "@/components/auth/MfaStep";
-import { AuthField, completeSignIn, Notice, oauthErrorMessage, PasswordInput } from "@/components/auth/parts";
+import { AuthField, completeSignIn, Notice, oauthErrorKey, PasswordInput } from "@/components/auth/parts";
 import { api } from "@/lib/api/endpoints";
 import { takeVerifier } from "@/lib/desktop";
 import { errorMessage, isApiError } from "@/lib/api/client";
@@ -20,7 +19,7 @@ const route = getRouteApi("/auth/auth/callback");
 
 type State =
   | { kind: "working" }
-  | { kind: "error"; message: string }
+  | { kind: "error"; error: unknown }
   | { kind: "mfa"; token: string; redirect?: string }
   | { kind: "link"; link: LinkRequired };
 
@@ -37,7 +36,7 @@ export default function Callback() {
   const search = route.useSearch();
   const router = useRouter();
   const [state, setState] = useState<State>(() =>
-    search.error ? { kind: "error", message: oauthErrorMessage(search.error)! } : search.code ? { kind: "working" } : { kind: "error", message: uiText("This sign-in link is incomplete. Start again.") },
+    search.error ? { kind: "error", error: oauthErrorKey(search.error) } : search.code ? { kind: "working" } : { kind: "error", error: "This sign-in link is incomplete. Start again." },
   );
   const provider = search.code?.startsWith("mock-") ? search.code.slice(5) : undefined;
   const ran = useRef(false);
@@ -62,7 +61,7 @@ export default function Callback() {
       .catch((e) => {
         const link = linkFromError(e);
         if (link) setState({ kind: "link", link });
-        else setState({ kind: "error", message: errorMessage(e, uiText("This sign-in link expired. Start again.")) });
+        else setState({ kind: "error", error: e });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search.code]);
@@ -82,7 +81,7 @@ export default function Callback() {
   return (
     <div>
       <AuthHeading title={uiText("Couldn't sign you in")} />
-      <Notice className="mb-5">{diagnosticText(state.message)}</Notice>
+      <Notice className="mb-5">{errorMessage(state.error, "This sign-in link expired. Start again.")}</Notice>
       <Button variant="secondary" size="lg" className="w-full" asChild>
         <Link to="/login">{uiText("Back to log in")}</Link>
       </Button>
@@ -94,7 +93,7 @@ function LinkAccount({ link, provider, onResult }: { link: LinkRequired; provide
   const { t: uiText } = useTranslation("interface");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const name = { google: "Google", microsoft: "Microsoft", github: "GitHub", oidc: "SSO" }[provider ?? ""] ?? uiText("this sign-in method");
 
   const submit = async (e: React.FormEvent) => {
@@ -109,7 +108,7 @@ function LinkAccount({ link, provider, onResult }: { link: LinkRequired; provide
       setPassword("");
       if (isApiError(err, "invalid_credentials") || (isApiError(err) && err.status === 401)) setError("That password isn't right.");
       else if (isApiError(err) && (err.code === "invalid_token" || err.status === 410)) setError("This link expired. Start the sign-in again.");
-      else setError(errorMessage(err));
+      else setError(err);
     }
   };
 
@@ -125,7 +124,7 @@ function LinkAccount({ link, provider, onResult }: { link: LinkRequired; provide
              {uiText("An opendesk account already uses")} {link.email ? <span className="font-medium text-fg">{link.email}</span> : uiText("this email")}{uiText(". Enter its password to link")} {name}{uiText(". Next time you can sign in with either.")} </>
         }
       />
-      {error && <Notice className="mb-4">{diagnosticText(error)}</Notice>}
+      {error != null && <Notice className="mb-4">{errorMessage(error)}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
         <AuthField
           label={uiText("Password")}

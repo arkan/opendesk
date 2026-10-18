@@ -1,4 +1,3 @@
-import { diagnosticText } from "@/i18n/text";
 import { uiText } from "@/i18n/text";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useRouter } from "@tanstack/react-router";
@@ -53,7 +52,7 @@ export default function Register() {
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { name: "", email: search.email ?? "", password: "" } });
   const password = watch("password");
   const [name, email] = watch(["name", "email"]);
-  const [error, setError] = useState<React.ReactNode>(null);
+  const [error, setError] = useState<unknown>(null);
   const turnstile = useRef<TurnstileHandle>(null);
 
   const closed = cfg?.signup_enabled === false && !invite;
@@ -72,18 +71,7 @@ export default function Register() {
       router.history.push(await completeSignIn(tok, search.next));
     } catch (err) {
       turnstile.current?.reset();
-      if (isApiError(err, "email_taken") || isApiError(err, "conflict"))
-        setError(
-          <>
-             {uiText("An account already uses this email.")}{" "}
-            <Link to="/login" search={{ next: search.next, add }} className="font-medium text-fg underline underline-offset-2">
-               {uiText("Log in instead")}
-            </Link>
-          </>,
-        );
-      else if (isApiError(err, "signup_disabled")) setError("New sign-ups are turned off. Ask an admin for an invitation.");
-      else if (isApiError(err, "too_many_accounts")) setError(t("accounts.limit", { count: MAX_ACCOUNTS }));
-      else setError(errorMessage(err));
+      setError(err);
     }
   });
 
@@ -106,7 +94,20 @@ export default function Register() {
           {!!cfg?.providers.length && <OrDivider />}
         </>
       )}
-      {error && <Notice className="mb-4">{typeof error === "string" ? diagnosticText(error) : error}</Notice>}
+      {error != null && (
+        <Notice className="mb-4">
+          {isApiError(error, "email_taken") || isApiError(error, "conflict") ? (
+            <>
+              {uiText("An account already uses this email.")}{" "}
+              <Link to="/login" search={{ next: search.next, add }} className="font-medium text-fg underline underline-offset-2">
+                {uiText("Log in instead")}
+              </Link>
+            </>
+          ) : isApiError(error, "signup_disabled") ? uiText("New sign-ups are turned off. Ask an admin for an invitation.")
+            : isApiError(error, "too_many_accounts") ? t("accounts.limit", { count: MAX_ACCOUNTS })
+              : errorMessage(error)}
+        </Notice>
+      )}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
         <AuthField label={uiText("Name")}>
           {(id) => (

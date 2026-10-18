@@ -23,7 +23,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   const { t: uiText } = useTranslation("interface");
   const [pending, setPending] = useState<Pending | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [typed, setTyped] = useState("");
 
   const show = useCallback<ConfirmApi["show"]>((text, onSubmit, opts) => {
@@ -41,7 +41,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       await pending.onSubmit();
       setPending(null);
     } catch (e) {
-      setError(errorMessage(e));
+      setError(e);
     } finally {
       setBusy(false);
     }
@@ -66,7 +66,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 <TextInput autoFocus value={typed} onChange={(e) => setTyped(e.target.value)} aria-label={uiText("Confirmation text")} />
               </div>
             )}
-            {error && <p className="mt-3 text-xs text-danger-fg">{error}</p>}
+            {error != null && <p className="mt-3 text-xs text-danger-fg">{errorMessage(error)}</p>}
             </div>
             <div className="flex justify-end gap-2 border-t border-line bg-sunken px-5 py-3">
               <A.Cancel asChild>

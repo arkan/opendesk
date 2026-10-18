@@ -1,4 +1,3 @@
-import { diagnosticText } from "@/i18n/text";
 import type { ParseKeys } from "i18next";
 import { uiText } from "@/i18n/text";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -34,7 +33,7 @@ export default function Invite() {
   const me = useSession((s) => s.user);
   const lookup = useQuery({ ...q.invitationLookup(token), enabled: !!token });
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
     void bootSession();
@@ -53,9 +52,7 @@ export default function Invite() {
       void navigate({ to: "/inbox/$folder/{-$ticketId}", params: { folder: "unassigned", ticketId: undefined } });
     } catch (e) {
       setBusy(false);
-      if (isApiError(e, "invitation_email_mismatch"))
-        setError(uiText("This invitation is for {{email}}. Sign in with that address to accept.", { email: lookup.data?.email ?? "another address" }));
-      else setError(errorMessage(e));
+      setError(e);
     }
   };
 
@@ -95,7 +92,13 @@ export default function Invite() {
           </>
         }
       />
-      {error && <Notice className="mb-4">{diagnosticText(error)}</Notice>}
+      {error != null && (
+        <Notice className="mb-4">
+          {isApiError(error, "invitation_email_mismatch")
+            ? uiText("This invitation is for {{email}}. Sign in with that address to accept.", { email: inv.email ?? uiText("another address") })
+            : errorMessage(error)}
+        </Notice>
+      )}
       {status === "authed" ? (
         <div className="flex flex-col gap-3">
           {mismatch && (

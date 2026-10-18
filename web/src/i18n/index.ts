@@ -137,11 +137,12 @@ async function applyLocale(lng: Locale, namespaces: readonly Namespace[], public
     if (request !== transition) return;
     // changeLanguage also loads resources; keep it scoped to the prepared surface.
     i18n.options.ns = [...namespaces];
+    // React subscribers read this state synchronously on languageChanged.
+    pageLocale = publicPage ? lng : null;
+    if (!publicPage) agentLocale = lng as AgentLocale;
     await i18n.changeLanguage(lng);
     if (request !== transition) return;
-    pageLocale = publicPage ? lng : null;
     if (remember) {
-      agentLocale = lng as AgentLocale;
       try {
         localStorage.setItem(AGENT_KEY, agentLocale);
       } catch {

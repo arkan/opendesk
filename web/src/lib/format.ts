@@ -109,10 +109,14 @@ export function clock(iso: string): string {
 }
 
 /** "Oct 6", or "Oct 6, 2024" outside the current year. */
-export function shortDate(iso: string | null | undefined): string {
+export function shortDate(iso: string | Date | null | undefined, opts: { year?: boolean; weekday?: boolean } = {}): string {
   if (!iso) return "";
   const d = new Date(iso);
-  return sameYear(d) ? dtf({ month: "short", day: "numeric" }).format(d) : dtf({ month: "short", day: "numeric", year: "numeric" }).format(d);
+  return dtf({
+    month: "short", day: "numeric",
+    ...((opts.year ?? !sameYear(d)) ? { year: "numeric" } : {}),
+    ...(opts.weekday ? { weekday: "short" } : {}),
+  }).format(d);
 }
 
 /** 135 -> "2h 15m", 2880 -> "2d". */

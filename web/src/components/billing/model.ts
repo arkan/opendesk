@@ -170,7 +170,7 @@ export function validTopUp(usd: number | null): usd is number {
 
 const BRANDS: Record<string, string> = {
   visa: "Visa", mastercard: "Mastercard", amex: "American Express", discover: "Discover", diners: "Diners Club", jcb: "JCB",
-  unionpay: "UnionPay", cartes_bancaires: "Cartes Bancaires", eftpos_au: "eftpos", get link() { return appText("Link"); }, get sepa_debit() { return appText("SEPA Direct Debit"); },
+  unionpay: "UnionPay", cartes_bancaires: "Cartes Bancaires", eftpos_au: "eftpos", link: "Link", get sepa_debit() { return appText("SEPA Direct Debit"); },
   get us_bank_account() { return appText("Bank account"); }, bacs_debit: "Bacs Direct Debit",
 };
 

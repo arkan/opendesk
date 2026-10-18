@@ -250,7 +250,7 @@ export function ProviderButtons({ next, verb }: { next?: string | null; verb?: s
       if (r.code) {
         setPending(id);
         toCallback(r.code);
-      } else setError(oauthErrorMessage(r.error));
+      } else setError(r.error ?? null);
     });
     const win = openSignInPopup(oauthStartUrl(id, next, popupId));
     setPending(null);
@@ -280,7 +280,7 @@ export function ProviderButtons({ next, verb }: { next?: string | null; verb?: s
     setPending(null);
     if ("code" in r) toCallback(r.code);
     else if (r.error !== "cancelled") {
-      setError(r.error === "timeout" ? t("desktop.oauthTimeout") : r.error === "browser_unavailable" ? t("desktop.oauthBrowser") : oauthErrorMessage(r.error));
+      setError(r.error);
     }
   };
   const cancel = () => {
@@ -302,7 +302,7 @@ export function ProviderButtons({ next, verb }: { next?: string | null; verb?: s
   const grid = !!desktop && providers.length > 1;
   return (
     <div className="flex flex-col gap-2">
-      {error && <Notice>{diagnosticText(error)}</Notice>}
+      {error && <Notice>{error === "timeout" ? t("desktop.oauthTimeout") : error === "browser_unavailable" ? t("desktop.oauthBrowser") : uiText(oauthErrorKey(error)!)}</Notice>}
       {grid ? (
         <div className="grid grid-cols-2 gap-2">
           {providers.map((p, i) => (
@@ -376,9 +376,9 @@ export const oauthErrors: Record<string, ParseKeys<"interface">> = {
   invalid_code: "That sign-in link expired. Start again.",
 };
 
-export function oauthErrorMessage(code: string | undefined): string | null {
+export function oauthErrorKey(code: string | undefined): ParseKeys<"interface"> | null {
   if (!code) return null;
-  return uiText(oauthErrors[code] ?? "Sign-in failed. Try again.");
+  return oauthErrors[code] ?? "Sign-in failed. Try again.";
 }
 
 /** A labelled field used across the auth screens. */

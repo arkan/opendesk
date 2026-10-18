@@ -100,7 +100,7 @@ function useRealtimeConnection() {
             n.type === "ai_cap_reached" ? appText("Chats go to your team until the cap resets or you raise it.") : (billingNoticeBody[n.type] ?? importProblem(n) ?? n.ticket?.subject),
           action: n.ticket
             ? {
-                label: appText("Open"),
+                label: i18n.t("notifications.openTicket", { ns: "shell" }),
                 onClick: () =>
                   void navigate({ to: "/inbox/$folder/{-$ticketId}", params: { folder: "mine", ticketId: n.ticket!.id } }),
               }

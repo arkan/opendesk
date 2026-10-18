@@ -1,4 +1,4 @@
-import { dateLocale } from "@/lib/dateLocale";
+import { shortDate } from "@/lib/format";
 import { useTranslation } from "react-i18next";
 import { appText } from "@/i18n/text";
 import { endOfMonth, format, parseISO, startOfMonth, subDays, subMonths } from "date-fns";
@@ -28,7 +28,7 @@ export function rangeLabel(r: ReportsRange) {
   const a = parseISO(r.from);
   const b = parseISO(r.to);
   const sameYear = a.getFullYear() === b.getFullYear();
-  return `${format(a, sameYear ? "MMM d" : "MMM d, yyyy", { locale: dateLocale() })} – ${format(b, "MMM d, yyyy", { locale: dateLocale() })}`;
+  return `${shortDate(a, { year: !sameYear })} – ${shortDate(b, { year: true })}`;
 }
 
 export function RangePicker({ value, onChange }: { value: ReportsRange; onChange: (r: ReportsRange) => void }) {
@@ -75,7 +75,7 @@ export function RangePicker({ value, onChange }: { value: ReportsRange; onChange
             )}
           >
             <span className="flex-1">{p.label}</span>
-            <span className="mono text-[10.5px] text-fg-4">{format(parseISO(p.range.from), "MMM d", { locale: dateLocale() })}</span>
+            <span className="mono text-[10.5px] text-fg-4">{shortDate(parseISO(p.range.from), { year: false })}</span>
             <Check className={cn("size-4", active === p.id ? "text-fg" : "invisible")} strokeWidth={2.5} />
           </button>
         ))}

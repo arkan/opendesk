@@ -1,4 +1,3 @@
-import { diagnosticText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { Check } from "lucide-react";
@@ -35,7 +34,7 @@ export default function Reset() {
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { password: "", confirm: "" } });
   const password = watch("password");
   const [done, setDone] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   if (!token)
     return (
@@ -67,14 +66,14 @@ export default function Reset() {
       setDone(true);
     } catch (err) {
       if (isApiError(err) && (err.code === "invalid_token" || err.code === "not_found")) setError("This reset link has expired or was already used. Request a new one.");
-      else setError(errorMessage(err));
+      else setError(err);
     }
   });
 
   return (
     <div>
       <AuthHeading title={uiText("Choose a new password")} subtitle={uiText("Use 12 or more characters. A short sentence works well.")} />
-      {error && <Notice className="mb-4">{diagnosticText(error)}</Notice>}
+      {error != null && <Notice className="mb-4">{errorMessage(error)}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
         <AuthField label={uiText("New password")}>
           {(id) => (

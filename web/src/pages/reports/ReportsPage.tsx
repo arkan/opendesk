@@ -1,4 +1,3 @@
-import { dateLocale } from "@/lib/dateLocale";
 import { intlLocale } from "@/i18n";
 import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
@@ -25,7 +24,7 @@ import { BrandFilter, GroupTable, NO_TEAM, TeamFilter, brandRows, teamRows, useR
 import { PriorityIcon, StatusIcon, priorityLabel, priorityOrder, statusLabel } from "@/components/tickets/bits";
 import type { ReportsOverview, ReportsQuery, ReportsRange, Ticket } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
-import { minutes } from "@/lib/format";
+import { minutes, shortDate } from "@/lib/format";
 import { q } from "@/lib/queries";
 import { isTone, priorityTone, SERIES, statusTone, tone, toneFor, toneVar, type Tone } from "@/lib/tones";
 import { reportsQuery } from "@/router";
@@ -321,7 +320,7 @@ function VolumeCard({ d, className }: { d: ReportsOverview; className?: string }
         <Figure
           label={t("volume.busiest")}
           value={busiest && busiest.created ? <AnimatedNumber value={busiest.created} /> : "–"}
-          sub={busiest && busiest.created ? format(parseISO(busiest.date), "EEE, MMM d", { locale: dateLocale() }) : undefined}
+          sub={busiest && busiest.created ? shortDate(parseISO(busiest.date), { year: false, weekday: true }) : undefined}
         />
         <Figure label={t("volume.solveRate")} value={rate === null ? "–" : <AnimatedNumber value={rate} format={(n) => `${Math.round(n)}%`} />} sub={t("volume.solvedOfCreated")} />
       </div>

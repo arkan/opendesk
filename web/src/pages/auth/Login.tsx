@@ -1,4 +1,3 @@
-import { diagnosticText } from "@/i18n/text";
 import { uiText } from "@/i18n/text";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
@@ -13,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { TextInput } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MfaStep } from "@/components/auth/MfaStep";
-import { AuthField, completeSignIn, FieldError, Notice, oauthErrorMessage, OrDivider, PasswordInput, ProviderButtons, safeNext } from "@/components/auth/parts";
+import { AuthField, completeSignIn, FieldError, Notice, oauthErrorKey, OrDivider, PasswordInput, ProviderButtons, safeNext } from "@/components/auth/parts";
 import { Turnstile, type TurnstileHandle } from "@/components/auth/Turnstile";
 import { api } from "@/lib/api/endpoints";
 import { errorMessage, isApiError } from "@/lib/api/client";
@@ -44,7 +43,7 @@ export default function Login() {
   const full = adding && accounts.length >= MAX_ACCOUNTS;
   const { data: cfg, isLoading } = useQuery(q.authConfig());
   const [token, setToken] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(oauthErrorMessage(search.error));
+  const [error, setError] = useState<unknown>(oauthErrorKey(search.error));
   const [mfa, setMfa] = useState<string | null>(null);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
   const turnstile = useRef<TurnstileHandle>(null);
@@ -77,7 +76,7 @@ export default function Login() {
         .then((r) => (live ? answer(r, "passkey") : undefined))
         // Autofill waits quietly; only a refused sign-in after a pick is worth saying.
         .catch((e) => {
-          if (live && isApiError(e)) setError(e.status === 401 ? "That passkey didn't work. Try another way to sign in." : errorMessage(e));
+          if (live && isApiError(e)) setError(e.status === 401 ? "That passkey didn't work. Try another way to sign in." : e);
         });
     });
     return () => {
@@ -93,7 +92,7 @@ export default function Login() {
     try {
       await answer(await signInWithPasskey(), "passkey");
     } catch (e) {
-      if (!isPasskeyCancel(e)) setError(isApiError(e) && e.status === 401 ? "That passkey didn't work. Try another way to sign in." : errorMessage(e));
+      if (!isPasskeyCancel(e)) setError(isApiError(e) && e.status === 401 ? "That passkey didn't work. Try another way to sign in." : e);
     } finally {
       setPasskeyBusy(false);
     }
@@ -112,9 +111,8 @@ export default function Login() {
     } catch (err) {
       turnstile.current?.reset();
       if (isApiError(err, "invalid_credentials") || (isApiError(err) && err.status === 401)) setError("Wrong email or password.");
-      else if (isApiError(err, "too_many_accounts")) setError(t("accounts.limit", { count: MAX_ACCOUNTS }));
       else if (isApiError(err, "captcha_failed")) setError("We couldn't verify you're human. Try the check again.");
-      else setError(errorMessage(err));
+      else setError(err);
     }
   });
 
@@ -182,7 +180,7 @@ export default function Login() {
             <ProviderButtons next={search.next} />
           </div>
           {passwordLogin && hasAlternatives && <OrDivider />}
-          {error && <Notice className="mb-4">{diagnosticText(error)}</Notice>}
+          {error != null && <Notice className="mb-4">{isApiError(error, "too_many_accounts") ? t("accounts.limit", { count: MAX_ACCOUNTS }) : errorMessage(error)}</Notice>}
           {passwordLogin && (
             <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
               <AuthField label={uiText("Email")}>

@@ -1,4 +1,3 @@
-import { diagnosticText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { Check, MailCheck, X } from "lucide-react";
@@ -22,7 +21,7 @@ export default function Verify() {
   const status = useSession((s) => s.status);
   const email = useSession((s) => s.user?.email);
   const [state, setState] = useState<"working" | "ok" | "failed">("working");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [resending, setResending] = useState(false);
   const ran = useRef(false);
 
@@ -37,7 +36,7 @@ export default function Verify() {
       .verifyEmail(token)
       .then(() => setState("ok"))
       .catch((e) => {
-        setError(errorMessage(e, "This link has expired or was already used."));
+        setError(e);
         setState("failed");
       });
   }, [token]);
@@ -99,7 +98,7 @@ export default function Verify() {
     <div>
       <Glyph hue="red"><X className="size-[18px]" /></Glyph>
       <AuthHeading title={uiText("That link didn't work")} />
-      {error && <Notice className="mb-5">{diagnosticText(error)}</Notice>}
+      <Notice className="mb-5">{errorMessage(error, "This link has expired or was already used.")}</Notice>
       {resendBlock}
     </div>
   );

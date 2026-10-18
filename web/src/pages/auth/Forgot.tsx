@@ -1,4 +1,3 @@
-import { diagnosticText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { MailCheck } from "lucide-react";
@@ -29,7 +28,7 @@ export default function Forgot() {
     formState: { errors, isSubmitting },
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { email: "" } });
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const turnstile = useRef<TurnstileHandle>(null);
 
   const submit = handleSubmit(async ({ email }) => {
@@ -40,7 +39,7 @@ export default function Forgot() {
     } catch (err) {
       turnstile.current?.reset();
       // The answer is the same for every address; only transport problems surface.
-      if (isApiError(err, "rate_limited") || isApiError(err, "network_error") || isApiError(err, "captcha_failed")) setError(errorMessage(err));
+      if (isApiError(err, "rate_limited") || isApiError(err, "network_error") || isApiError(err, "captcha_failed")) setError(err);
       else setSent(true);
     }
   });
@@ -64,7 +63,7 @@ export default function Forgot() {
   return (
     <div>
       <AuthHeading title={uiText("Reset your password")} subtitle={uiText("Enter the email you use for opendesk and we'll send you a reset link.")} />
-      {error && <Notice className="mb-4">{diagnosticText(error)}</Notice>}
+      {error != null && <Notice className="mb-4">{errorMessage(error)}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
         <AuthField label={uiText("Email")}>
           {(id) => (

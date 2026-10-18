@@ -87,6 +87,7 @@ export function errorMessage(e: unknown, fallback = "Something went wrong"): str
     const field = e.errors?.find((x) => x.message)?.message;
     return diagnosticText(e.detail || field || e.title || fallback);
   }
+  if (typeof e === "string" && e) return diagnosticText(e);
   if (e instanceof Error && e.message) return diagnosticText(e.message);
   return diagnosticText(fallback);
 }

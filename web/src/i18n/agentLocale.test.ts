@@ -68,6 +68,27 @@ describe("manual agent language", () => {
     expect(i18n.language).toBe("fr");
   });
 
+  it("keeps the active language in sync when restoring French fails and allows retry", async () => {
+    await setAgentLocale("fr");
+    await setLocale("ar", ["public", "common"]);
+    i18n.removeResourceBundle("fr", "shell");
+    vi.spyOn(i18n.services.backendConnector.backend as BackendModule, "read").mockImplementationOnce((_lng, _ns, callback) => {
+      callback(new Error("offline"), null);
+    });
+
+    await resetLocale();
+
+    expect(i18n.language).toBe("en");
+    expect(getAgentLocale()).toBe("en");
+    expect(document.documentElement.lang).toBe("en");
+    expect(document.documentElement.dir).toBe("ltr");
+    expect(localStorage.getItem("od-agent-lang")).toBe("fr");
+
+    await setAgentLocale("fr");
+    expect(i18n.language).toBe("fr");
+    expect(getAgentLocale()).toBe("fr");
+  });
+
   it("does not let an obsolete public load overwrite a newer agent transition", async () => {
     let finish: (() => void) | undefined;
     i18n.removeResourceBundle("ar", "common");

@@ -1,4 +1,3 @@
-import { diagnosticText } from "@/i18n/text";
 import { appText } from "@/i18n/text";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
@@ -31,11 +30,11 @@ export default function Workspace() {
   const [deleting, setDeleting] = useState(false);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return setError(appText("Give your workspace a name."));
+    if (!name.trim()) return setError("name_required");
     setBusy(true);
     setError(null);
     try {
@@ -47,7 +46,7 @@ export default function Workspace() {
       void navigate({ to: "/onboarding/mailbox" });
     } catch (err) {
       setBusy(false);
-      setError(errorMessage(err));
+      setError(err);
     }
   };
 
@@ -62,7 +61,7 @@ export default function Workspace() {
       )}
       <OnboardingSteps current={1} />
       <AuthHeading title={appText("Create your workspace")} subtitle={appText("A workspace holds your team's inboxes, contacts and help center. You can rename it and set up your help center address later.")} />
-      {error && <Notice className="mb-4">{diagnosticText(error)}</Notice>}
+      {error != null && <Notice className="mb-4">{error === "name_required" ? appText("Give your workspace a name.") : errorMessage(error)}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
         <AuthField label={appText("Workspace name")}>
           {(id) => <TextInput id={id} className="h-9" autoFocus value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder={appText("Acme support")} />}

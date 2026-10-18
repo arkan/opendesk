@@ -1,4 +1,3 @@
-import { diagnosticText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 // The footer link of notification emails (contracts/api.md "Notification preferences
 // and emails"). Mail scanners open links on their own, so the page only asks; the
@@ -17,7 +16,7 @@ import { tone, type Tone } from "@/lib/tones";
 
 const route = getRouteApi("/auth/unsubscribe");
 
-type State = { kind: "ask" } | { kind: "done"; workspace: { id: string; name: string } } | { kind: "invalid" } | { kind: "error"; message: string };
+type State = { kind: "ask" } | { kind: "done"; workspace: { id: string; name: string } } | { kind: "invalid" } | { kind: "error"; error: unknown };
 
 export default function Unsubscribe() {
   const { t: uiText } = useTranslation("interface");
@@ -32,7 +31,7 @@ export default function Unsubscribe() {
       const r = await api.notifications.unsubscribe(token);
       setState({ kind: "done", workspace: r.workspace });
     } catch (e) {
-      setState(isApiError(e, "invalid_token") ? { kind: "invalid" } : { kind: "error", message: errorMessage(e) });
+      setState(isApiError(e, "invalid_token") ? { kind: "invalid" } : { kind: "error", error: e });
     } finally {
       setBusy(false);
     }
@@ -78,7 +77,7 @@ export default function Unsubscribe() {
         title={uiText("Stop notification emails?")}
         subtitle={uiText("You will stop getting notification emails from this workspace. Notifications still show in the app, and you can turn emails back on in your settings.")}
       />
-      {state.kind === "error" && <Notice className="mb-5">{diagnosticText(state.message)}</Notice>}
+      {state.kind === "error" && <Notice className="mb-5">{errorMessage(state.error)}</Notice>}
       <Button variant="primary" size="lg" className="w-full" loading={busy} onClick={unsubscribe}>
         {uiText("Unsubscribe")}
       </Button>

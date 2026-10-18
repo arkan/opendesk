@@ -64,6 +64,7 @@
   },
   "newTicket": "New ticket",
   "notifications": {
+    "openTicket": "Open",
     "title": "Notifications",
     "unread": "Notifications, {{count}} unread",
     "markAll": "Mark all read",
