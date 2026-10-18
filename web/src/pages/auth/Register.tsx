@@ -1,3 +1,4 @@
+import { diagnosticText } from "@/i18n/text";
 import { uiText } from "@/i18n/text";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useRouter } from "@tanstack/react-router";
@@ -105,7 +106,7 @@ export default function Register() {
           {!!cfg?.providers.length && <OrDivider />}
         </>
       )}
-      {error && <Notice className="mb-4">{error}</Notice>}
+      {error && <Notice className="mb-4">{typeof error === "string" ? diagnosticText(error) : error}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
         <AuthField label={uiText("Name")}>
           {(id) => (

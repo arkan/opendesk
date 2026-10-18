@@ -53,7 +53,7 @@ export type ComposerHandle = { focus: (mode?: Mode) => void; retry: (m: Message)
 const emailRe = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
 
 function EmailChips({ label, values, onChange }: { label: string; values: string[]; onChange: (v: string[]) => void }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const [text, setText] = useState("");
   const commit = () => {
     const parts = text.split(/[\s,;]+/).filter(Boolean);
@@ -96,7 +96,7 @@ function EmailChips({ label, values, onChange }: { label: string; values: string
 }
 
 function useSend(ticket: Ticket, ctx: TeamsCtx) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const qc = useQueryClient();
   const user = useSession((s) => s.user!);
   return useMutation({

@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { appText } from "@/i18n/text";
 // Page scaffolding shared by every screen, so headers, sections and rows line
 // up across the app.
 
@@ -240,12 +239,12 @@ export function ListRow({
 }
 
 /** Shown in place of a settings page to roles that can't manage it. */
-export function NoAccess({ what = appText("these settings") }: { what?: string }) {
-  useTranslation("app");
+export function NoAccess({ what }: { what?: string }) {
+  const { t: appText } = useTranslation("app");
   return (
     <div className="rounded-lg border border-dashed border-line px-6 py-12 text-center">
       <p className="text-[13px] font-medium">{appText("Admins only")}</p>
-      <p className="mt-1 text-[12.5px] text-fg-3">{appText("Ask a workspace admin if you need to change")} {appText(what)}.</p>
+      <p className="mt-1 text-[12.5px] text-fg-3">{appText("Ask a workspace admin if you need to change")} {what ?? appText("these settings")}.</p>
     </div>
   );
 }

@@ -70,7 +70,7 @@ export default function WebhookDetail() {
   if (!admin)
     return (
       <SettingsPage title={t("webhook.title")}>
-        <NoAccess what="webhooks" />
+        <NoAccess what={appText("webhooks")} />
       </SettingsPage>
     );
   if (isLoading)

@@ -1,3 +1,5 @@
+import { diagnosticText } from "@/i18n/text";
+import type { ParseKeys } from "i18next";
 import { uiText } from "@/i18n/text";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
@@ -16,7 +18,7 @@ import type { Role } from "@/lib/api/types";
 
 const route = getRouteApi("/auth/invite");
 
-const roleCopy: Record<Role, string> = {
+const roleCopy: Record<Role, ParseKeys<"interface">> = {
   owner: "an owner",
   admin: "an admin",
   agent: "an agent",
@@ -93,7 +95,7 @@ export default function Invite() {
           </>
         }
       />
-      {error && <Notice className="mb-4">{error}</Notice>}
+      {error && <Notice className="mb-4">{diagnosticText(error)}</Notice>}
       {status === "authed" ? (
         <div className="flex flex-col gap-3">
           {mismatch && (

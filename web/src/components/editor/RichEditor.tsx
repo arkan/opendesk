@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { appText } from "@/i18n/text";
 import { EditorContent, useEditor, type Editor, type Extensions } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -60,7 +59,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(function
   },
   ref,
 ) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -150,7 +149,7 @@ function TB({ label, active, onClick, children, shortcut }: { label: string; act
 }
 
 export function Toolbar({ editor, full, onImage, end }: { editor: Editor; full?: boolean; onImage?: () => void; end?: ReactNode }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   return (
     <div className="flex items-center gap-0.5 px-1.5 pb-1.5">
       {full && (
@@ -203,7 +202,7 @@ export function Toolbar({ editor, full, onImage, end }: { editor: Editor; full?:
 }
 
 function LinkButton({ editor }: { editor: Editor }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const [open, setOpen] = useState(false);
   const [href, setHref] = useState("");
   const active = editor.isActive("link");

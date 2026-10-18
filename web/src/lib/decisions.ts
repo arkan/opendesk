@@ -1,3 +1,4 @@
+import type { ParseKeys } from "i18next";
 import { appText } from "@/i18n/text";
 // Ollie's decisions on a ticket (contracts/ai.md "Decisions"): the latest triage
 // run in custom.ai_decisions and the ones below the workspace's confidence
@@ -79,7 +80,7 @@ export function decisionNote(d: AIDecisions | null, field: DecisionField): { sur
 
 /** Built-in triage categories from contracts/ai.md; custom content stays literal. */
 export function categoryLabel(value: string): string {
-  const labels: Record<string, string> = {
+  const labels: Record<string, ParseKeys<"app">> = {
     question: "Question", problem: "Problem", bug: "Bug", billing: "Billing", account: "Account",
     feature_request: "Feature request", feedback: "Feedback", sales: "Sales", shipping: "Shipping",
     refund: "Refund", cancellation: "Cancellation", spam: "Spam", other: "Other",

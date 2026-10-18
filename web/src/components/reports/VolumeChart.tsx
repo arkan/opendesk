@@ -192,7 +192,7 @@ export function VolumeLegend<D extends Row = Day>({ series: lines = series as un
 }
 
 export function VolumeTable({ days }: { days: Day[] }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   return (
     <div className="max-h-[268px] overflow-y-auto">
       <table className="w-full text-[12.5px]">

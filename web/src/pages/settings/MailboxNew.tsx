@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { BackLink, NoAccess, Section, SettingsPage } from "@/components/layout";
@@ -42,7 +43,7 @@ export default function MailboxNew() {
           }
         />
       ) : (
-        <NoAccess what="mailboxes" />
+        <NoAccess what={appText("mailboxes")} />
       )}
     </SettingsPage>
   );

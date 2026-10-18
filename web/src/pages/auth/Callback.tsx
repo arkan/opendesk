@@ -1,4 +1,4 @@
-import { uiText } from "@/i18n/text";
+import { diagnosticText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { getRouteApi, Link, useRouter } from "@tanstack/react-router";
 import { Link2 } from "lucide-react";
@@ -33,7 +33,7 @@ function linkFromError(e: unknown): LinkRequired | null {
 }
 
 export default function Callback() {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const search = route.useSearch();
   const router = useRouter();
   const [state, setState] = useState<State>(() =>
@@ -82,7 +82,7 @@ export default function Callback() {
   return (
     <div>
       <AuthHeading title={uiText("Couldn't sign you in")} />
-      <Notice className="mb-5">{state.message}</Notice>
+      <Notice className="mb-5">{diagnosticText(state.message)}</Notice>
       <Button variant="secondary" size="lg" className="w-full" asChild>
         <Link to="/login">{uiText("Back to log in")}</Link>
       </Button>
@@ -91,7 +91,7 @@ export default function Callback() {
 }
 
 function LinkAccount({ link, provider, onResult }: { link: LinkRequired; provider?: string; onResult: (r: ExchangeResponse) => Promise<void> }) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -125,7 +125,7 @@ function LinkAccount({ link, provider, onResult }: { link: LinkRequired; provide
              {uiText("An opendesk account already uses")} {link.email ? <span className="font-medium text-fg">{link.email}</span> : uiText("this email")}{uiText(". Enter its password to link")} {name}{uiText(". Next time you can sign in with either.")} </>
         }
       />
-      {error && <Notice className="mb-4">{error}</Notice>}
+      {error && <Notice className="mb-4">{diagnosticText(error)}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
         <AuthField
           label={uiText("Password")}

@@ -1,12 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { appText } from "@/i18n/text";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AuthHeading } from "@/app/AuthLayout";
 import { OnboardingSteps } from "@/components/auth/OnboardingSteps";
 import { AddMailboxWizard } from "@/components/mailboxes/AddMailboxWizard";
 
 export default function Mailbox() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const navigate = useNavigate();
   const toInbox = () => void navigate({ to: "/inbox/$folder/{-$ticketId}", params: { folder: "unassigned", ticketId: undefined } });
   return (

@@ -1,4 +1,3 @@
-import { uiText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { Command } from "cmdk";
 import { Popover as P } from "radix-ui";
@@ -53,7 +52,7 @@ type Multi = Common & { multi: true; values: string[]; onChange: (v: string[]) =
  * Assignee, team, status, priority, tags, mailboxes, saved replies all use it.
  */
 export function Picker(props: Single | Multi) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const { trigger, items, placeholder = uiText("Search"), emptyText = uiText("No matches"), align = "start", side = "bottom", width = 240 } = props;
   const [innerOpen, setInnerOpen] = useState(false);
   const open = props.open ?? innerOpen;

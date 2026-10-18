@@ -3,7 +3,7 @@
 // the browser sends to /v1/auth/refresh (contracts/tokens.md). A 401 triggers
 // one shared refresh of that account, then the request is retried once.
 
-import { uiText } from "@/i18n/text";
+import { diagnosticText, uiText } from "@/i18n/text";
 import type { TokenResponse } from "./types";
 
 export type Problem = {
@@ -85,10 +85,10 @@ export function errorMessage(e: unknown, fallback = "Something went wrong"): str
     if (e.code === "network_error") return uiText("Can't reach the server. Check your connection.");
     if (e.code === "rate_limited") return uiText("Too many attempts. Wait a moment and try again.");
     const field = e.errors?.find((x) => x.message)?.message;
-    return uiText(e.detail || field || e.title || fallback);
+    return diagnosticText(e.detail || field || e.title || fallback);
   }
-  if (e instanceof Error && e.message) return uiText(e.message);
-  return uiText(fallback);
+  if (e instanceof Error && e.message) return diagnosticText(e.message);
+  return diagnosticText(fallback);
 }
 
 // Transport: fetch by default; mock mode swaps it for an in-memory handler.

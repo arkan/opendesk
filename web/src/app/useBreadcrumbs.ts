@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { appText } from "@/i18n/text";
 import { useEffect } from "react";
 import { useMatches } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -20,7 +19,7 @@ export function usePageCrumb(label: string | null | undefined) {
 
 /** Header breadcrumbs for the current route: section, then page, then the page's own crumb. */
 export function useBreadcrumbs(): Crumb[] {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const matches = useMatches();
   const extra = useCrumbStore((s) => s.label);
   const { data: views } = useQuery(q.views());

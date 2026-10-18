@@ -1,4 +1,4 @@
-import { uiText } from "@/i18n/text";
+import { diagnosticText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { OTPInput, REGEXP_ONLY_DIGITS } from "input-otp";
 import { useEffect, useRef, useState } from "react";
@@ -13,7 +13,7 @@ import { Notice } from "./parts";
 
 /** Six boxes over one real input (input-otp): paste, autofill and screen readers just work. */
 export function OtpInput({ value, onChange, onComplete, disabled, invalid }: { value: string; onChange: (v: string) => void; onComplete?: (v: string) => void; disabled?: boolean; invalid?: boolean }) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   return (
     <OTPInput
       autoFocus
@@ -50,7 +50,7 @@ export function OtpInput({ value, onChange, onComplete, disabled, invalid }: { v
 }
 
 export function MfaStep({ mfaToken, onDone, onBack }: { mfaToken: string; onDone: (t: TokenResponse) => void | Promise<void>; onBack: () => void }) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const [mode, setMode] = useState<"totp" | "recovery">("totp");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -107,7 +107,7 @@ export function MfaStep({ mfaToken, onDone, onBack }: { mfaToken: string; onDone
             spellCheck={false}
           />
         )}
-        {error && <Notice>{error}</Notice>}
+        {error && <Notice>{diagnosticText(error)}</Notice>}
         <Button type="submit" variant="primary" size="lg" className="w-full" loading={busy} disabled={mode === "totp" && code.length !== 6}>
           {uiText("Verify")}
         </Button>

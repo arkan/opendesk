@@ -16,7 +16,7 @@ export async function copyText(text: string) {
 }
 
 export function CopyButton({ value, label = uiText("Copy"), className }: { value: string; label?: string; className?: string }) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const [done, setDone] = useState(false);
   return (
     <Tooltip content={done ? uiText("Copied") : label}>

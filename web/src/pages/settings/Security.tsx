@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { appText } from "@/i18n/text";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { Download, Laptop, ShieldCheck, Smartphone } from "lucide-react";
@@ -27,7 +26,7 @@ import { q, qk } from "@/lib/queries";
 import { updateUser, useSession } from "@/lib/session";
 
 export default function Security() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   return (
     <SettingsPage title={appText("Security")} description={appText("Your password, passkeys, two-factor authentication and signed-in devices.")}>
       <PasswordSection />
@@ -42,7 +41,7 @@ export default function Security() {
 // ─── Password ──────────────────────────────────────────────────────────────
 
 function PasswordSection() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
@@ -97,7 +96,7 @@ function PasswordSection() {
 // ─── Two-factor ────────────────────────────────────────────────────────────
 
 function TwoFactorSection() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const user = useSession((s) => s.user)!;
   const [setupOpen, setSetupOpen] = useState(false);
   const [disableOpen, setDisableOpen] = useState(false);
@@ -139,7 +138,7 @@ const slide = {
 };
 
 function SetupDialog({ onClose }: { onClose: () => void }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const user = useSession((s) => s.user)!;
   const confirm = useConfirm();
   const [step, setStep] = useState<0 | 1 | 2>(0);
@@ -327,7 +326,7 @@ function SetupDialog({ onClose }: { onClose: () => void }) {
 }
 
 function DisableDialog({ onClose }: { onClose: () => void }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const user = useSession((s) => s.user)!;
   const [code, setCode] = useState("");
   const disable = useMutation({
@@ -377,7 +376,7 @@ function DisableDialog({ onClose }: { onClose: () => void }) {
 // ─── Sessions ──────────────────────────────────────────────────────────────
 
 function SessionsSection() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const qc = useQueryClient();
   const confirm = useConfirm();
   const { data, isLoading } = useQuery(q.sessions());
@@ -471,7 +470,7 @@ function SessionsSection() {
 // ─── Delete account ────────────────────────────────────────────────────────
 
 function DeleteAccountSection() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const [open, setOpen] = useState(false);
   return (
     <Section title={appText("Delete account")} danger>

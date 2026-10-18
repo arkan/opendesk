@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Settings > Routing > a rule (contracts/teams.md "Routing"): a name, all or
 // any of up to 20 conditions, and the team matching tickets go to. "new"
 // creates one at the end of the list.
@@ -50,7 +51,7 @@ export default function RoutingRuleEdit() {
   if (!admin)
     return (
       <SettingsPage title={t("routing.title")} back={back}>
-        <NoAccess what="routing" />
+        <NoAccess what={appText("routing")} />
       </SettingsPage>
     );
   if (!isNew && isLoading)

@@ -78,7 +78,6 @@ function soundForTicket(t: Ticket, me: string) {
 }
 
 function useRealtimeConnection() {
-  useTranslation("app");
   const qc = useQueryClient();
   const navigate = useNavigate();
   const wid = useSession((s) => s.workspaceId);
@@ -135,7 +134,7 @@ function useRealtimeConnection() {
 }
 
 export function AppLayout() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   // The top-level area (inbox, views, contacts, settings/...) keys the route transition.
   const section = useRouterState({ select: (s) => { const p = s.location.pathname.split("/").filter(Boolean); return p[0] ?? ""; } });
   useRealtimeConnection();

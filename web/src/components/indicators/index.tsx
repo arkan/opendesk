@@ -88,7 +88,7 @@ export function StatusIcon({ status, className }: { status: TicketStatus; classN
 
 /** Spam is a folder rather than a status; it gets a matching glyph. */
 export function SpamIcon({ className }: { className?: string }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const c = toneVar("red");
   return (
     <Glyph k="spam" label={appText("Spam")} className={className}>
@@ -112,7 +112,7 @@ export function StatusPill({ status, className, label, hue }: { status: TicketSt
 // filled square with an exclamation, the one mark that shouts.
 
 export function PriorityIcon({ priority, className, muted }: { priority: Priority | null | undefined; className?: string; muted?: boolean }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   // No priority yet: a faint dashed outline holds the slot so columns align.
   if (!priority)
     return (

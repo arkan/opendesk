@@ -14,7 +14,7 @@ function ToastIcon({ hue, children }: { hue: Tone; children: React.ReactNode }) 
 }
 
 export function Toaster() {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const { dark } = useTheme();
   return (
     <Sonner

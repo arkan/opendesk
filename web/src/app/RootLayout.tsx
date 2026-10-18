@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { appText } from "@/i18n/text";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, useMatches, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
@@ -12,12 +11,12 @@ import { onAccountFallback } from "@/lib/session";
 import { useDesktopNavigation } from "./useDesktopBridge";
 
 function useRouteTitle() {
-  const { i18n } = useTranslation("app");
+  const { t } = useTranslation("app");
   const matches = useMatches();
   const title = [...matches].reverse().find((m) => m.staticData?.title)?.staticData.title;
   useEffect(() => {
-    document.title = title ? `${appText(title)} · opendesk` : "opendesk";
-  }, [title, i18n.language]);
+    document.title = title ? `${t(title)} · opendesk` : "opendesk";
+  }, [title, t]);
 }
 
 function usePageviews() {
@@ -42,18 +41,25 @@ function useAccountFallback() {
   );
 }
 
-export function RootLayout() {
+function AgentRoot() {
   useRouteTitle();
+  return (
+    <ConfirmProvider>
+      <Outlet />
+      <Toaster />
+    </ConfirmProvider>
+  );
+}
+
+export function RootLayout() {
+  const publicPage = useMatches({ select: (matches) => matches.some((match) => match.staticData.publicLocale) });
   usePageviews();
   useAccountFallback();
   useDesktopNavigation();
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider delayDuration={400} skipDelayDuration={200}>
-        <ConfirmProvider>
-          <Outlet />
-          <Toaster />
-        </ConfirmProvider>
+        {publicPage ? <Outlet /> : <AgentRoot />}
       </TooltipProvider>
     </QueryClientProvider>
   );

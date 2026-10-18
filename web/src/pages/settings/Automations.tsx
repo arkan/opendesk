@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { intlLocale } from "@/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -65,7 +66,7 @@ export default function Automations() {
   if (!admin)
     return (
       <SettingsPage title={t("automations.title")}>
-        <NoAccess what="automations" />
+        <NoAccess what={appText("automations")} />
       </SettingsPage>
     );
 

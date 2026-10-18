@@ -1,4 +1,3 @@
-import { uiText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 // /auth/popup: where a provider sign-in that ran in a popup window comes back
 // (lib/oauthPopup.ts). It hands the one-time code to the tab that started it and closes;
@@ -12,7 +11,7 @@ import { deliverPopupResult } from "@/lib/oauthPopup";
 const route = getRouteApi("/auth/auth/popup");
 
 export default function PopupDone() {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const search = route.useSearch();
   const router = useRouter();
   const [handed, setHanded] = useState(false);

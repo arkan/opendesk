@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Settings > Brands (contracts/teams.md): what customers see. Each brand has
 // its addresses, chat widgets and help center. Every workspace has one
 // default brand; brand pickers elsewhere appear once there is a second.
@@ -44,7 +45,7 @@ export default function Brands() {
   if (!admin)
     return (
       <SettingsPage title={t("brands.title")}>
-        <NoAccess what="brands" />
+        <NoAccess what={appText("brands")} />
       </SettingsPage>
     );
 

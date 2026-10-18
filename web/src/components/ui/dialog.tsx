@@ -1,4 +1,3 @@
-import { uiText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { Dialog as D } from "radix-ui";
 import { X } from "lucide-react";
@@ -28,7 +27,7 @@ export function Dialog({
   onEscapeKeyDown?: (e: KeyboardEvent) => void;
   onInteractOutside?: (e: Event) => void;
 }) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const w = { sm: "max-w-[400px]", md: "max-w-[520px]", lg: "max-w-[680px]", xl: "max-w-[880px]" }[size];
   return (
     <D.Root open={open} onOpenChange={onOpenChange}>
@@ -87,7 +86,7 @@ export function Drawer({
   onEscapeKeyDown?: (e: KeyboardEvent) => void;
   onInteractOutside?: (e: Event) => void;
 }) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   return (
     <D.Root open={open} onOpenChange={onOpenChange}>
       <D.Portal>

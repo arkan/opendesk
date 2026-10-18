@@ -1,4 +1,4 @@
-import { uiText } from "@/i18n/text";
+import { diagnosticText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { Check } from "lucide-react";
@@ -25,7 +25,7 @@ const schema = z
 type Values = z.infer<typeof schema>;
 
 export default function Reset() {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const { token } = route.useSearch();
   const {
     register,
@@ -74,7 +74,7 @@ export default function Reset() {
   return (
     <div>
       <AuthHeading title={uiText("Choose a new password")} subtitle={uiText("Use 12 or more characters. A short sentence works well.")} />
-      {error && <Notice className="mb-4">{error}</Notice>}
+      {error && <Notice className="mb-4">{diagnosticText(error)}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
         <AuthField label={uiText("New password")}>
           {(id) => (

@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Settings > Routing (contracts/teams.md "Routing"): how a new ticket gets its
 // team. The address or widget decides first, then the first enabled rule that
 // matches, then the team's assignment. Rules reorder by drag; a test panel
@@ -72,7 +73,7 @@ export default function Routing() {
   if (!admin)
     return (
       <SettingsPage title={t("routing.title")}>
-        <NoAccess what="routing" />
+        <NoAccess what={appText("routing")} />
       </SettingsPage>
     );
 

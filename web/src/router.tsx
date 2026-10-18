@@ -9,6 +9,7 @@ import {
   lazyRouteComponent,
   redirect,
 } from "@tanstack/react-router";
+import type { ParseKeys } from "i18next";
 import type { QueryClient } from "@tanstack/react-query";
 import { RootLayout } from "./app/RootLayout";
 import { AppLayout } from "./app/AppLayout";
@@ -28,7 +29,7 @@ declare module "@tanstack/react-router" {
   }
   interface StaticDataRouteOption {
     /** Tab title, without the brand. */
-    title?: string;
+    title?: ParseKeys<"app">;
     /** Public pages choose their language independently of the agent preference. */
     publicLocale?: boolean;
   }
@@ -423,7 +424,7 @@ const settingsIndex = createRoute({
 });
 
 type Prefetch = (qc: QueryClient) => unknown;
-function settingsPage<P extends string>(path: P, title: string, load: () => Promise<{ default: React.ComponentType }>, prefetch?: Prefetch) {
+function settingsPage<P extends string>(path: P, title: ParseKeys<"app">, load: () => Promise<{ default: React.ComponentType }>, prefetch?: Prefetch) {
   return createRoute({
     getParentRoute: () => settingsLayout,
     path,

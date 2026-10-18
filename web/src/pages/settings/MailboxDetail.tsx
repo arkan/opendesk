@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { InBrowserNote } from "@/components/desktop/InBrowser";
@@ -120,7 +121,7 @@ export default function MailboxDetail() {
   if (!atLeast(role, "admin"))
     return (
       <SettingsPage title={t("detail.fallbackTitle")} back={back}>
-        <NoAccess what="mailboxes" />
+        <NoAccess what={appText("mailboxes")} />
       </SettingsPage>
     );
   if (isLoading)

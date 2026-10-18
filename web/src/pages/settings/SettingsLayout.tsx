@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { appText } from "@/i18n/text";
+import type { ParseKeys } from "i18next";
 import { atLeast, useRole } from "@/lib/session";
 import { useQuery } from "@tanstack/react-query";
 import { q } from "@/lib/queries";
@@ -84,71 +84,71 @@ type NavPath =
 
 const AGENT_GROUP = "AI agent";
 
-const groups: { title: string; items: { to: NavPath; label: string; icon: ReactNode }[] }[] = [
+const groups: { title: ParseKeys<"app">; items: { to: NavPath; label: ParseKeys<"app">; icon: ReactNode }[] }[] = [
   {
     title: "Account",
     items: [
-      { to: "/settings/profile", get label() { return appText("Profile"); }, icon: <User /> },
-      { to: "/settings/security", get label() { return appText("Security"); }, icon: <Shield /> },
-      { to: "/settings/notifications", get label() { return appText("Notifications"); }, icon: <Bell /> },
+      { to: "/settings/profile", label: "Profile", icon: <User /> },
+      { to: "/settings/security", label: "Security", icon: <Shield /> },
+      { to: "/settings/notifications", label: "Notifications", icon: <Bell /> },
     ],
   },
   {
     title: "Workspace",
     items: [
-      { to: "/settings/workspace", get label() { return appText("General"); }, icon: <Building2 /> },
-      { to: "/settings/members", get label() { return appText("Members"); }, icon: <Users /> },
-      { to: "/settings/teams", get label() { return appText("Teams"); }, icon: <UsersRound /> },
-      { to: "/settings/billing", get label() { return appText("Plan and billing"); }, icon: <CreditCard /> },
-      { to: "/settings/ai", get label() { return appText("AI"); }, icon: <Bot /> },
-      { to: "/settings/integrations", get label() { return appText("Integrations"); }, icon: <Plug /> },
-      { to: "/settings/import", get label() { return appText("Import"); }, icon: <ImportIcon /> },
+      { to: "/settings/workspace", label: "General", icon: <Building2 /> },
+      { to: "/settings/members", label: "Members", icon: <Users /> },
+      { to: "/settings/teams", label: "Teams", icon: <UsersRound /> },
+      { to: "/settings/billing", label: "Plan and billing", icon: <CreditCard /> },
+      { to: "/settings/ai", label: "AI", icon: <Bot /> },
+      { to: "/settings/integrations", label: "Integrations", icon: <Plug /> },
+      { to: "/settings/import", label: "Import", icon: <ImportIcon /> },
     ],
   },
   {
     title: "Inbox",
     items: [
-      { to: "/settings/tags", get label() { return appText("Labels"); }, icon: <Tag /> },
-      { to: "/settings/custom-fields", get label() { return appText("Custom fields"); }, icon: <SlidersHorizontal /> },
-      { to: "/settings/assignment", get label() { return appText("Assignment"); }, icon: <Shuffle /> },
-      { to: "/settings/triage", get label() { return appText("Triage"); }, icon: <Sparkles /> },
-      { to: "/settings/business-hours", get label() { return appText("Business hours"); }, icon: <Clock /> },
-      { to: "/settings/saved-replies", get label() { return appText("Saved replies"); }, icon: <MessageSquareText /> },
-      { to: "/settings/views", get label() { return appText("Views"); }, icon: <Layers /> },
-      { to: "/settings/sla", get label() { return appText("SLA policies"); }, icon: <Gauge /> },
-      { to: "/settings/automations", get label() { return appText("Automations"); }, icon: <Workflow /> },
+      { to: "/settings/tags", label: "Labels", icon: <Tag /> },
+      { to: "/settings/custom-fields", label: "Custom fields", icon: <SlidersHorizontal /> },
+      { to: "/settings/assignment", label: "Assignment", icon: <Shuffle /> },
+      { to: "/settings/triage", label: "Triage", icon: <Sparkles /> },
+      { to: "/settings/business-hours", label: "Business hours", icon: <Clock /> },
+      { to: "/settings/saved-replies", label: "Saved replies", icon: <MessageSquareText /> },
+      { to: "/settings/views", label: "Views", icon: <Layers /> },
+      { to: "/settings/sla", label: "SLA policies", icon: <Gauge /> },
+      { to: "/settings/automations", label: "Automations", icon: <Workflow /> },
     ],
   },
   {
     title: "Channels",
     items: [
-      { to: "/settings/mailboxes", get label() { return appText("Mailboxes"); }, icon: <Inbox /> },
-      { to: "/settings/routing", get label() { return appText("Routing"); }, icon: <Route /> },
-      { to: "/settings/brands", get label() { return appText("Brands and widgets"); }, icon: <MessageCircle /> },
-      { to: "/settings/email-design", get label() { return appText("Email design"); }, icon: <Palette /> },
+      { to: "/settings/mailboxes", label: "Mailboxes", icon: <Inbox /> },
+      { to: "/settings/routing", label: "Routing", icon: <Route /> },
+      { to: "/settings/brands", label: "Brands and widgets", icon: <MessageCircle /> },
+      { to: "/settings/email-design", label: "Email design", icon: <Palette /> },
     ],
   },
   {
     title: AGENT_GROUP,
     items: [
-      { to: "/settings/ai/agent", get label() { return appText("Overview"); }, icon: <LayoutDashboard /> },
-      { to: "/settings/ai/bots", get label() { return appText("Bots"); }, icon: <Smile /> },
-      { to: "/settings/ai/behaviour", get label() { return appText("Behaviour"); }, icon: <SlidersHorizontal /> },
-      { to: "/settings/ai/knowledge", get label() { return appText("Knowledge"); }, icon: <BookOpen /> },
-      { to: "/settings/ai/tools", get label() { return appText("Tools"); }, icon: <Wrench /> },
-      { to: "/settings/ai/playground", get label() { return appText("Playground"); }, icon: <FlaskConical /> },
-      { to: "/settings/ai/tests", get label() { return appText("Tests"); }, icon: <ClipboardCheck /> },
+      { to: "/settings/ai/agent", label: "Overview", icon: <LayoutDashboard /> },
+      { to: "/settings/ai/bots", label: "Bots", icon: <Smile /> },
+      { to: "/settings/ai/behaviour", label: "Behaviour", icon: <SlidersHorizontal /> },
+      { to: "/settings/ai/knowledge", label: "Knowledge", icon: <BookOpen /> },
+      { to: "/settings/ai/tools", label: "Tools", icon: <Wrench /> },
+      { to: "/settings/ai/playground", label: "Playground", icon: <FlaskConical /> },
+      { to: "/settings/ai/tests", label: "Tests", icon: <ClipboardCheck /> },
     ],
   },
   {
     title: "Developers",
     items: [
-      { to: "/settings/api-keys", get label() { return appText("API keys"); }, icon: <KeyRound /> },
-      { to: "/settings/ai-clients", get label() { return appText("AI clients"); }, icon: <Cable /> },
-      { to: "/settings/webhooks", get label() { return appText("Webhooks"); }, icon: <Webhook /> },
+      { to: "/settings/api-keys", label: "API keys", icon: <KeyRound /> },
+      { to: "/settings/ai-clients", label: "AI clients", icon: <Cable /> },
+      { to: "/settings/webhooks", label: "Webhooks", icon: <Webhook /> },
     ],
   },
-  { title: "Admin", items: [{ to: "/settings/audit-log", get label() { return appText("Audit log"); }, icon: <ListChecks /> }] },
+  { title: "Admin", items: [{ to: "/settings/audit-log", label: "Audit log", icon: <ListChecks /> }] },
 ];
 
 /**
@@ -175,7 +175,7 @@ function useBrandItems() {
 }
 
 export default function SettingsLayout() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const groups = useVisibleGroups();
   const brands = useBrandItems();
   const all = groups.flatMap((g) => g.items);
@@ -191,7 +191,7 @@ export default function SettingsLayout() {
     <div className="flex min-h-0 flex-1 flex-col md:flex-row">
       <nav aria-label={appText("Settings")} className="hidden w-[232px] shrink-0 overflow-y-auto border-r border-line px-2.5 pb-6 pt-4 md:block">
         {groups.map((g, gi) => (
-          <div key={appText(g.title)} className={gi ? "mt-4" : undefined}>
+          <div key={g.title} className={gi ? "mt-4" : undefined}>
             <div className="label-caps px-2 pb-1">{appText(g.title)}</div>
             <div className="flex flex-col gap-px">
               {g.items.map((i) => {

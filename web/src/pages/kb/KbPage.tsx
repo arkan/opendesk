@@ -1,4 +1,3 @@
-import { appText } from "@/i18n/text";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { BookOpen, ExternalLink, Folder, FolderPlus, Library, MoreHorizontal, Pencil, Plus, Settings2, Trash2 } from "lucide-react";
@@ -338,7 +337,7 @@ export default function KbPage() {
 }
 
 function ArticleSkeleton() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   return (
     <div aria-busy="true" aria-label={appText("Loading")}>
       {Array.from({ length: 8 }).map((_, i) => (

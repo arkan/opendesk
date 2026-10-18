@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { intlLocale } from "@/i18n";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
@@ -203,7 +204,7 @@ export default function AutomationEdit() {
   if (!atLeast(role, "admin"))
     return (
       <SettingsPage title={t("edit.fallbackTitle")}>
-        <NoAccess what="automations" />
+        <NoAccess what={appText("automations")} />
       </SettingsPage>
     );
 

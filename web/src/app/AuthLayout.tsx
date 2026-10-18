@@ -1,4 +1,3 @@
-import { appText } from "@/i18n/text";
 import { AgentLanguageSelect } from "@/components/AgentLanguageSelect";
 import { Link, Outlet } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -17,7 +16,7 @@ import { desktop } from "@/lib/desktop";
  * of a shared inbox filling in live.
  */
 export function AuthLayout() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   if (desktop) return <DesktopAuthLayout />;
   return (
     <div className="relative flex min-h-dvh flex-col bg-frame">
@@ -101,7 +100,7 @@ const ROWS: Row[] = [
 
 /** Decorative: a few tickets arriving and getting solved. Hidden from assistive tech. */
 function InboxPreview() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const reduce = useReducedMotion();
   const [n, setN] = useState(4);
   useEffect(() => {

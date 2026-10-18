@@ -1,4 +1,5 @@
 import { i18n } from "@/i18n";
+import type { ParseKeys } from "i18next";
 import { appText } from "@/i18n/text";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import {
@@ -78,83 +79,85 @@ function glyph(action: string): { icon: ReactNode; tone: Tone } {
   return { icon: <Settings2 />, tone: "gray" };
 }
 
-const verbs: Record<string, string> = {
-  get "login.succeeded"() { return appText("signed in"); },
-  get login() { return appText("signed in"); },
-  get "login.failed"() { return appText("failed to sign in"); },
-  get "member.invited"() { return appText("invited"); },
-  get logout() { return appText("signed out"); },
-  get "session.revoked"() { return appText("revoked a session"); },
-  get "password.changed"() { return appText("changed their password"); },
-  get "password.reset"() { return appText("reset their password"); },
-  get "totp.enabled"() { return appText("turned on two-factor authentication"); },
-  get "totp.disabled"() { return appText("turned off two-factor authentication"); },
-  get "recovery_codes.used"() { return appText("used a recovery code"); },
-  get "member.added"() { return appText("added a member"); },
-  get "member.removed"() { return appText("removed a member"); },
-  get "member.role_changed"() { return appText("changed a member's role"); },
-  get "invitation.created"() { return appText("invited someone"); },
-  get "invitation.revoked"() { return appText("revoked an invitation"); },
-  get "invitation.accepted"() { return appText("accepted an invitation"); },
-  get "api_key.created"() { return appText("created an API key"); },
-  get "api_key.revoked"() { return appText("revoked an API key"); },
-  get "api_key.deleted"() { return appText("revoked an API key"); },
-  get "webhook.created"() { return appText("created a webhook"); },
-  get "webhook.updated"() { return appText("updated a webhook"); },
-  get "webhook.deleted"() { return appText("deleted a webhook"); },
-  get "mailbox.connected"() { return appText("connected a mailbox"); },
-  get "mailbox.created"() { return appText("added a mailbox"); },
-  get "mailbox.disconnected"() { return appText("disconnected a mailbox"); },
-  get "mailbox.deleted"() { return appText("removed a mailbox"); },
-  get "workspace.updated"() { return appText("updated workspace settings"); },
-  get "workspace.transferred"() { return appText("transferred ownership"); },
-  get "widget.secret_rotated"() { return appText("rotated the widget secret"); },
-  get "widget_secret.rotated"() { return appText("rotated the widget secret"); },
-  get "workspace.widget_secret_rotated"() { return appText("rotated the widget secret"); },
-  get "workspace.created"() { return appText("created the workspace"); },
-  get "2fa.enabled"() { return appText("turned on two-factor authentication"); },
-  get "2fa.disabled"() { return appText("turned off two-factor authentication"); },
-  get "member.joined"() { return appText("joined the workspace"); },
-  get "member.left"() { return appText("left the workspace"); },
-  get "member.account_deleted"() { return appText("deleted their account"); },
-  get "identity.linked"() { return appText("linked a sign-in provider"); },
-  get "session.refresh_reused"() { return appText("had a reused session token refused"); },
-  get "api_key.updated"() { return appText("renamed an API key"); },
-  get "mailbox.updated"() { return appText("updated a mailbox"); },
-  get "team.created"() { return appText("created a team"); },
-  get "team.updated"() { return appText("updated a team"); },
-  get "team.deleted"() { return appText("deleted a team"); },
-  get "view.created"() { return appText("created a view"); },
-  get "view.updated"() { return appText("updated a view"); },
-  get "view.deleted"() { return appText("deleted a view"); },
-  get "widget.settings_updated"() { return appText("updated the chat widget"); },
-  get "ai.settings_updated"() { return appText("updated AI settings"); },
-  get "billing.updated"() { return appText("changed the subscription"); },
-  get "billing.ai_top_up_purchased"() { return appText("added AI usage"); },
-  get "billing.ai_recharged"() { return appText("auto-recharged the AI balance"); },
-  get "billing.auto_recharge_updated"() { return appText("changed auto-recharge"); },
-  get "billing.auto_recharge_failed"() { return appText("had an auto-recharge fail"); },
+const verbs: Record<string, ParseKeys<"app">> = {
+  "login.succeeded": "signed in",
+  login: "signed in",
+  "login.failed": "failed to sign in",
+  "member.invited": "invited",
+  logout: "signed out",
+  "session.revoked": "revoked a session",
+  "password.changed": "changed their password",
+  "password.reset": "reset their password",
+  "totp.enabled": "turned on two-factor authentication",
+  "totp.disabled": "turned off two-factor authentication",
+  "recovery_codes.used": "used a recovery code",
+  "member.added": "added a member",
+  "member.removed": "removed a member",
+  "member.role_changed": "changed a member's role",
+  "invitation.created": "invited someone",
+  "invitation.revoked": "revoked an invitation",
+  "invitation.accepted": "accepted an invitation",
+  "api_key.created": "created an API key",
+  "api_key.revoked": "revoked an API key",
+  "api_key.deleted": "revoked an API key",
+  "webhook.created": "created a webhook",
+  "webhook.updated": "updated a webhook",
+  "webhook.deleted": "deleted a webhook",
+  "mailbox.connected": "connected a mailbox",
+  "mailbox.created": "added a mailbox",
+  "mailbox.disconnected": "disconnected a mailbox",
+  "mailbox.deleted": "removed a mailbox",
+  "workspace.updated": "updated workspace settings",
+  "workspace.transferred": "transferred ownership",
+  "widget.secret_rotated": "rotated the widget secret",
+  "widget_secret.rotated": "rotated the widget secret",
+  "workspace.widget_secret_rotated": "rotated the widget secret",
+  "workspace.created": "created the workspace",
+  "2fa.enabled": "turned on two-factor authentication",
+  "2fa.disabled": "turned off two-factor authentication",
+  "member.joined": "joined the workspace",
+  "member.left": "left the workspace",
+  "member.account_deleted": "deleted their account",
+  "identity.linked": "linked a sign-in provider",
+  "session.refresh_reused": "had a reused session token refused",
+  "api_key.updated": "renamed an API key",
+  "mailbox.updated": "updated a mailbox",
+  "team.created": "created a team",
+  "team.updated": "updated a team",
+  "team.deleted": "deleted a team",
+  "view.created": "created a view",
+  "view.updated": "updated a view",
+  "view.deleted": "deleted a view",
+  "widget.settings_updated": "updated the chat widget",
+  "ai.settings_updated": "updated AI settings",
+  "billing.updated": "changed the subscription",
+  "billing.ai_top_up_purchased": "added AI usage",
+  "billing.ai_recharged": "auto-recharged the AI balance",
+  "billing.auto_recharge_updated": "changed auto-recharge",
+  "billing.auto_recharge_failed": "had an auto-recharge fail",
   // Older entries, from before AI usage was counted in US dollars.
-  get "billing.credits_purchased"() { return appText("added AI usage"); },
-  get "billing.credits_recharged"() { return appText("auto-recharged the AI balance"); },
-  get "billing.payment_failed"() { return appText("had a payment fail"); },
-  get "billing.seats_synced"() { return appText("synced billed seats"); },
+  "billing.credits_purchased": "added AI usage",
+  "billing.credits_recharged": "auto-recharged the AI balance",
+  "billing.payment_failed": "had a payment fail",
+  "billing.seats_synced": "synced billed seats",
 };
 
 function str(v: unknown): string | null {
   return typeof v === "string" && v ? v : null;
 }
 
-const genericVerbs = new Set(["created", "updated", "deleted", "removed", "added", "revoked", "connected", "disconnected", "enabled", "disabled", "rotated", "changed", "published", "invited"]);
+const genericVerbs: Record<string, ParseKeys<"app">> = {
+  created: "created", updated: "updated", deleted: "deleted", removed: "removed", added: "added", revoked: "revoked", connected: "connected", disconnected: "disconnected", enabled: "enabled", disabled: "disabled", rotated: "rotated", changed: "changed", published: "published", invited: "invited"
+};
 
 function generic(e: Entry): string | null {
   const a = norm(e.action);
   const i = a.lastIndexOf(".");
   const verb = i < 0 ? "" : a.slice(i + 1);
-  if (!genericVerbs.has(verb)) return null;
+  if (!Object.hasOwn(genericVerbs, verb)) return null;
   const thing = (i < 0 ? a : a.slice(0, i)).replace(/_/g, " ");
   if (i18n.language === "fr") {
-    const nouns: Record<string, string> = {
+    const nouns: Record<string, ParseKeys<"app">> = {
       automation: "Automation", tag: "Tag", sla_policy: "SLA policy", "sla policy": "SLA policy",
       "api key": "API key", integration: "Integration", "custom field": "Custom field",
       "saved reply": "Saved reply", "business hours": "Business hours", template: "Template",
@@ -163,7 +166,7 @@ function generic(e: Entry): string | null {
     };
     const noun = Object.hasOwn(nouns, thing) ? nouns[thing] : undefined;
     if (!noun) return null;
-    return appText("{{verb}}: {{thing}}", { verb: appText(verb), thing: appText(noun).toLocaleLowerCase("fr") });
+    return appText("{{verb}}: {{thing}}", { verb: appText(genericVerbs[verb]), thing: appText(noun).toLocaleLowerCase("fr") });
   }
   const article = /^[aeiou]/.test(thing) || thing.startsWith("sla") ? "an" : "a";
   return `${verb} ${article} ${thing === "sla policy" ? appText("SLA policy") : thing === "api key" ? appText("API key") : thing}`;
@@ -171,13 +174,14 @@ function generic(e: Entry): string | null {
 
 /** A plain sentence for an entry, with the object named when the data has it. */
 function describe(e: Entry): ReactNode {
-  const verb = verbs[norm(e.action)] ?? verbs[e.action] ?? generic(e);
+  const key = verbs[norm(e.action)] ?? verbs[e.action];
+  const verb = key ? appText(key) : generic(e);
   const d = e.data;
   const object = str(d.email) ?? str(d.name) ?? str(d.url) ?? str(d.title);
-  const roles: Record<string, string> = { owner: "Owner", admin: "Admin", agent: "Agent", viewer: "Viewer" };
+  const roles: Record<string, ParseKeys<"app">> = { owner: "Owner", admin: "Admin", agent: "Agent", viewer: "Viewer" };
   const nextRole = str(d.to);
   const role = norm(e.action) === "member.role_changed" && nextRole
-    ? appText(" to {{role}}", { role: appText(Object.hasOwn(roles, nextRole) ? roles[nextRole] : nextRole) }) : "";
+    ? appText(" to {{role}}", { role: Object.hasOwn(roles, nextRole) ? appText(roles[nextRole]) : nextRole }) : "";
   if (!verb)
     return (
       <>
@@ -196,7 +200,7 @@ function describe(e: Entry): ReactNode {
 
 /** Who did it. The row's tile already says what kind of change it was, so the actor stays text. */
 function Actor({ e }: { e: Entry }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   if (e.actor.type === "user" && e.actor.user) return <span className="truncate font-medium text-fg">{e.actor.user.name || e.actor.user.email}</span>;
   if (e.actor.type === "api_key")
     return (
@@ -269,7 +273,7 @@ function Row({ e }: { e: Entry }) {
 /** Words to match a filter against: who, what, and on what. */
 function haystack(e: Entry): string {
   const d = e.data ?? {};
-  return [e.action, e.actor.user?.name, e.actor.user?.email, e.ip, str(d.email), str(d.name), str(d.url), str(d.title), verbs[norm(e.action)]]
+  return [e.action, e.actor.user?.name, e.actor.user?.email, e.ip, str(d.email), str(d.name), str(d.url), str(d.title), Object.hasOwn(verbs, norm(e.action)) ? appText(verbs[norm(e.action)]) : null]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
@@ -314,7 +318,7 @@ export default function AuditLog() {
   if (!admin)
     return (
       <SettingsPage title={t("audit.title")}>
-        <NoAccess what="the audit log" />
+        <NoAccess what={appText("the audit log")} />
       </SettingsPage>
     );
 

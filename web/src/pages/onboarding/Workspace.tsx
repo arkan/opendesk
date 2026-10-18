@@ -1,3 +1,4 @@
+import { diagnosticText } from "@/i18n/text";
 import { appText } from "@/i18n/text";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
@@ -61,7 +62,7 @@ export default function Workspace() {
       )}
       <OnboardingSteps current={1} />
       <AuthHeading title={appText("Create your workspace")} subtitle={appText("A workspace holds your team's inboxes, contacts and help center. You can rename it and set up your help center address later.")} />
-      {error && <Notice className="mb-4">{error}</Notice>}
+      {error && <Notice className="mb-4">{diagnosticText(error)}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
         <AuthField label={appText("Workspace name")}>
           {(id) => <TextInput id={id} className="h-9" autoFocus value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder={appText("Acme support")} />}

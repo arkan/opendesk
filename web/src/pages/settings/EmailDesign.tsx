@@ -7,7 +7,7 @@ import { Link } from "@tanstack/react-router";
 import { BookOpen, Check, Copy, LayoutTemplate, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { templateText } from "@/i18n/text";
+import { templateMetadataText } from "@/i18n/text";
 import { Section, SettingsPage } from "@/components/layout";
 import { SaveBar } from "@/components/settings/SaveBar";
 import { UnsavedGuard } from "@/components/settings2/UnsavedGuard";
@@ -486,7 +486,7 @@ function VariablesReference() {
               <div key={tg.name}>
                 <dt className="flex items-baseline gap-2 text-[12.5px]">
                   <span className="mono font-medium">{tg.name}</span>
-                  <span className="text-[12px] text-fg-3">{templateText(tg.description)}</span>
+                  <span className="text-[12px] text-fg-3">{templateMetadataText(tg.description)}</span>
                 </dt>
                 <dd>
                   <Code code={tg.syntax} />
@@ -511,7 +511,7 @@ function VariablesReference() {
                             {f.name}
                             {f.args && <span className="font-normal text-fg-3">: {f.args}</span>}
                           </span>
-                          <span className="text-[12px] text-fg-3">{templateText(f.description)}</span>
+                          <span className="text-[12px] text-fg-3">{templateMetadataText(f.description)}</span>
                         </dt>
                         <dd>
                           <Code code={f.example} />

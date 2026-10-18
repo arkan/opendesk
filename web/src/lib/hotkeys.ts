@@ -1,3 +1,4 @@
+import type { ParseKeys } from "i18next";
 import { useEffect, useRef } from "react";
 
 export type HotkeyMap = Record<string, (e: KeyboardEvent) => void>;
@@ -70,7 +71,7 @@ export function useHotkeys(map: HotkeyMap, enabled = true) {
   }, [enabled]);
 }
 
-export const shortcutGroups: { title: string; items: { keys: string; label: string }[] }[] = [
+export const shortcutGroups: { title: ParseKeys<"app">; items: { keys: string; label: ParseKeys<"app"> }[] }[] = [
   {
     title: "General",
     items: [

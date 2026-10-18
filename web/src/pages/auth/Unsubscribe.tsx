@@ -1,4 +1,4 @@
-import { uiText } from "@/i18n/text";
+import { diagnosticText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 // The footer link of notification emails (contracts/api.md "Notification preferences
 // and emails"). Mail scanners open links on their own, so the page only asks; the
@@ -20,7 +20,7 @@ const route = getRouteApi("/auth/unsubscribe");
 type State = { kind: "ask" } | { kind: "done"; workspace: { id: string; name: string } } | { kind: "invalid" } | { kind: "error"; message: string };
 
 export default function Unsubscribe() {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const { token } = route.useSearch();
   const [state, setState] = useState<State>({ kind: "ask" });
   const [busy, setBusy] = useState(false);
@@ -78,7 +78,7 @@ export default function Unsubscribe() {
         title={uiText("Stop notification emails?")}
         subtitle={uiText("You will stop getting notification emails from this workspace. Notifications still show in the app, and you can turn emails back on in your settings.")}
       />
-      {state.kind === "error" && <Notice className="mb-5">{state.message}</Notice>}
+      {state.kind === "error" && <Notice className="mb-5">{diagnosticText(state.message)}</Notice>}
       <Button variant="primary" size="lg" className="w-full" loading={busy} onClick={unsubscribe}>
         {uiText("Unsubscribe")}
       </Button>
@@ -88,7 +88,7 @@ export default function Unsubscribe() {
 
 /** To the settings page, in the workspace the email was about (`?ws=`) when known. */
 function ManageLink({ workspaceId }: { workspaceId?: string }) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const router = useRouter();
   const href = workspaceId ? `/settings/notifications?ws=${encodeURIComponent(workspaceId)}` : "/settings/notifications";
   return (

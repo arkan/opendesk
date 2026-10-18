@@ -1,4 +1,4 @@
-import { uiText } from "@/i18n/text";
+import { diagnosticText, uiText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { forwardRef, useEffect, useId, useRef, useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
 import { Search, X } from "lucide-react";
@@ -100,7 +100,7 @@ export function SearchInput({
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
   inputRef?: React.Ref<HTMLInputElement>;
 }) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   return (
     <TextInput
       ref={inputRef}
@@ -138,7 +138,7 @@ export function SearchInput({
 }
 
 export function Label({ children, htmlFor, className, optional }: { children: ReactNode; htmlFor?: string; className?: string; optional?: boolean }) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   return (
     <label htmlFor={htmlFor} className={cn("flex items-center gap-1.5 text-[12.5px] font-medium text-fg", className)}>
       {children}
@@ -179,7 +179,7 @@ export function Field({
       {children({ id, "aria-describedby": describedBy, invalid: !!error })}
       {error ? (
         <p id={`${id}-err`} role="alert" className="animate-rise-in text-xs text-danger-fg">
-          {typeof error === "string" ? uiText(error) : error}
+          {typeof error === "string" ? diagnosticText(error) : error}
         </p>
       ) : hint ? (
         <p id={`${id}-hint`} className="text-xs text-fg-3">

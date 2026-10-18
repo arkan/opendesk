@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { appText } from "@/i18n/text";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { errorMessage, isApiError } from "@/lib/api/client";
@@ -11,7 +10,7 @@ export function isReauthError(e: unknown) {
 }
 
 export function ReauthNotice({ error }: { error: unknown }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const navigate = useNavigate();
   if (!error) return null;
   if (!isReauthError(error)) return <p className="text-xs text-danger-fg">{errorMessage(error)}</p>;

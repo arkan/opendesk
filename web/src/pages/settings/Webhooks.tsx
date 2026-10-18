@@ -62,7 +62,7 @@ export default function Webhooks() {
   if (!admin)
     return (
       <SettingsPage title={t("webhooks.title")}>
-        <NoAccess what="webhooks" />
+        <NoAccess what={appText("webhooks")} />
       </SettingsPage>
     );
 

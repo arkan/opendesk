@@ -63,7 +63,7 @@ export default function ApiKeys() {
   if (!admin)
     return (
       <SettingsPage title={t("apiKeys.title")}>
-        <NoAccess what="API keys" />
+        <NoAccess what={appText("API keys")} />
       </SettingsPage>
     );
 
@@ -287,7 +287,7 @@ function keyState(k: ApiKey, now: number): "active" | "expiring" | "expired" {
 }
 
 function InlineName({ initial, onDone }: { initial: string; onDone: (v: string | null) => void }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const [v, setV] = useState(initial);
   const cancelled = useRef(false);
   return (

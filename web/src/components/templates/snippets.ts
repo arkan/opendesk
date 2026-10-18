@@ -1,3 +1,4 @@
+import type { ParseKeys } from "i18next";
 import { templateText } from "@/i18n/text";
 // Ready-made logic for template editors (contracts/templates.md "The language"):
 // what "{%" offers and the Insert menu's Logic tab. Each inserts working code with
@@ -13,7 +14,7 @@ export type Snippet = {
   keywords: string;
 };
 
-export const SNIPPETS: Snippet[] = [
+export const SNIPPETS: (Omit<Snippet, "label" | "description"> & { label: ParseKeys<"templatesUi">; description: ParseKeys<"templatesUi"> })[] = [
   {
     id: "fallback",
     label: "Fallback when empty",

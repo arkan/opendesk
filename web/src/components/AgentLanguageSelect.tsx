@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getAgentLocale, LOCALE_NAMES, setAgentLocale, type AgentLocale } from "@/i18n";
-import { appText } from "@/i18n/text";
 import { Select } from "@/components/ui/select";
 
 export function AgentLanguageSelect() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
 

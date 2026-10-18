@@ -36,7 +36,7 @@ function guessName() {
 }
 
 export function PasskeysSection() {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const qc = useQueryClient();
   const confirm = useConfirm();
   const reduce = useReducedMotion();
@@ -161,7 +161,7 @@ export function PasskeysSection() {
 }
 
 function AddDialog({ onClose }: { onClose: () => void }) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const qc = useQueryClient();
   const [name, setName] = useState(guessName);
   const add = useMutation({
@@ -221,7 +221,7 @@ function AddDialog({ onClose }: { onClose: () => void }) {
 }
 
 function RenameDialog({ passkey, onClose }: { passkey: Passkey; onClose: () => void }) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const qc = useQueryClient();
   const [name, setName] = useState(passkey.name);
   const save = useMutation({

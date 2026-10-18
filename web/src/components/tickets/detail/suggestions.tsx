@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { appText } from "@/i18n/text";
 // Composer suggestions: "@" mentions (notes) and "/" saved replies. TipTap's
 // Suggestion utility drives the matching; a tiny store feeds one React popup.
 
@@ -121,7 +120,7 @@ export function savedReplyExtension(getReplies: () => SavedReply[], pick: (html:
 
 /** The floating list; mount once next to the editor. */
 export function SuggestionPopup() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const { open, items, index, getRect, anchorEl, pick, kind } = useSuggest();
   const ref = useRef<HTMLDivElement>(null);
   const rect = useCaretAnchor({ open, getRect, anchorEl, popupRef: ref, onDismiss: dismiss });

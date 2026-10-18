@@ -1,4 +1,4 @@
-import { uiText } from "@/i18n/text";
+import { diagnosticText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { MailCheck } from "lucide-react";
@@ -20,7 +20,7 @@ const schema = z.object({ email: z.string().trim().min(1, "Enter your email.").e
 type Values = z.infer<typeof schema>;
 
 export default function Forgot() {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const [token, setToken] = useState<string | null>(null);
   const {
     register,
@@ -64,7 +64,7 @@ export default function Forgot() {
   return (
     <div>
       <AuthHeading title={uiText("Reset your password")} subtitle={uiText("Enter the email you use for opendesk and we'll send you a reset link.")} />
-      {error && <Notice className="mb-4">{error}</Notice>}
+      {error && <Notice className="mb-4">{diagnosticText(error)}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
         <AuthField label={uiText("Email")}>
           {(id) => (

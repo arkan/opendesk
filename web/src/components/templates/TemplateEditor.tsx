@@ -72,7 +72,7 @@ export const TemplateEditor = forwardRef<TemplateEditorHandle, TemplateEditorPro
         known: () => knownRef.current,
         items: (query) => matchVars(itemsRef.current, query, (g) => g),
         filters: () => filtersRef.current,
-        valueLabel: "Example",
+        get valueLabel() { return templateText("Example"); },
       }),
     ],
     [],

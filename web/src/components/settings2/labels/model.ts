@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { appText } from "@/i18n/text";
 // Labels (the API's tags) for the settings screens: label rows and groups
 // from the query cache, plus optimistic writes for labels, groups, merge and
 // reorder. Realtime keeps qk.tags and qk.tagGroups fresh.
@@ -64,7 +63,7 @@ export function useLabels() {
 }
 
 export function useLabelWrites(_caps: LabelCaps = CAPS) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const qc = useQueryClient();
   const key = qk.tags;
   const patchList = (fn: (rows: ApiTag[]) => ApiTag[]) => {
@@ -116,7 +115,7 @@ export function useLabelWrites(_caps: LabelCaps = CAPS) {
 
 /** Group, merge and reorder writes, optimistic where the result is known. */
 export function useLabelStructureWrites() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const qc = useQueryClient();
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: qk.tags });

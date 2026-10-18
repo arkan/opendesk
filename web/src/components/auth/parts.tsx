@@ -1,4 +1,5 @@
-import { uiText } from "@/i18n/text";
+import { diagnosticText, uiText } from "@/i18n/text";
+import type { ParseKeys } from "i18next";
 // Small pieces shared by the sign-in flows.
 
 import { useQuery } from "@tanstack/react-query";
@@ -46,7 +47,6 @@ export function go(path: string) {
 }
 
 export function Notice({ children, tone: kind = "danger", className }: { children: ReactNode; tone?: "danger" | "ok" | "info"; className?: string }) {
-  useTranslation("interface");
   return (
     <div
       role={kind === "danger" ? "alert" : "status"}
@@ -61,17 +61,17 @@ export function Notice({ children, tone: kind = "danger", className }: { childre
         aria-hidden
         className={cn("mt-[6px] size-1.5 shrink-0 rounded-full", kind === "danger" ? tone.red.solid : kind === "ok" ? tone.green.solid : "bg-fg-3")}
       />
-      <div className="min-w-0">{typeof children === "string" ? uiText(children) : children}</div>
+      <div className="min-w-0">{children}</div>
     </div>
   );
 }
 
-export function OrDivider({ label = uiText("or") }: { label?: string }) {
-  useTranslation("interface");
+export function OrDivider({ label }: { label?: string }) {
+  const { t } = useTranslation("interface");
   return (
     <div className="my-5 flex items-center gap-3" role="separator">
       <span className="h-px flex-1 bg-line" />
-      <span className="text-[11.5px] text-fg-4">{label}</span>
+      <span className="text-[11.5px] text-fg-4">{label ?? t("or")}</span>
       <span className="h-px flex-1 bg-line" />
     </div>
   );
@@ -79,7 +79,7 @@ export function OrDivider({ label = uiText("or") }: { label?: string }) {
 
 export const PasswordInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }>(
   function PasswordInput({ className, ...rest }, ref) {
-    useTranslation("interface");
+    const { t: uiText } = useTranslation("interface");
     const [show, setShow] = useState(false);
     return (
       <TextInput
@@ -108,7 +108,7 @@ const strengthBar = [tone.red.solid, tone.red.solid, tone.amber.solid, tone.gree
 
 /** Four segments that warm up as the password gets harder to guess (zxcvbn), plus its one warning. */
 export function StrengthMeter({ password, userInputs }: { password: string; userInputs?: string[] }) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const { score, warning } = usePasswordStrength(password, userInputs);
   const short = password.length > 0 && password.length < 12;
   const label = !password ? uiText("12 characters minimum") : short ? uiText("{{count}} more characters", { count: 12 - password.length }) : uiText(strengthWords[score]);
@@ -131,7 +131,7 @@ export function StrengthMeter({ password, userInputs }: { password: string; user
         </div>
         <span className="mono shrink-0 whitespace-nowrap text-right text-[11px] text-fg-3">{label}</span>
       </div>
-      {warning && !short && score < 3 && <p className="text-[11.5px] leading-4 text-fg-3">{uiText(warning)}</p>}
+      {warning && !short && score < 3 && <p className="text-[11.5px] leading-4 text-fg-3">{diagnosticText(warning)}</p>}
     </div>
   );
 }
@@ -142,7 +142,7 @@ export function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
     <p role="alert" className="animate-rise-in text-[12px] leading-4 text-danger-fg">
-      {uiText(message)}
+      {diagnosticText(message)}
     </p>
   );
 }
@@ -218,7 +218,8 @@ async function desktopOAuth(provider: AuthProvider["id"], next: string | null | 
   return { code: r.code };
 }
 
-export function ProviderButtons({ next, verb = uiText("Continue") }: { next?: string | null; verb?: string }) {
+export function ProviderButtons({ next, verb }: { next?: string | null; verb?: string }) {
+  const { t: uiText } = useTranslation("interface");
   const { data, isLoading } = useQuery(q.authConfig());
   const { t } = useTranslation("shell");
   const router = useRouter();
@@ -301,7 +302,7 @@ export function ProviderButtons({ next, verb = uiText("Continue") }: { next?: st
   const grid = !!desktop && providers.length > 1;
   return (
     <div className="flex flex-col gap-2">
-      {error && <Notice>{error}</Notice>}
+      {error && <Notice>{diagnosticText(error)}</Notice>}
       {grid ? (
         <div className="grid grid-cols-2 gap-2">
           {providers.map((p, i) => (
@@ -328,7 +329,7 @@ export function ProviderButtons({ next, verb = uiText("Continue") }: { next?: st
           icon={<ProviderGlyph id={p.id} />}
           onClick={() => void start(p.id)}
         >
-          {verb} {uiText("with")} {p.id === "oidc" ? p.name || "SSO" : p.name}
+          {verb ?? uiText("Continue")} {uiText("with")} {p.id === "oidc" ? p.name || "SSO" : p.name}
         </Button>
       ))}
       {popup && (
@@ -363,7 +364,7 @@ export function providerName(id: string | undefined): string {
   return { google: "Google", microsoft: "Microsoft", github: "GitHub", oidc: "SSO" }[id ?? ""] ?? uiText("your provider");
 }
 
-export const oauthErrors: Record<string, string> = {
+export const oauthErrors: Record<string, ParseKeys<"interface">> = {
   access_denied: "Sign-in was cancelled.",
   invalid_state: "That sign-in link expired. Start again.",
   invalid_request: "The sign-in request was not valid. Start again.",

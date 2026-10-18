@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Settings > Brands > a brand (contracts/teams.md): overview (name, colour,
 // language, logo, default), its addresses, its chat widgets and its help
 // center. Name, colour, language, slug and help center settings save
@@ -59,7 +60,7 @@ export default function BrandDetail() {
   if (!admin)
     return (
       <SettingsPage title={t("brands.title")} back={back}>
-        <NoAccess what="brands" />
+        <NoAccess what={appText("brands")} />
       </SettingsPage>
     );
   if (isLoading)

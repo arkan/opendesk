@@ -1,4 +1,4 @@
-import { uiText } from "@/i18n/text";
+import { diagnosticText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { Check, MailCheck, X } from "lucide-react";
@@ -17,7 +17,7 @@ import { tone, type Tone } from "@/lib/tones";
 const route = getRouteApi("/auth/verify");
 
 export default function Verify() {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const { token } = route.useSearch();
   const status = useSession((s) => s.status);
   const email = useSession((s) => s.user?.email);
@@ -99,7 +99,7 @@ export default function Verify() {
     <div>
       <Glyph hue="red"><X className="size-[18px]" /></Glyph>
       <AuthHeading title={uiText("That link didn't work")} />
-      {error && <Notice className="mb-5">{error}</Notice>}
+      {error && <Notice className="mb-5">{diagnosticText(error)}</Notice>}
       {resendBlock}
     </div>
   );

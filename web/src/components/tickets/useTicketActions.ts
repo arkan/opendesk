@@ -102,7 +102,7 @@ export function applyPatch(qc: QueryClient, t: Ticket, p: TicketPatch): Ticket {
 }
 
 export function useUpdateTicket() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const qc = useQueryClient();
   const me = useSession((s) => s.user?.id ?? "");
   return useMutation({
@@ -137,7 +137,7 @@ export function useUpdateTicket() {
 }
 
 export function useBulkUpdate() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const qc = useQueryClient();
   const me = useSession((s) => s.user?.id ?? "");
   return useMutation({
@@ -206,7 +206,7 @@ export function teamName(teams: Team[] | undefined, id: string | null) {
 
 /** Dismiss Ollie's suggestion for a field, optimistically. */
 export function useDismissSuggestion() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const qc = useQueryClient();
   const me = useSession((s) => s.user?.id ?? "");
   return useMutation({

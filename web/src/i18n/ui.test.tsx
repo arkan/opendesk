@@ -5,13 +5,15 @@ import { FieldError, PasswordInput } from "@/components/auth/parts";
 import { ApiError, errorMessage } from "@/lib/api/client";
 import { i18n } from "./index";
 import french from "./locales/fr/interface.json";
-import { uiText } from "./text";
+import frenchApp from "./locales/fr/app.json";
+import { appText, diagnosticText, uiText } from "./text";
 
 let root: Root | undefined;
 let container: HTMLDivElement | undefined;
 
 beforeEach(async () => {
   i18n.addResourceBundle("fr", "interface", french, true, true);
+  i18n.addResourceBundle("fr", "app", frenchApp, true, true);
   await i18n.changeLanguage("en");
 });
 
@@ -24,13 +26,24 @@ afterEach(async () => {
 });
 
 describe("interface translations", () => {
+  it("uses native catalog keys with periods, colons and literal interpolation values", async () => {
+    await i18n.changeLanguage("fr");
+    expect(uiText(". Next time you can sign in with either.")).toBe(". Vous pourrez ensuite utiliser l’un ou l’autre pour vous connecter.");
+    expect(appText("Template guide: conditions, loops and every variable")).toBe("Guide des modèles : conditions, boucles et variables");
+    expect(appText("{{verb}}: {{thing}}", { verb: "Créer", thing: "$t(Close) {{name}}" })).toBe("Créer : $t(Close) {{name}}");
+    expect(uiText("This invitation is for {{email}}. Sign in with that address to accept.", { email: "agent@example.com" }))
+      .toBe("Cette invitation est destinée à agent@example.com. Connectez-vous avec cette adresse pour l’accepter.");
+    await i18n.changeLanguage("en");
+    expect(appText("Template guide: conditions, loops and every variable")).toBe("Template guide: conditions, loops and every variable");
+  });
+
   it("translates catalog copy and count forms while preserving unknown diagnostics", async () => {
     await i18n.changeLanguage("fr");
     expect(uiText("Password")).toBe("Mot de passe");
     expect(uiText("{{count}} more characters", { count: 1 })).toBe("Encore 1 caractère");
     expect(uiText("{{count}} more characters", { count: 2 })).toBe("Encore 2 caractères");
-    expect(uiText("Provider diagnostic 451: retry later")).toBe("Provider diagnostic 451: retry later");
-    expect(uiText("Provider diagnostic: $t(Close)")).toBe("Provider diagnostic: $t(Close)");
+    expect(diagnosticText("Provider diagnostic 451: retry later")).toBe("Provider diagnostic 451: retry later");
+    expect(diagnosticText("Provider diagnostic: $t(Close)")).toBe("Provider diagnostic: $t(Close)");
   });
 
   it("updates visible schema errors and accessible password controls after switching", async () => {

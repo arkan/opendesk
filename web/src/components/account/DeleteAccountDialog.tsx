@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { appText } from "@/i18n/text";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -12,7 +11,7 @@ import { leaveActiveAccount, useSession } from "@/lib/session";
 
 /** Deletes the signed-in account after the password (and 2FA code when on). Used in Security and onboarding. */
 export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   // Null for a moment after deletion clears the session, before the page leaves.
   const totp = useSession((s) => s.user?.totp_enabled ?? false);
   const navigate = useNavigate();

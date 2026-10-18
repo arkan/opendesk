@@ -96,7 +96,7 @@ export default function Mailboxes() {
   if (!atLeast(role, "admin"))
     return (
       <SettingsPage title={t("list.title")}>
-        <NoAccess what="mailboxes" />
+        <NoAccess what={appText("mailboxes")} />
       </SettingsPage>
     );
 
@@ -205,7 +205,7 @@ export default function Mailboxes() {
 }
 
 function MailboxSkeleton() {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   return (
     <div aria-busy="true" aria-label={appText("Loading")}>
       {[0, 1, 2].map((i) => (

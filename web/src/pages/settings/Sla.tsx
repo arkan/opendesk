@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Clock, ListOrdered, MoreHorizontal, Pencil, Plus, Timer, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -102,7 +103,7 @@ export default function Sla() {
   if (!atLeast(role, "admin"))
     return (
       <SettingsPage title={t("sla.title")}>
-        <NoAccess what="SLA policies" />
+        <NoAccess what={appText("SLA policies")} />
       </SettingsPage>
     );
 

@@ -45,7 +45,7 @@ export function TeamDot({ team, className }: { team: Pick<Team, "color" | "name"
 
 /** A team as a soft pill: its dot, its name and a lock when private. */
 export function TeamChip({ team, className, size = "sm" }: { team: Pick<Team, "color" | "name" | "private">; className?: string; size?: "xs" | "sm" }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   return (
     <span
       className={cn(

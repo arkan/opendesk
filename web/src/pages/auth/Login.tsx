@@ -1,3 +1,4 @@
+import { diagnosticText } from "@/i18n/text";
 import { uiText } from "@/i18n/text";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
@@ -181,7 +182,7 @@ export default function Login() {
             <ProviderButtons next={search.next} />
           </div>
           {passwordLogin && hasAlternatives && <OrDivider />}
-          {error && <Notice className="mb-4">{error}</Notice>}
+          {error && <Notice className="mb-4">{diagnosticText(error)}</Notice>}
           {passwordLogin && (
             <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
               <AuthField label={uiText("Email")}>

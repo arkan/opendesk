@@ -1,4 +1,3 @@
-import { uiText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { AlertDialog as A } from "radix-ui";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
@@ -21,7 +20,7 @@ type ConfirmApi = { show: (text: ReactNode, onSubmit: () => unknown | Promise<un
 const Ctx = createContext<ConfirmApi | null>(null);
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const [pending, setPending] = useState<Pending | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

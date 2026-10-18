@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { templateText } from "@/i18n/text";
+import { templateMetadataText, templateText } from "@/i18n/text";
 // The template variable list (contracts/templates.md), from the server so the
 // app never keeps its own copy, plus helpers to read tags in a template.
 
@@ -73,7 +73,7 @@ export function useCatalog(kind: TemplateKind = "reply"): Catalog {
   const language = i18n.language;
   const { data, isLoading } = useQuery(q.templateVariables());
   return useMemo(() => {
-    const text = (value: string) => templateText(value, { lng: language });
+    const text = (value: string) => templateMetadataText(value, { lng: language });
     const variables = (data?.variables ?? []).filter((v) => !(kind === "personal_signature" && v.key === "agent.signature"))
       .map((v) => v.key.includes(".fields.") ? v : { ...v, label: text(v.label), description: text(v.description) });
     const slots = (data?.slots ?? []).filter((s) => slotsFor(kind).includes(s.key)).map((s) => ({ ...s, label: text(s.label), description: text(s.description) }));

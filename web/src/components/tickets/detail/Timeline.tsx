@@ -1,4 +1,3 @@
-import { appText } from "@/i18n/text";
 import { useQuery } from "@tanstack/react-query";
 import { AlarmClock, Hand, ShieldAlert, Sparkles, ArrowRightLeft, CircleDot, GitMerge, Link2, PencilLine, Star, Tag as TagIcon, TimerOff, Users, UserRound } from "lucide-react";
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
@@ -334,7 +333,7 @@ export function Timeline({
   /** The address the customer first wrote to, for inbound messages that don't say. */
   receivedAt?: string | null;
 }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const items = useMemo<Item[]>(() => {
     const out: Item[] = [
       ...(messages ?? []).map((m) => ({ kind: "message" as const, at: m.created_at, m })),

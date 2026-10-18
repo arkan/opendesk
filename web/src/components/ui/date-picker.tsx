@@ -48,7 +48,7 @@ export function Calendar({
   max?: Date | null;
   className?: string;
 }) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const [focus, setFocus] = useState(() => startOfDay(value ?? new Date()));
   const [month, setMonth] = useState(() => startOfMonth(focus));
   const grid = useRef<HTMLDivElement>(null);
@@ -182,7 +182,7 @@ export function DateField({
   autoFocus?: boolean;
   "aria-label"?: string;
 }) {
-  useTranslation("interface");
+  const { t: uiText } = useTranslation("interface");
   const [open, setOpen] = useState(false);
   const day = parseDay(value);
   return (

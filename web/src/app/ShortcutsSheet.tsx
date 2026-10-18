@@ -1,4 +1,3 @@
-import { appText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { Dialog } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
@@ -9,6 +8,7 @@ import { quickSwitchKeys } from "./useAccounts";
 export function ShortcutsSheet() {
   const open = useShell((s) => s.shortcutsOpen);
   const { t } = useTranslation("shell");
+  const { t: appText } = useTranslation("app");
   // Shortcuts bound in AppLayout that the shared list may not name yet.
   const extra: Record<string, { keys: string; label: string }[]> = {
     General: [
@@ -20,7 +20,7 @@ export function ShortcutsSheet() {
   };
   const groups = shortcutGroups.map((g) => {
     const have = new Set(g.items.map((i) => i.keys));
-    return { ...g, items: [...g.items, ...(extra[g.title] ?? []).filter((i) => !have.has(i.keys))] };
+    return { ...g, items: [...g.items.map((i) => ({ ...i, label: appText(i.label) })), ...(extra[g.title] ?? []).filter((i) => !have.has(i.keys))] };
   });
   return (
     <Dialog open={open} onOpenChange={(o) => shell.shortcuts(o)} title={appText("Keyboard shortcuts")} description={appText("Most things in opendesk work without a mouse.")} size="lg">
@@ -31,7 +31,7 @@ export function ShortcutsSheet() {
             <ul className="flex flex-col">
               {g.items.map((i) => (
                 <li key={i.label} className="flex h-8 items-center justify-between gap-4 border-b border-line-soft text-[12.5px] text-fg-2 last:border-0">
-                  <span className="truncate">{appText(i.label)}</span>
+                  <span className="truncate">{i.label}</span>
                   <Kbd>{i.keys}</Kbd>
                 </li>
               ))}

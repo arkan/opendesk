@@ -42,7 +42,7 @@ type State = {
   pick: ((item: VarItem) => void) | null;
   /** "values" shows this ticket's values; "examples" sample values. */
   valueLabel: string;
-  title: string;
+  title: "Variables" | "Helpers" | "Logic";
 };
 
 export const useVarSuggest = create<State>(() => ({ open: false, items: [], index: 0, getRect: null, anchorEl: null, pick: null, valueLabel: "", title: "Variables" }));
@@ -102,7 +102,7 @@ function snippetItems(query: string): VarItem[] {
   return matchSnippets(query).map((sn) => ({ kind: "snippet" as const, key: sn.id, label: sn.label, group: "Logic", description: sn.description, code: sn.code, select: sn.select }));
 }
 
-function listRender(opts: { valueLabel?: string }, title: string) {
+function listRender(opts: { valueLabel?: string }, title: State["title"]) {
   return () => ({
     onStart: (p: SuggestionProps<VarItem>) =>
       useVarSuggest.setState({
@@ -254,7 +254,7 @@ export function VarSuggestPopup() {
     >
       <div className="label-caps flex shrink-0 items-center justify-between px-3 pb-1 pt-2">
         <span>{templateText(title)}</span>
-        {valueLabel && <span className="normal-case tracking-normal text-fg-4">{templateText(valueLabel)}</span>}
+        {valueLabel && <span className="normal-case tracking-normal text-fg-4">{valueLabel}</span>}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-1">
         {items.length === 0 ? (

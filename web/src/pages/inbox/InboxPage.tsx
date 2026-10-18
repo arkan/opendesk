@@ -193,7 +193,6 @@ export default function InboxPage() {
   const [focusIdx, setFocusIdx] = useState(0);
   const lastToggled = useRef<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
   const rowsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -352,10 +351,6 @@ export default function InboxPage() {
           h: () => tickets[focusIdx] && quick(tickets[focusIdx], "snooze"),
           s: (e: KeyboardEvent) => e.shiftKey && spamFocused(),
         }),
-    "/": () => {
-      searchRef.current?.focus();
-      if (!searchRef.current) (document.querySelector('[aria-label="Search"]') as HTMLButtonElement | null)?.click();
-    },
     escape: () => {
       if (selected.size) setSelected(new Set());
       else if (openId) close();
@@ -437,7 +432,6 @@ export default function InboxPage() {
           }
           search={search}
           onSearch={setSearch}
-          searchRef={searchRef}
           compact={compact}
           layout={wide && !openId ? layout : undefined}
           onLayout={setLayout}

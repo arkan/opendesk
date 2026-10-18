@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { appText } from "@/i18n/text";
 // Value pickers shared by the view filter builder and the automation builder.
 
 import { useQuery } from "@tanstack/react-query";
@@ -104,7 +103,7 @@ export function useMemberItems(): PickerItem[] {
 }
 
 export function useTeamItems(): PickerItem[] {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const { data } = useQuery(q.teams());
   return (data ?? []).map((t) => ({
     value: t.id,

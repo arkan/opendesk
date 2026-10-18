@@ -23,7 +23,7 @@ export function ReorderButtons({
   label: string;
   disabled?: boolean;
 }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const btn =
     "flex size-6 items-center justify-center rounded-md text-fg-3 transition-colors hover:bg-hover hover:text-fg disabled:pointer-events-none disabled:opacity-30";
   return (
@@ -52,7 +52,7 @@ export function MonoChip({ children, className }: { children: React.ReactNode; c
 }
 
 export function ListSkeleton({ rows = 4 }: { rows?: number }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   return (
     <div aria-busy="true" aria-label={appText("Loading")}>
       {Array.from({ length: rows }).map((_, i) => (

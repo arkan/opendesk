@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Settings > Brands > a brand > a chat widget (contracts/teams.md "Widget"):
 // an editor on the left (appearance, header, home screen, topics, routing,
 // behaviour, install, identity) and the real widget on the right, live,
@@ -124,7 +125,7 @@ export default function WidgetDetail() {
   if (!admin)
     return (
       <SettingsPage title={t("widget.fallbackTitle")} back={back}>
-        <NoAccess what="chat widgets" />
+        <NoAccess what={appText("chat widgets")} />
       </SettingsPage>
     );
   if (isLoading)

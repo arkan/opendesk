@@ -1,4 +1,5 @@
-import { templateText } from "@/i18n/text";
+import type { ParseKeys } from "i18next";
+import { templateMetadataText, templateText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { appText } from "@/i18n/text";
 // A searchable list of the template variables, grouped, with what each reads.
@@ -150,7 +151,7 @@ function LogicList({ onInsert }: { onInsert: (code: string, select?: string) => 
   );
 }
 
-const FILTER_GROUP_LABELS: Record<string, string> = { text: "Text", list: "Lists", number: "Numbers", date: "Dates" };
+const FILTER_GROUP_LABELS: Record<string, ParseKeys<"templatesUi">> = { text: "Text", list: "Lists", number: "Numbers", date: "Dates" };
 
 /** The helpers (filters), each inserting its example. */
 function HelperList({ onInsert }: { onInsert: (code: string, select?: string) => void }) {
@@ -158,7 +159,7 @@ function HelperList({ onInsert }: { onInsert: (code: string, select?: string) =>
   const { data } = useQuery(q.templateVariables());
   const [query, setQuery] = useState("");
   const ql = query.toLowerCase().trim();
-  const filters = (data?.filters ?? []).map((f) => ({ ...f, description: templateText(f.description) })).filter((f) => !ql || f.name.includes(ql) || f.description.toLowerCase().includes(ql));
+  const filters = (data?.filters ?? []).map((f) => ({ ...f, description: templateMetadataText(f.description) })).filter((f) => !ql || f.name.includes(ql) || f.description.toLowerCase().includes(ql));
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="p-2 pb-1.5">

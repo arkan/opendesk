@@ -1,4 +1,3 @@
-import { appText } from "@/i18n/text";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { Building2, Plus } from "lucide-react";
@@ -194,7 +193,7 @@ export default function CompaniesPage() {
 }
 
 function TableSkeleton({ rows = 10 }: { rows?: number }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   return (
     <div aria-busy="true" aria-label={appText("Loading")}>
       {Array.from({ length: rows }).map((_, i) => (

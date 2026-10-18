@@ -32,7 +32,7 @@ export function rangeLabel(r: ReportsRange) {
 }
 
 export function RangePicker({ value, onChange }: { value: ReportsRange; onChange: (r: ReportsRange) => void }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState(value.from);
   const [to, setTo] = useState(value.to);

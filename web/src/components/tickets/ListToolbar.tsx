@@ -13,6 +13,7 @@ import { encodeFieldFilters, parseFieldFilters, type InboxSearch } from "@/lib/f
 import { fieldText, useTicketFields, type CustomField } from "./fields";
 import { q } from "@/lib/queries";
 import { cn } from "@/lib/cn";
+import { useHotkeys } from "@/lib/hotkeys";
 import { AnimatedNumber } from "@/components/motion";
 import { TagSwatch } from "./TagSwatch";
 import { ChannelIcon, PriorityIcon, SeverityChip, channelLabel, priorityLabel, priorityOrder, severityLabel, severityOrder } from "./bits";
@@ -55,7 +56,6 @@ export function ListToolbar({
   count,
   search,
   onSearch,
-  searchRef,
   compact,
   layout,
   onLayout,
@@ -71,7 +71,6 @@ export function ListToolbar({
   count?: number | null;
   search: InboxSearch;
   onSearch: (s: InboxSearch) => void;
-  searchRef: React.RefObject<HTMLInputElement | null>;
   compact: boolean;
   /** The list/split choice; offered on wide screens only. */
   layout?: InboxLayout;
@@ -86,7 +85,15 @@ export function ListToolbar({
   const openingAddress = useRef(false);
   const [term, setTerm] = useState(search.q ?? "");
   const [searchOpen, setSearchOpen] = useState(!!search.q);
+  const searchRef = useRef<HTMLInputElement>(null);
   const first = useRef(true);
+
+  useHotkeys({
+    "/": () => {
+      setSearchOpen(true);
+      searchRef.current?.focus();
+    },
+  });
 
   useEffect(() => {
     if (first.current) {
