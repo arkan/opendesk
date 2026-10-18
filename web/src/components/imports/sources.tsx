@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { templateText } from "../templates/text";
+import { templateText } from "@/i18n/text";
 // The products an import reads (contracts/imports.md "Credentials"): what each asks for,
 // where its people find it, and its logo.
 

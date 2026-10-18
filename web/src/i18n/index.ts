@@ -102,19 +102,18 @@ export function getAgentLocale(): AgentLocale {
 }
 
 async function prepare(lng: Locale, namespaces: readonly Namespace[]) {
-  await i18nReady;
-  await new Promise<void>((resolve, reject) => {
-    i18n.loadLanguages(lng, (err) => err ? reject(new Error("Could not load language catalogs")) : resolve());
-  });
   const missing = namespaces.filter((ns) => !i18n.hasResourceBundle(lng, ns) || !Object.keys(i18n.getResourceBundle(lng, ns)).length);
-  if (missing.length) {
-    await new Promise<void>((resolve, reject) => {
-      i18n.reloadResources(lng, [...missing], (err?: unknown) => err ? reject(new Error("Could not load language catalogs")) : resolve());
+  // Read only this surface's missing bundles and allow a failed import to retry.
+  await Promise.all(missing.map((ns) => new Promise<void>((resolve, reject) => {
+    lazyBackend.read(lng, ns, (err, data) => {
+      if (err || !data || typeof data !== "object" || !Object.keys(data).length) {
+        reject(new Error("Could not load language catalogs"));
+        return;
+      }
+      i18n.addResourceBundle(lng, ns, data);
+      resolve();
     });
-    if (missing.some((ns) => !Object.keys(i18n.getResourceBundle(lng, ns) ?? {}).length)) {
-      throw new Error("Could not load language catalogs");
-    }
-  }
+  })));
 }
 
 function documentLocale(lng: Locale) {
@@ -127,6 +126,8 @@ function documentLocale(lng: Locale) {
 async function applyLocale(lng: Locale, namespaces: readonly Namespace[], publicPage: boolean, remember = false): Promise<void> {
   const request = ++transition;
   try {
+    await i18nReady;
+    if (request !== transition) return;
     await prepare(lng, namespaces);
   } catch (err) {
     if (request === transition) throw err;
@@ -134,6 +135,8 @@ async function applyLocale(lng: Locale, namespaces: readonly Namespace[], public
   }
   const commit = commits.then(async () => {
     if (request !== transition) return;
+    // changeLanguage also loads resources; keep it scoped to the prepared surface.
+    i18n.options.ns = [...namespaces];
     await i18n.changeLanguage(lng);
     if (request !== transition) return;
     pageLocale = publicPage ? lng : null;

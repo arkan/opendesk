@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "web/src/styles/app.css"
+        ],
+        "createdAt": "2026-10-18T17:18:46.211Z",
+        "reason": "Agent review: the only match is the semantic .prose-od blockquote border, a neutral 2px citation marker rather than a card accent."
+      }
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-import { uiText } from "@/i18n/ui";
+import { uiText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 // The footer link of notification emails (contracts/api.md "Notification preferences
 // and emails"). Mail scanners open links on their own, so the page only asks; the

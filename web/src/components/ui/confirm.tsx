@@ -1,4 +1,4 @@
-import { uiText } from "@/i18n/ui";
+import { uiText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { AlertDialog as A } from "radix-ui";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";

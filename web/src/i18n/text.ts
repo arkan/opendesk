@@ -1,7 +1,14 @@
 import { i18n } from "./index";
 
-/** Translate interface literals outside the original feature catalogs. */
-export function appText(value: string, values: Record<string, string | number> = {}): string {
-  if (!i18n.exists(value, { ...values, ns: "app", keySeparator: false, nsSeparator: false })) return value;
-  return i18n.t(value, { ...values, ns: "app", keySeparator: false, nsSeparator: false, defaultValue: value });
+/** Localize catalog literals while leaving unknown diagnostics and template code untouched. */
+function literalText(ns: "app" | "interface" | "templatesUi") {
+  return (value: string, values?: Record<string, string | number>): string => {
+    const options = { ...values, ns, keySeparator: false, nsSeparator: false } as const;
+    if (!i18n.exists(value, options)) return value;
+    return i18n.t(value, { ...options, defaultValue: value });
+  };
 }
+
+export const appText = literalText("app");
+export const uiText = literalText("interface");
+export const templateText = literalText("templatesUi");

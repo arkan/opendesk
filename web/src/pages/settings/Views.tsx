@@ -459,7 +459,7 @@ function ViewDrawer({ view, nextPosition, onClose }: { view: View | null; nextPo
             <div className="flex flex-col rounded-lg border border-line bg-surface">
               <FilterRow label={t("views.filters.status")} onClear={f.status?.length ? () => set("status", undefined) : undefined}>
                 <MultiPick
-                  items={statusItems}
+                  items={statusItems()}
                   values={f.status ?? []}
                   onChange={(v) => set("status", v as TicketStatus[])}
                   placeholder={t("views.any.status")}
@@ -467,7 +467,7 @@ function ViewDrawer({ view, nextPosition, onClose }: { view: View | null; nextPo
               </FilterRow>
               <FilterRow label={t("views.filters.priority")} onClear={f.priority?.length ? () => set("priority", undefined) : undefined}>
                 <MultiPick
-                  items={priorityItems}
+                  items={priorityItems()}
                   values={f.priority ?? []}
                   onChange={(v) => set("priority", v as Priority[])}
                   placeholder={t("views.any.priority")}
@@ -497,7 +497,7 @@ function ViewDrawer({ view, nextPosition, onClose }: { view: View | null; nextPo
                 <TagPick value={f.tag} onChange={(v) => set("tag", v)} placeholder={t("views.any.tag")} />
               </FilterRow>
               <FilterRow label={t("views.filters.channel")} onClear={f.channel ? () => set("channel", undefined) : undefined}>
-                <SinglePick items={channelItems} value={f.channel} onChange={(v) => set("channel", v as Channel)} placeholder={t("views.any.channel")} />
+                <SinglePick items={channelItems()} value={f.channel} onChange={(v) => set("channel", v as Channel)} placeholder={t("views.any.channel")} />
               </FilterRow>
               <FilterRow label={t("views.filters.keyword")} onClear={f.q ? () => set("q", undefined) : undefined}>
                 <TextInput

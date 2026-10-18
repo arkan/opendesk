@@ -29,6 +29,8 @@ declare module "@tanstack/react-router" {
   interface StaticDataRouteOption {
     /** Tab title, without the brand. */
     title?: string;
+    /** Public pages choose their language independently of the agent preference. */
+    publicLocale?: boolean;
   }
 }
 
@@ -74,7 +76,7 @@ const helpRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/help/$slug/$",
   component: page(() => import("./pages/public/HelpRedirect")),
-  staticData: { title: "Help center" },
+  staticData: { title: "Help center", publicLocale: true },
 });
 
 const csatRoute = createRoute({
@@ -82,7 +84,7 @@ const csatRoute = createRoute({
   path: "/csat/$token",
   validateSearch: (s: Record<string, unknown>): { score?: string } => ({ score: typeof s.score === "number" ? String(s.score) : str(s.score) }),
   component: page(() => import("./pages/public/Csat")),
-  staticData: { title: "Rate your conversation" },
+  staticData: { title: "Rate your conversation", publicLocale: true },
 });
 
 // ─── Auth ──────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { uiText } from "@/i18n/ui";
+import { uiText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 // Cloudflare Turnstile, loaded on demand. Renders nothing when no site key is
 // configured, in which case no token is sent.

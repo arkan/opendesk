@@ -1,4 +1,4 @@
-import { uiText } from "@/i18n/ui";
+import { uiText } from "@/i18n/text";
 // Small pieces shared by the sign-in flows.
 
 import { useQuery } from "@tanstack/react-query";

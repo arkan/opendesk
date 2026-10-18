@@ -30,18 +30,18 @@ import { sentimentLabel, sentiments, triggerLabel, triggerTone } from "./automat
 import { q } from "@/lib/queries";
 import { cn } from "@/lib/cn";
 
-export const statusItems: PickerItem[] = statusOrder.map((s) => ({
+export const statusItems = (): PickerItem[] => statusOrder.map((s) => ({
   value: s,
   label: statusLabel[s],
   icon: <StatusIcon status={s} />,
 }));
-export const priorityItems: PickerItem[] = priorityOrder.map((p) => ({
+export const priorityItems = (): PickerItem[] => priorityOrder.map((p) => ({
   value: p,
   label: priorityLabel[p],
   icon: <PriorityIcon priority={p} />,
 }));
 /** Severity levels, sev1 first, each with what it means. */
-export const severityItems: PickerItem[] = severityOrder.map((s) => ({
+export const severityItems = (): PickerItem[] => severityOrder.map((s) => ({
   value: s,
   label: severityLabel[s],
   hint: severityHint[s],
@@ -49,10 +49,10 @@ export const severityItems: PickerItem[] = severityOrder.map((s) => ({
 }));
 /** Severity levels plus "no severity" ("none"), for conditions and filters. */
 export const severityFilterItems = (): PickerItem[] => [
-  ...severityItems,
+  ...severityItems(),
   { value: "none", label: i18n.t("settingsInbox:edit.noSeverity"), icon: <span className="h-[16px] w-[22px] rounded-[4px] border border-dashed border-line-strong" /> },
 ];
-export const channelItems: PickerItem[] = (Object.keys(channelLabel) as Channel[]).map((c) => ({
+export const channelItems = (): PickerItem[] => (Object.keys(channelLabel) as Channel[]).map((c) => ({
   value: c,
   label: channelLabel[c],
   icon: <ChannelIcon channel={c} />,

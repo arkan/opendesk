@@ -1,4 +1,4 @@
-import { uiText } from "@/i18n/ui";
+import { uiText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";

@@ -1,4 +1,4 @@
-import { uiText } from "@/i18n/ui";
+import { uiText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { Toaster as Sonner, toast as sonner } from "sonner";
 import { errorMessage } from "@/lib/api/client";

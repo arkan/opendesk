@@ -5,7 +5,7 @@ import { FieldError, PasswordInput } from "@/components/auth/parts";
 import { ApiError, errorMessage } from "@/lib/api/client";
 import { i18n } from "./index";
 import french from "./locales/fr/interface.json";
-import { uiText } from "./ui";
+import { uiText } from "./text";
 
 let root: Root | undefined;
 let container: HTMLDivElement | undefined;

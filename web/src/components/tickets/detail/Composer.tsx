@@ -404,7 +404,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
         </AnimatePresence>
         <div
           onDragOver={(e) => {
-            if (e.dataTransfer.types.includes(appText("Files"))) {
+            if (e.dataTransfer.types.includes("Files")) {
               e.preventDefault();
               setDragging(true);
             }

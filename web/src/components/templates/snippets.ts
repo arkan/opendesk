@@ -1,4 +1,4 @@
-import { templateText } from "./text";
+import { templateText } from "@/i18n/text";
 // Ready-made logic for template editors (contracts/templates.md "The language"):
 // what "{%" offers and the Insert menu's Logic tab. Each inserts working code with
 // the part to change selected, so nobody has to remember the syntax.

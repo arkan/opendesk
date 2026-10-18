@@ -3,7 +3,7 @@
 // the browser sends to /v1/auth/refresh (contracts/tokens.md). A 401 triggers
 // one shared refresh of that account, then the request is retried once.
 
-import { uiText } from "@/i18n/ui";
+import { uiText } from "@/i18n/text";
 import type { TokenResponse } from "./types";
 
 export type Problem = {

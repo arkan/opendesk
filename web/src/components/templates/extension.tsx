@@ -1,4 +1,4 @@
-import { templateText } from "./text";
+import { templateText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { appText } from "@/i18n/text";
 // Template tags in the rich editor: every {{ variable }} and {% tag %} shows as a

@@ -3,7 +3,7 @@ import { i18n, i18nReady } from "@/i18n";
 import { credentialFields, sourceName } from "../imports/sources";
 import { GROUP_LABELS } from "./catalog";
 import { matchSnippets, SNIPPETS } from "./snippets";
-import { templateText } from "./text";
+import { templateText } from "@/i18n/text";
 
 afterEach(async () => {
   await i18n.changeLanguage("en");

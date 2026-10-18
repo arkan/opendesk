@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { templateText } from "./text";
+import { templateText } from "@/i18n/text";
 // The template variable list (contracts/templates.md), from the server so the
 // app never keeps its own copy, plus helpers to read tags in a template.
 
@@ -69,18 +69,17 @@ export function slotsFor(kind: TemplateKind | "history_header"): string[] {
 }
 
 export function useCatalog(kind: TemplateKind = "reply"): Catalog {
-  const { t, i18n } = useTranslation("templatesUi");
+  const { i18n, ready } = useTranslation("templatesUi");
+  const language = i18n.language;
   const { data, isLoading } = useQuery(q.templateVariables());
   return useMemo(() => {
-    const text = (value: string) => i18n.exists(value, { ns: "templatesUi", keySeparator: false, nsSeparator: false })
-      ? t(value, { keySeparator: false, nsSeparator: false, defaultValue: value })
-      : value;
+    const text = (value: string) => templateText(value, { lng: language });
     const variables = (data?.variables ?? []).filter((v) => !(kind === "personal_signature" && v.key === "agent.signature"))
       .map((v) => v.key.includes(".fields.") ? v : { ...v, label: text(v.label), description: text(v.description) });
     const slots = (data?.slots ?? []).filter((s) => slotsFor(kind).includes(s.key)).map((s) => ({ ...s, label: text(s.label), description: text(s.description) }));
     const known = new Set<string>([...variables.map((v) => v.key), ...slots.map((s) => s.key)]);
-    return { variables, slots, known, byKey: new Map(variables.map((v) => [v.key, v])), filters: (data?.filters ?? []).map((f) => ({ ...f, description: text(f.description) })), loading: isLoading };
-  }, [data, isLoading, kind, i18n, t]);
+    return { variables, slots, known, byKey: new Map(variables.map((v) => [v.key, v])), filters: (data?.filters ?? []).map((f) => ({ ...f, description: text(f.description) })), loading: isLoading || !ready };
+  }, [data, isLoading, kind, language, ready]);
 }
 
 /** Whether a tag is fine as far as the client can tell (the server checks for real). */

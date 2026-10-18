@@ -1,4 +1,4 @@
-import { templateText } from "./text";
+import { templateText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 import { appText } from "@/i18n/text";
 // A searchable list of the template variables, grouped, with what each reads.

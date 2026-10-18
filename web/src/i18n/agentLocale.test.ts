@@ -1,4 +1,5 @@
 import { categoryLabel } from "@/lib/decisions";
+import type { BackendModule } from "i18next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getAgentLocale, i18n, initAgentLocale, intlLocale, readAgentLocale, resetLocale, setAgentLocale, setLocale } from "./index";
 
@@ -69,11 +70,12 @@ describe("manual agent language", () => {
 
   it("does not let an obsolete public load overwrite a newer agent transition", async () => {
     let finish: (() => void) | undefined;
-    const realLoad = i18n.loadLanguages.bind(i18n);
-    vi.spyOn(i18n, "loadLanguages").mockImplementationOnce((_lng, callback) => {
-      finish = () => callback?.(null, i18n.t);
-      return Promise.resolve();
-    }).mockImplementation(realLoad);
+    i18n.removeResourceBundle("ar", "common");
+    const backend = i18n.services.backendConnector.backend as BackendModule;
+    const read = backend.read.bind(backend);
+    vi.spyOn(backend, "read").mockImplementationOnce((lng, ns, callback) => {
+      finish = () => read(lng, ns, callback);
+    });
     const obsolete = setLocale("ar", ["common"]);
     await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
     await setAgentLocale("fr");
@@ -85,9 +87,9 @@ describe("manual agent language", () => {
   });
 
   it("preserves the previous language on load failure and allows retry", async () => {
-    vi.spyOn(i18n, "loadLanguages").mockImplementationOnce((_lng, callback) => {
-      callback?.([new Error("offline")], i18n.t);
-      return Promise.resolve();
+    i18n.removeResourceBundle("fr", "shell");
+    vi.spyOn(i18n.services.backendConnector.backend as BackendModule, "read").mockImplementationOnce((_lng, _ns, callback) => {
+      callback(new Error("offline"), null);
     });
     await expect(setAgentLocale("fr")).rejects.toThrow("Could not load language catalogs");
     expect(i18n.language).toBe("en");
@@ -99,9 +101,9 @@ describe("manual agent language", () => {
 
   it("falls back to bundled English if French fails at startup without clearing the stored choice", async () => {
     localStorage.setItem("od-agent-lang", "fr");
-    vi.spyOn(i18n, "loadLanguages").mockImplementationOnce((_lng, callback) => {
-      callback?.([new Error("offline")], i18n.t);
-      return Promise.resolve();
+    i18n.removeResourceBundle("fr", "shell");
+    vi.spyOn(i18n.services.backendConnector.backend as BackendModule, "read").mockImplementationOnce((_lng, _ns, callback) => {
+      callback(new Error("offline"), null);
     });
     await initAgentLocale();
     expect(i18n.language).toBe("en");

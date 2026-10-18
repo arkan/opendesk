@@ -1,4 +1,4 @@
-import { uiText } from "@/i18n/ui";
+import { uiText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 // /auth/popup: where a provider sign-in that ran in a popup window comes back
 // (lib/oauthPopup.ts). It hands the one-time code to the tab that started it and closes;

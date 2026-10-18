@@ -7,6 +7,7 @@ import { Link } from "@tanstack/react-router";
 import { BookOpen, Check, Copy, LayoutTemplate, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { templateText } from "@/i18n/text";
 import { Section, SettingsPage } from "@/components/layout";
 import { SaveBar } from "@/components/settings/SaveBar";
 import { UnsavedGuard } from "@/components/settings2/UnsavedGuard";
@@ -454,7 +455,7 @@ const FILTER_GROUPS: { group: TemplateFilter["group"]; label: "text" | "lists" |
 ];
 
 function VariablesReference() {
-  const { t } = useTranslation("emailDesign");
+  const { t } = useTranslation(["emailDesign", "templatesUi"]);
   const { data } = useQuery(q.templateVariables());
   const [copied, setCopied] = useState<string | null>(null);
   const copy = (code: string) => {
@@ -485,7 +486,7 @@ function VariablesReference() {
               <div key={tg.name}>
                 <dt className="flex items-baseline gap-2 text-[12.5px]">
                   <span className="mono font-medium">{tg.name}</span>
-                  <span className="text-[12px] text-fg-3">{tg.description}</span>
+                  <span className="text-[12px] text-fg-3">{templateText(tg.description)}</span>
                 </dt>
                 <dd>
                   <Code code={tg.syntax} />
@@ -510,7 +511,7 @@ function VariablesReference() {
                             {f.name}
                             {f.args && <span className="font-normal text-fg-3">: {f.args}</span>}
                           </span>
-                          <span className="text-[12px] text-fg-3">{f.description}</span>
+                          <span className="text-[12px] text-fg-3">{templateText(f.description)}</span>
                         </dt>
                         <dd>
                           <Code code={f.example} />

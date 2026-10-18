@@ -40,6 +40,7 @@ function remember(l: string) {
  * whether its catalogs are in, so pages can hold back text until then.
  */
 export function usePublicLocale(workspaceDefault: string | null | undefined, ready: boolean) {
+  const router = useRouter();
   const fromUrl = useRouterState({ select: (s) => langParam(s.location.search) });
   useEffect(() => {
     if (fromUrl) remember(fromUrl);
@@ -62,7 +63,10 @@ export function usePublicLocale(workspaceDefault: string | null | undefined, rea
     };
   }, [lng]);
 
-  useEffect(() => () => { void resetLocale(); }, []);
+  useEffect(() => () => {
+    // Restore only when leaving public routes, including during StrictMode remounts.
+    if (!router.state.matches.some((match) => match.staticData.publicLocale)) void resetLocale();
+  }, [router]);
 
   return { locale: applied ?? lng ?? "en", loaded: !!lng && (applied === lng || applied === "en") };
 }

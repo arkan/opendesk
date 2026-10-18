@@ -53,8 +53,16 @@ const groupCls =
   "[&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:text-[11.5px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-fg-3";
 
 function Item({ children, onSelect, icon, hint, value, keywords, forceMount }: { children: ReactNode; onSelect: () => void; icon?: ReactNode; hint?: ReactNode; value: string; keywords?: string[]; forceMount?: boolean }) {
+  // cmdk indexes aliases on registration, so a translated label gets a fresh item.
   return (
-    <Command.Item value={value} keywords={keywords} onSelect={onSelect} forceMount={forceMount} className={itemCls}>
+    <Command.Item
+      key={typeof children === "string" ? children : value}
+      value={value}
+      keywords={typeof children === "string" ? [children, ...(keywords ?? [])] : keywords}
+      onSelect={onSelect}
+      forceMount={forceMount}
+      className={itemCls}
+    >
       {icon}
       <span className="flex min-w-0 flex-1 items-center gap-2 truncate">{children}</span>
       {hint && <span className="shrink-0 text-xs text-fg-4">{hint}</span>}
