@@ -1,4 +1,5 @@
 import { appText } from "@/i18n/text";
+import type { ParseKeys } from "i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,23 +16,23 @@ import type { Webhook } from "@/lib/api/types";
 import { qk, upsertInList } from "@/lib/queries";
 
 /** The events catalog (contracts/events.md), grouped by resource. */
-export const eventGroups: { label: string; events: string[] }[] = [
-  { get label() { return appText("Tickets"); }, events: ["ticket.created", "ticket.updated", "ticket.deleted"] },
-  { get label() { return appText("Messages"); }, events: ["message.created", "message.updated"] },
-  { get label() { return appText("Activity"); }, events: ["activity.created"] },
-  { get label() { return appText("Contacts"); }, events: ["contact.created", "contact.updated", "contact.deleted"] },
-  { get label() { return appText("Companies"); }, events: ["company.created", "company.updated", "company.deleted"] },
-  { get label() { return appText("Labels"); }, events: ["tag.created", "tag.updated", "tag.deleted"] },
-  { get label() { return appText("Mailboxes"); }, events: ["mailbox.created", "mailbox.updated", "mailbox.deleted"] },
-  { get label() { return appText("Members"); }, events: ["member.added", "member.updated", "member.removed"] },
-  { get label() { return appText("Knowledge base"); }, events: ["kb_article.created", "kb_article.updated", "kb_article.deleted", "kb_collection.created", "kb_collection.updated", "kb_collection.deleted"] },
-  { get label() { return appText("Saved replies"); }, events: ["saved_reply.created", "saved_reply.updated", "saved_reply.deleted"] },
-  { get label() { return appText("Views"); }, events: ["view.created", "view.updated", "view.deleted"] },
-  { get label() { return appText("Automations"); }, events: ["automation.created", "automation.updated", "automation.deleted"] },
-  { get label() { return appText("SLA policies"); }, events: ["sla_policy.created", "sla_policy.updated", "sla_policy.deleted"] },
-  { get label() { return appText("Teams"); }, events: ["team.created", "team.updated", "team.deleted"] },
+const eventGroups: { label: ParseKeys<"app">; events: string[] }[] = [
+  { label: "Tickets", events: ["ticket.created", "ticket.updated", "ticket.deleted"] },
+  { label: "Messages", events: ["message.created", "message.updated"] },
+  { label: "Activity", events: ["activity.created"] },
+  { label: "Contacts", events: ["contact.created", "contact.updated", "contact.deleted"] },
+  { label: "Companies", events: ["company.created", "company.updated", "company.deleted"] },
+  { label: "Labels", events: ["tag.created", "tag.updated", "tag.deleted"] },
+  { label: "Mailboxes", events: ["mailbox.created", "mailbox.updated", "mailbox.deleted"] },
+  { label: "Members", events: ["member.added", "member.updated", "member.removed"] },
+  { label: "Knowledge base", events: ["kb_article.created", "kb_article.updated", "kb_article.deleted", "kb_collection.created", "kb_collection.updated", "kb_collection.deleted"] },
+  { label: "Saved replies", events: ["saved_reply.created", "saved_reply.updated", "saved_reply.deleted"] },
+  { label: "Views", events: ["view.created", "view.updated", "view.deleted"] },
+  { label: "Automations", events: ["automation.created", "automation.updated", "automation.deleted"] },
+  { label: "SLA policies", events: ["sla_policy.created", "sla_policy.updated", "sla_policy.deleted"] },
+  { label: "Teams", events: ["team.created", "team.updated", "team.deleted"] },
 ];
-export const allEvents = eventGroups.flatMap((g) => g.events);
+const allEvents = eventGroups.flatMap((g) => g.events);
 
 /** The server stores "every event, including ones added later" as ["*"]. */
 export function isAllEvents(events: string[]) {
@@ -42,20 +43,15 @@ function expandEvents(events: string[]) {
   return events.includes("*") ? allEvents : events;
 }
 
-export function eventSummary(events: string[]) {
-  if (isAllEvents(events)) return appText("All events");
-  return events.length === 1 ? events[0] : `${events.length} events`;
-}
-
-function validUrl(v: string): string | null {
+function validUrl(v: string): ParseKeys<"settingsDev"> | null {
   try {
     const u = new URL(v.trim());
     // http is accepted only for a local receiver; the server allows it on development instances only.
     const local = u.hostname === "localhost" || u.hostname === "[::1]" || /^127\.\d+\.\d+\.\d+$/.test(u.hostname);
-    if (u.protocol !== "https:" && !(u.protocol === "http:" && local)) return "Use an https:// URL.";
+    if (u.protocol !== "https:" && !(u.protocol === "http:" && local)) return "webhookForm.httpsRequired";
     return null;
   } catch {
-    return "Enter a full URL, like https://example.com/hooks/opendesk.";
+    return "webhookForm.invalidUrl";
   }
 }
 
@@ -67,8 +63,8 @@ export function WebhookDialog({ hook, onClose, onCreated }: { hook: Webhook | nu
   const [events, setEvents] = useState<string[]>(hook ? expandEvents(hook.events) : ["ticket.created", "ticket.updated", "message.created"]);
   const [enabled, setEnabled] = useState(hook?.enabled ?? true);
   const [privateTeams, setPrivateTeams] = useState<string[]>(hook?.private_team_ids ?? []);
-  const [error, setError] = useState<string | null>(null);
-  const [urlError, setUrlError] = useState<string | null>(null);
+  const [eventsMissing, setEventsMissing] = useState(false);
+  const [urlError, setUrlError] = useState<ParseKeys<"settingsDev"> | null>(null);
   const all = allEvents.every((e) => events.includes(e));
 
   const save = useMutation({
@@ -85,15 +81,15 @@ export function WebhookDialog({ hook, onClose, onCreated }: { hook: Webhook | nu
       if (secret && onCreated) onCreated({ ...(row as Webhook), secret });
       else onClose();
     },
-    onError: (e) => setError(errorMessage(e)),
   });
 
   const submit = () => {
-    setError(null);
+    save.reset();
+    setEventsMissing(false);
     const ue = validUrl(url);
     setUrlError(ue);
     if (ue) return;
-    if (!events.length) return setError(t("webhookForm.eventRequired"));
+    if (!events.length) return setEventsMissing(true);
     save.mutate();
   };
 
@@ -109,7 +105,7 @@ export function WebhookDialog({ hook, onClose, onCreated }: { hook: Webhook | nu
       description={t("webhookForm.description")}
       footer={
         <>
-          <span className="mr-auto text-xs text-danger-fg">{error}</span>
+          <span role="alert" className="mr-auto text-xs text-danger-fg">{eventsMissing ? t("webhookForm.eventRequired") : save.error ? errorMessage(save.error) : null}</span>
           <Button variant="ghost" onClick={onClose}>
             {t("cancel")}
           </Button>
@@ -126,7 +122,7 @@ export function WebhookDialog({ hook, onClose, onCreated }: { hook: Webhook | nu
           submit();
         }}
       >
-        <Field label={t("webhookForm.url")} error={urlError}>
+        <Field label={t("webhookForm.url")} error={urlError ? t(urlError) : null}>
           {(p) => (
             <TextInput
               {...p}
@@ -158,15 +154,16 @@ export function WebhookDialog({ hook, onClose, onCreated }: { hook: Webhook | nu
           <div className="grid max-h-[300px] grid-cols-1 overflow-y-auto rounded-md border border-line sm:grid-cols-2">
             {eventGroups.map((g) => {
               const on = g.events.filter((e) => events.includes(e)).length;
+              const label = appText(g.label);
               return (
                 <div key={g.label} className="border-b border-line-soft p-3 sm:odd:border-r">
                   <label className="mb-1.5 flex items-center gap-2 text-[12.5px] font-medium">
                     <Checkbox
                       checked={on === g.events.length ? true : on ? "indeterminate" : false}
                       onCheckedChange={(v) => toggleGroup(g.events, v)}
-                      aria-label={appText("All {{group}} events", { group: g.label.toLowerCase() })}
+                      aria-label={appText("All {{group}} events", { group: label.toLowerCase() })}
                     />
-                    {g.label}
+                    {label}
                   </label>
                   <div className="flex flex-col gap-1 pl-6">
                     {g.events.map((e) => (

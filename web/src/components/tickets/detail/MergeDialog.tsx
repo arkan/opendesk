@@ -23,7 +23,6 @@ export function MergeDialog({ ticket, open, onOpenChange }: { ticket: Ticket; op
   const [term, setTerm] = useState("");
   const deferred = useDeferredValue(term.trim());
   const [target, setTarget] = useState<Ticket | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const merge = useMergeTicket();
   const navigate = useNavigate();
 
@@ -40,7 +39,6 @@ export function MergeDialog({ ticket, open, onOpenChange }: { ticket: Ticket; op
 
   const run = () => {
     if (!target) return;
-    setError(null);
     merge.mutate(
       { id: ticket.id, into: target.id },
       {
@@ -49,7 +47,6 @@ export function MergeDialog({ ticket, open, onOpenChange }: { ticket: Ticket; op
           onOpenChange(false);
           void navigate({ to: "/inbox/$folder/{-$ticketId}", params: { folder: "open", ticketId: target.id } });
         },
-        onError: (e) => setError(errorMessage(e)),
       },
     );
   };
@@ -62,7 +59,7 @@ export function MergeDialog({ ticket, open, onOpenChange }: { ticket: Ticket; op
       description={tr("merge.description")}
       footer={
         <>
-          {error && <p className="mr-auto text-xs text-danger-fg">{error}</p>}
+          {merge.error && <p role="alert" className="mr-auto text-xs text-danger-fg">{errorMessage(merge.error)}</p>}
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {tr("common.cancel")}
           </Button>

@@ -3,8 +3,9 @@
 // `priority_labels` in the workspace settings contract.
 
 import { RotateCcw } from "lucide-react";
+import type { ParseKeys } from "i18next";
 import { useTranslation } from "react-i18next";
-import { PriorityIcon, StatusIcon, priorityLabel, priorityOrder, statusLabel, statusOrder } from "@/components/indicators";
+import { PriorityIcon, StatusIcon, priorityLabelKey, priorityOrder, statusLabelKey, statusOrder } from "@/components/indicators";
 import { Popover } from "@/components/ui/popover";
 import { TextInput } from "@/components/ui/input";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -37,7 +38,7 @@ export function DisplayOverridesEditor({
       <OverrideList
         title={t("display.statuses")}
         keys={statusOrder}
-        defaults={statusLabel}
+        defaultKeys={statusLabelKey}
         tones={statusTone}
         icon={(k) => <StatusIcon status={k} />}
         value={statuses}
@@ -47,7 +48,7 @@ export function DisplayOverridesEditor({
       <OverrideList
         title={t("display.priorities")}
         keys={priorityOrder}
-        defaults={priorityLabel}
+        defaultKeys={priorityLabelKey}
         tones={priorityTone}
         icon={(k) => <PriorityIcon priority={k} />}
         value={priorities}
@@ -61,7 +62,7 @@ export function DisplayOverridesEditor({
 function OverrideList<K extends string>({
   title,
   keys,
-  defaults,
+  defaultKeys,
   tones: defaultTones,
   icon,
   value,
@@ -70,7 +71,7 @@ function OverrideList<K extends string>({
 }: {
   title: string;
   keys: K[];
-  defaults: Record<K, string>;
+  defaultKeys: Record<K, ParseKeys<"app">>;
   tones: Record<K, Tone>;
   icon: (k: K) => React.ReactNode;
   value: Overrides<K>;
@@ -78,6 +79,7 @@ function OverrideList<K extends string>({
   disabled?: boolean;
 }) {
   const { t } = useTranslation("settings");
+  const { t: appText } = useTranslation("app");
   const set = (k: K, patch: DisplayOverride) => {
     const next: DisplayOverride = { ...value[k], ...patch };
     if (!next.label) delete next.label;
@@ -92,6 +94,8 @@ function OverrideList<K extends string>({
       <div className="label-caps mb-2">{title}</div>
       <div className="flex flex-col">
         {keys.map((k) => {
+          const labelKey: ParseKeys<"app"> = defaultKeys[k];
+          const defaultLabel = appText(labelKey);
           const o = value[k] ?? {};
           const hue = o.color ?? defaultTones[k];
           const changed = !!(o.label || o.color);
@@ -102,11 +106,11 @@ function OverrideList<K extends string>({
               <TextInput
                 inputSize="sm"
                 value={o.label ?? ""}
-                placeholder={defaults[k]}
+                placeholder={defaultLabel}
                 maxLength={40}
                 invalid={bad}
                 disabled={disabled}
-                aria-label={t("display.labelFor", { name: defaults[k] })}
+                aria-label={t("display.labelFor", { name: defaultLabel })}
                 onChange={(e) => set(k, { label: e.target.value })}
                 className="min-w-0 flex-1"
               />
@@ -117,19 +121,19 @@ function OverrideList<K extends string>({
                   <button
                     type="button"
                     disabled={disabled}
-                    aria-label={t("display.colourFor", { name: defaults[k] })}
+                    aria-label={t("display.colourFor", { name: defaultLabel })}
                     className="flex size-7 shrink-0 items-center justify-center rounded-md border border-line bg-surface transition-colors hover:border-line-strong disabled:opacity-50"
                   >
                     <span className={cn("size-3.5 rounded-xs", tones[hue].solid)} />
                   </button>
                 }
               >
-                <ColorSwatchPicker value={hue} onChange={(c) => set(k, { color: c })} size="sm" className="w-[124px]" label={t("display.colourFor", { name: defaults[k] })} />
+                <ColorSwatchPicker value={hue} onChange={(c) => set(k, { color: c })} size="sm" className="w-[124px]" label={t("display.colourFor", { name: defaultLabel })} />
               </Popover>
               <Tooltip content={t("display.reset")}>
                 <button
                   type="button"
-                  aria-label={t("display.resetFor", { name: defaults[k] })}
+                  aria-label={t("display.resetFor", { name: defaultLabel })}
                   disabled={disabled || !changed}
                   onClick={() => {
                     const out = { ...value };

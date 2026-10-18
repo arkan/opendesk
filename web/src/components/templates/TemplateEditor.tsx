@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/input";
 import { Segmented } from "@/components/ui/tabs";
 import type { TemplateKind, TemplateProblem } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
-import { GROUP_LABELS, tagFor, useCatalog } from "./catalog";
+import { GROUP_LABEL_KEYS, tagFor, useCatalog } from "./catalog";
 import { insertCode, matchVars, refreshTags, templateExtension, VarSuggestPopup, type FilterInfo, type VarItem } from "./extension";
 import { VariablePicker } from "./VariablePicker";
 
@@ -62,7 +62,7 @@ export const TemplateEditor = forwardRef<TemplateEditorHandle, TemplateEditorPro
   itemsRef.current = useMemo(
     () => [
       ...catalog.slots.map((s) => ({ key: s.key, label: s.label, group: templateText("Place") })),
-      ...catalog.variables.map((v) => ({ key: v.key, label: v.label, group: GROUP_LABELS[v.group] ?? v.group, value: v.example })),
+      ...catalog.variables.map((v) => ({ key: v.key, label: v.label, group: Object.hasOwn(GROUP_LABEL_KEYS, v.group) ? templateText(GROUP_LABEL_KEYS[v.group]) : v.group, value: v.example })),
     ],
     [catalog.slots, catalog.variables],
   );

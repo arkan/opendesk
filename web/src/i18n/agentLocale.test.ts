@@ -120,6 +120,35 @@ describe("manual agent language", () => {
     expect(i18n.language).toBe("fr");
   });
 
+  it.each([
+    { language: "ar", change: () => setLocale("ar", ["public", "common"]), next: () => setAgentLocale("fr"), unavailable: "fr", missing: "shell", agent: "en", direction: "rtl" },
+    { language: "fr", change: () => setAgentLocale("fr"), next: () => setLocale("ar", ["public", "common"]), unavailable: "ar", missing: "common", agent: "fr", direction: "ltr" },
+  ] as const)("commits $language atomically before a subscriber starts a failing request", async ({ language, change, next, unavailable, missing, agent, direction }) => {
+    i18n.removeResourceBundle(unavailable, missing);
+    const backend = i18n.services.backendConnector.backend as BackendModule;
+    const read = backend.read.bind(backend);
+    vi.spyOn(backend, "read").mockImplementation((lng, ns, callback) => {
+      if (lng === unavailable && ns === missing) callback(new Error("offline"), null);
+      else read(lng, ns, callback);
+    });
+    let followup: Promise<unknown> | undefined;
+    const onChange = (lng: string) => {
+      if (lng === language) followup = next().catch((error: unknown) => error);
+    };
+    i18n.on("languageChanged", onChange);
+    try {
+      await change();
+      expect(await followup).toBeInstanceOf(Error);
+      expect(i18n.language).toBe(language);
+      expect(getAgentLocale()).toBe(agent);
+      expect(document.documentElement.lang).toBe(language);
+      expect(document.documentElement.dir).toBe(direction);
+      expect(localStorage.getItem("od-agent-lang")).toBe(agent);
+    } finally {
+      i18n.off("languageChanged", onChange);
+    }
+  });
+
   it("falls back to bundled English if French fails at startup without clearing the stored choice", async () => {
     localStorage.setItem("od-agent-lang", "fr");
     i18n.removeResourceBundle("fr", "shell");

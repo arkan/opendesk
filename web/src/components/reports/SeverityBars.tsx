@@ -1,5 +1,6 @@
+import { appText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
-import { SeverityChip, severityLabel, severityOrder } from "@/components/tickets/bits";
+import { SeverityChip, severityLabelKey, severityOrder } from "@/components/tickets/bits";
 import type { ReportsOverview, Severity } from "@/lib/api/types";
 import { severityTone } from "@/lib/tones";
 import { BreakdownBars, ShareBar, type BarRow } from "./Bars";
@@ -10,8 +11,8 @@ export function SeverityBars({ data }: { data: NonNullable<ReportsOverview["by_s
   const rows: BarRow[] = [
     ...severityOrder.map((s: Severity) => ({
       id: s,
-      label: severityLabel[s],
-      text: severityLabel[s],
+      label: appText(severityLabelKey[s]),
+      text: appText(severityLabelKey[s]),
       value: data[s] ?? 0,
       tone: severityTone[s],
       icon: <SeverityChip severity={s} />,

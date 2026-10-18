@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useQuery } from "@tanstack/react-query";
 import { AlarmClock, Hand, ShieldAlert, Sparkles, ArrowRightLeft, CircleDot, GitMerge, Link2, PencilLine, Star, Tag as TagIcon, TimerOff, Users, UserRound } from "lucide-react";
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
@@ -12,7 +13,7 @@ import { TagChip } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
 import { AI_TONE, tone } from "@/lib/tones";
 import { Tooltip } from "@/components/ui/tooltip";
-import { PriorityIcon, priorityLabel, SeverityChip, severityLabel, StatusIcon, statusLabel } from "../bits";
+import { PriorityIcon, priorityLabelKey, SeverityChip, severityLabelKey, StatusIcon, statusLabelKey } from "../bits";
 import { categoryLabel, isSeverity, pct } from "@/lib/decisions";
 import { MessageItem } from "./MessageItem";
 import { LiveAgentReply } from "./AgentReply";
@@ -87,25 +88,25 @@ function describe(a: Activity, t: TFunction<"inbox">, { teams, members, tags, fi
         return {
           icon: <ShieldAlert />,
           hue: "amber",
-          text: line("activity.statusKept", { status: statusLabel[to] ? display.status(to) : String(d.to) }),
+          text: line("activity.statusKept", { status: statusLabelKey[to] ? display.status(to) : String(d.to) }),
         };
       }
       return {
-        icon: statusLabel[to] ? <StatusIcon status={to} className="size-3" /> : <CircleDot />,
-        text: line("activity.status", { status: (statusLabel[to] ? display.status(to) : String(d.to)).toLowerCase() }),
+        icon: statusLabelKey[to] ? <StatusIcon status={to} className="size-3" /> : <CircleDot />,
+        text: line("activity.status", { status: (statusLabelKey[to] ? display.status(to) : String(d.to)).toLowerCase() }),
       };
     }
     case "priority_changed": {
       const to = d.to as Priority;
       return {
-        icon: priorityLabel[to] ? <PriorityIcon priority={to} className="size-3" /> : <CircleDot />,
-        text: line("activity.priority", { priority: priorityLabel[to] ? display.priority(to) : String(d.to) }),
+        icon: priorityLabelKey[to] ? <PriorityIcon priority={to} className="size-3" /> : <CircleDot />,
+        text: line("activity.priority", { priority: priorityLabelKey[to] ? display.priority(to) : String(d.to) }),
       };
     }
     case "severity_changed": {
       const to = d.to;
       return isSeverity(to)
-        ? { icon: <SeverityChip severity={to} className="h-[13px] min-w-[18px] px-0.5 text-[8.5px]" />, text: line("activity.severity", { severity: severityLabel[to] }) }
+        ? { icon: <SeverityChip severity={to} className="h-[13px] min-w-[18px] px-0.5 text-[8.5px]" />, text: line("activity.severity", { severity: appText(severityLabelKey[to]) }) }
         : { icon: <CircleDot />, text: line("activity.severityCleared") };
     }
     case "assigned": {

@@ -71,6 +71,7 @@ function Item({ children, onSelect, icon, hint, value, keywords, forceMount }: {
 }
 
 export function CommandPalette() {
+  const { t: appText } = useTranslation("app");
   const open = useShell((s) => s.paletteOpen);
   const [query, setQuery] = useState("");
   const deferred = useDeferredValue(query.trim());
@@ -255,11 +256,11 @@ export function CommandPalette() {
                 {folders.map((f) => (
                   <Item
                     key={f.id}
-                    value={`go inbox ${f.label}`}
+                    value={`go inbox ${f.id}`}
                     icon={f.id === "unassigned" ? <CircleDashed /> : f.id === "mine" ? <User /> : <Inbox />}
                     onSelect={() => go(() => void navigate({ to: "/inbox/$folder/{-$ticketId}", params: { folder: f.id, ticketId: undefined } }))}
                   >
-                    {f.label}
+                    {appText(f.labelKey)}
                   </Item>
                 ))}
                 {teams.myTeams.size > 1 && (

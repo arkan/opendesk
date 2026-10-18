@@ -175,6 +175,8 @@
     "save": "Enregistrer le webhook",
     "create": "Créer le webhook",
     "url": "URL du point de terminaison",
+    "httpsRequired": "Utilisez une URL en https://.",
+    "invalidUrl": "Saisissez une URL complète, par exemple https://example.com/hooks/opendesk.",
     "descriptionLabel": "Description",
     "descriptionPlaceholder": "Synchroniser les tickets vers l’entrepôt de données",
     "events": "Événements",

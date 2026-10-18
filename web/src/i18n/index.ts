@@ -137,11 +137,9 @@ async function applyLocale(lng: Locale, namespaces: readonly Namespace[], public
     if (request !== transition) return;
     // changeLanguage also loads resources; keep it scoped to the prepared surface.
     i18n.options.ns = [...namespaces];
-    // React subscribers read this state synchronously on languageChanged.
+    // Publish the whole commit before languageChanged can start another request.
     pageLocale = publicPage ? lng : null;
     if (!publicPage) agentLocale = lng as AgentLocale;
-    await i18n.changeLanguage(lng);
-    if (request !== transition) return;
     if (remember) {
       try {
         localStorage.setItem(AGENT_KEY, agentLocale);
@@ -150,6 +148,7 @@ async function applyLocale(lng: Locale, namespaces: readonly Namespace[], public
       }
     }
     documentLocale(lng);
+    await i18n.changeLanguage(lng);
   });
   commits = commit.catch(() => {});
   await commit;

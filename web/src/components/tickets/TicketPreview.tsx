@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // A read-only look at the focused ticket, beside the list on wide screens.
 // It follows j/k without opening the ticket (no presence, nothing marked),
 // and Enter or a click opens it for real.
@@ -16,7 +17,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { TagChip } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
-import { ChannelIcon, channelLabel, PriorityPill, SlaPill, slaState, StatusPill, TicketNumber } from "./bits";
+import { ChannelIcon, channelLabelKey, PriorityPill, SlaPill, slaState, StatusPill, TicketNumber } from "./bits";
 import { Timeline } from "./detail/Timeline";
 import { useDisplay } from "./fields";
 import { TicketTeamChips, useTeamsCtx } from "./teams";
@@ -94,7 +95,7 @@ export function TicketPreview({ ticket: t, onOpen, onReply }: { ticket: Ticket; 
                   <span className="truncate text-fg-2" data-ph-mask>
                     {contact}
                   </span>
-                  <span className="text-fg-4">· {channelLabel[t.channel]}</span>
+                  <span className="text-fg-4">· {appText(channelLabelKey[t.channel])}</span>
                 </span>
                 {sla && sla.state === "on_track" && <SlaPill ticket={t} />}
                 {t.tags.map((tag) => (

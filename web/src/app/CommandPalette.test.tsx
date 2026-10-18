@@ -68,6 +68,7 @@ afterEach(async () => {
 });
 
 it.each([
+  ["non attribués", "go inbox unassigned", "Non attribués"],
   ["entreprises", "go companies", "Entreprises"],
   ["connaissances", "go knowledge base kb articles", "Base de connaissances"],
   ["rapports", "go reports analytics", "Rapports"],
@@ -78,6 +79,17 @@ it.each([
 ])("finds the displayed French command with %s", async (query, value, label) => {
   await search(query);
   expect(command(value)?.textContent ?? "").toContain(label);
+});
+
+it("keeps folder commands stable while translating their searchable labels", async () => {
+  await search("go inbox unassigned");
+  expect(command("go inbox unassigned")?.textContent).toBe("Non attribués");
+  await act(async () => { await i18n.changeLanguage("en"); });
+  expect(command("go inbox unassigned")?.textContent).toBe("Unassigned");
+  await search("non attribués");
+  expect(command("go inbox unassigned")).toBeNull();
+  await act(async () => { await i18n.changeLanguage("fr"); });
+  expect(command("go inbox unassigned")?.textContent).toBe("Non attribués");
 });
 
 it("refreshes searchable labels when switching language with the palette open", async () => {

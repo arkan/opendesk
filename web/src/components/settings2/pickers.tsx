@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
 // Value pickers shared by the view filter builder and the automation builder.
 
@@ -13,13 +14,13 @@ import {
   SentimentIcon,
   SeverityChip,
   StatusIcon,
-  channelLabel,
-  priorityLabel,
+  channelLabelKey,
+  priorityLabelKey,
   priorityOrder,
-  severityHint,
-  severityLabel,
+  severityHintKey,
+  severityLabelKey,
   severityOrder,
-  statusLabel,
+  statusLabelKey,
   statusOrder,
 } from "@/components/tickets/bits";
 import { i18n } from "@/i18n";
@@ -31,19 +32,19 @@ import { cn } from "@/lib/cn";
 
 export const statusItems = (): PickerItem[] => statusOrder.map((s) => ({
   value: s,
-  label: statusLabel[s],
+  label: appText(statusLabelKey[s]),
   icon: <StatusIcon status={s} />,
 }));
 export const priorityItems = (): PickerItem[] => priorityOrder.map((p) => ({
   value: p,
-  label: priorityLabel[p],
+  label: appText(priorityLabelKey[p]),
   icon: <PriorityIcon priority={p} />,
 }));
 /** Severity levels, sev1 first, each with what it means. */
 export const severityItems = (): PickerItem[] => severityOrder.map((s) => ({
   value: s,
-  label: severityLabel[s],
-  hint: severityHint[s],
+  label: appText(severityLabelKey[s]),
+  hint: appText(severityHintKey[s]),
   icon: <SeverityChip severity={s} />,
 }));
 /** Severity levels plus "no severity" ("none"), for conditions and filters. */
@@ -51,9 +52,9 @@ export const severityFilterItems = (): PickerItem[] => [
   ...severityItems(),
   { value: "none", label: i18n.t("settingsInbox:edit.noSeverity"), icon: <span className="h-[16px] w-[22px] rounded-[4px] border border-dashed border-line-strong" /> },
 ];
-export const channelItems = (): PickerItem[] => (Object.keys(channelLabel) as Channel[]).map((c) => ({
+export const channelItems = (): PickerItem[] => (Object.keys(channelLabelKey) as Channel[]).map((c) => ({
   value: c,
-  label: channelLabel[c],
+  label: appText(channelLabelKey[c]),
   icon: <ChannelIcon channel={c} />,
 }));
 

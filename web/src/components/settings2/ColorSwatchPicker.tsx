@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { appText } from "@/i18n/text";
+import type { ParseKeys } from "i18next";
 // A row of tone swatches for things people colour (tags, labels). Arrow keys
 // move between swatches like a radio group; the current one carries a ring.
 
@@ -9,29 +9,17 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
 import { TAG_TONES, tone as tones, type Tone } from "@/lib/tones";
 
-const toneName: Record<Tone, string> = {
-  get gray() { return appText("Gray"); },
-  get blue() { return appText("Blue"); },
-  get indigo() { return appText("Indigo"); },
-  get violet() { return appText("Violet"); },
-  get purple() { return appText("Purple"); },
-  get pink() { return appText("Pink"); },
-  get rose() { return appText("Rose"); },
-  get red() { return appText("Red"); },
-  get orange() { return appText("Orange"); },
-  get amber() { return appText("Amber"); },
-  get yellow() { return appText("Yellow"); },
-  get lime() { return appText("Lime"); },
-  get green() { return appText("Green"); },
-  get teal() { return appText("Teal"); },
-  get cyan() { return appText("Cyan"); },
+const toneName: Record<Tone, ParseKeys<"app">> = {
+  gray: "Gray", blue: "Blue", indigo: "Indigo", violet: "Violet", purple: "Purple",
+  pink: "Pink", rose: "Rose", red: "Red", orange: "Orange", amber: "Amber",
+  yellow: "Yellow", lime: "Lime", green: "Green", teal: "Teal", cyan: "Cyan",
 };
 
 export function ColorSwatchPicker({
   value,
   onChange,
   tones: choices = TAG_TONES,
-  label = appText("Colour"),
+  label,
   size = "md",
   className,
 }: {
@@ -42,7 +30,7 @@ export function ColorSwatchPicker({
   size?: "sm" | "md";
   className?: string;
 }) {
-  useTranslation("app");
+  const { t: appText } = useTranslation("app");
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const current = value && choices.includes(value) ? value : null;
   const focusIndex = current ? choices.indexOf(current) : 0;
@@ -52,11 +40,12 @@ export function ColorSwatchPicker({
     refs.current[n]?.focus();
   };
   return (
-    <div role="radiogroup" aria-label={label} className={cn("flex flex-wrap items-center gap-1.5", className)}>
+    <div role="radiogroup" aria-label={label ?? appText("Colour")} className={cn("flex flex-wrap items-center gap-1.5", className)}>
       {choices.map((t, i) => {
         const on = t === current;
+        const name = appText(toneName[t]);
         return (
-          <Tooltip key={t} content={toneName[t]}>
+          <Tooltip key={t} content={name}>
             <button
               ref={(el) => {
                 refs.current[i] = el;
@@ -64,7 +53,7 @@ export function ColorSwatchPicker({
               type="button"
               role="radio"
               aria-checked={on}
-              aria-label={toneName[t]}
+              aria-label={name}
               tabIndex={i === focusIndex ? 0 : -1}
               onClick={() => onChange(t)}
               onKeyDown={(e) => {
@@ -91,5 +80,3 @@ export function ColorSwatchPicker({
     </div>
   );
 }
-
-export { toneName };

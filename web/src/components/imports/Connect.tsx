@@ -73,12 +73,13 @@ export function CredentialsForm({
   replacing?: boolean;
 }) {
   const { t } = useTranslation("imports");
+  const { t: templateText } = useTranslation("templatesUi");
   const set = (k: string, v: string) => onChange({ ...value, [k]: v });
   const fields = credentialFields[source];
   const first = fields.find((f) => !f.choices && (!replacing || f.secret))?.key;
   const hint = (f: CredentialField) => (
     <>
-      {f.hint}
+      {templateText(f.hint)}
       {f.help && (
         <>
           {" "}
@@ -95,17 +96,17 @@ export function CredentialsForm({
       {fields.map((f) =>
         f.choices ? (
           <div key={f.key} className="flex flex-col gap-1.5">
-            <span className="text-[12.5px] font-medium text-fg-2">{f.label}</span>
+            <span className="text-[12.5px] font-medium text-fg-2">{templateText(f.label)}</span>
             <Segmented
               className="self-start"
               value={value[f.key] ?? f.choices[0]![0]}
               onChange={(v) => set(f.key, v)}
-              options={f.choices.map(([v, label]) => ({ value: v, label }))}
+              options={f.choices.map(([v, label]) => ({ value: v, label: templateText(label) }))}
             />
             <p className="text-xs text-fg-3">{hint(f)}</p>
           </div>
         ) : (
-          <Field key={f.key} label={f.label} optional={f.optional || (replacing && !f.secret)} error={errors[f.key]} hint={hint(f)}>
+          <Field key={f.key} label={templateText(f.label)} optional={f.optional || (replacing && !f.secret)} error={errors[f.key]} hint={hint(f)}>
             {(p) =>
               f.secret ? (
                 <Secret id={p.id} describedBy={p["aria-describedby"]} invalid={p.invalid} value={value[f.key] ?? ""} onChange={(v) => set(f.key, v)} autoFocus={autoFocus && first === f.key} />

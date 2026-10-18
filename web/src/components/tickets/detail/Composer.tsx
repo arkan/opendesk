@@ -1,4 +1,4 @@
-import { appText } from "@/i18n/text";
+import { appText, templateText } from "@/i18n/text";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRightLeft, Check, ChevronDown, Loader2, Lock, MessageSquareText, Paperclip, TriangleAlert, X } from "lucide-react";
 import { Morph } from "@/components/motion";
@@ -27,11 +27,11 @@ import { floatingPanel } from "@/components/ui/popover";
 import { toast } from "@/components/ui/toast";
 import { RichEditor, type RichEditorHandle } from "@/components/editor/RichEditor";
 import { mentionExtension, savedReplyExtension, SuggestionPopup } from "./suggestions";
-import { GROUP_LABELS, useCatalog } from "@/components/templates/catalog";
+import { GROUP_LABEL_KEYS, useCatalog } from "@/components/templates/catalog";
 import { matchVars, refreshTags, templateExtension, VarSuggestPopup, type VarItem } from "@/components/templates/extension";
 import { variableText } from "./composerTemplates";
 import { SignaturePreview } from "./SignaturePreview";
-import { StatusIcon, statusLabel } from "../bits";
+import { StatusIcon, statusLabelKey } from "../bits";
 import { useTicketViewers } from "../presence";
 import { applyPatch } from "../useTicketActions";
 import { patchTicketEverywhere } from "@/lib/ticketCache";
@@ -182,7 +182,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
     () =>
       catalog.variables.map((v) => {
         const value = vars?.values[v.key];
-        return { key: v.key, label: v.label, group: GROUP_LABELS[v.group] ?? v.group, value: vars ? (v.html && value ? t("composer.valueSet") : (value ?? "")) : undefined };
+        return { key: v.key, label: v.label, group: Object.hasOwn(GROUP_LABEL_KEYS, v.group) ? templateText(GROUP_LABEL_KEYS[v.group]) : v.group, value: vars ? (v.html && value ? t("composer.valueSet") : (value ?? "")) : undefined };
       }),
     [catalog.variables, vars, t],
   );
@@ -341,7 +341,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
     setDraft({ html: "", cc: [], bcc: [], showCc: false, mailboxId: undefined });
     editor.current?.clear();
     ai.dismissSources();
-    if (status) toast.success(t(mode === "note" ? "composer.noteAndMarked" : "composer.sentAndMarked", { status: statusLabel[status].toLowerCase() }));
+    if (status) toast.success(t(mode === "note" ? "composer.noteAndMarked" : "composer.sentAndMarked", { status: appText(statusLabelKey[status]).toLowerCase() }));
   };
 
   const onKeyDown = (e: KeyboardEvent) => {
@@ -725,7 +725,7 @@ function SendButton({
             {options.map((s) => (
               <M.Item key={s} onSelect={() => onSend(s)} className="flex h-8 cursor-default items-center gap-2 rounded-md px-2 text-[12.5px] outline-none data-[highlighted]:bg-hover">
                 <StatusIcon status={s} />
-                <span className="flex-1 whitespace-nowrap">{t("composer.andMark", { label, status: statusLabel[s].toLowerCase() })}</span>
+                <span className="flex-1 whitespace-nowrap">{t("composer.andMark", { label, status: appText(statusLabelKey[s]).toLowerCase() })}</span>
                 {s === "solved" && <Kbd className="ml-3 shrink-0">mod shift enter</Kbd>}
               </M.Item>
             ))}

@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowUpRight, AtSign, Globe, Inbox, Layers, Lock, MoreHorizontal, Pencil, Plus, Search, Trash2, UserRound, Users, UsersRound, X } from "lucide-react";
@@ -33,7 +34,7 @@ import {
   TagPick,
   useTeamItems,
 } from "@/components/settings2/pickers";
-import { ChannelIcon, PriorityIcon, SeverityChip, StatusIcon, channelLabel, priorityLabel, severityLabel, statusLabel } from "@/components/tickets/bits";
+import { ChannelIcon, PriorityIcon, SeverityChip, StatusIcon, channelLabelKey, priorityLabelKey, severityLabelKey, statusLabelKey } from "@/components/tickets/bits";
 import { api } from "@/lib/api/endpoints";
 import { errorMessage } from "@/lib/api/client";
 import type { Channel, Priority, Severity, TicketFilters, TicketStatus, View } from "@/lib/api/types";
@@ -59,7 +60,7 @@ function FilterChips({ f }: { f: TicketFilters }) {
         {f.status.map((s) => (
           <StatusIcon key={s} status={s} />
         ))}
-        <span className="truncate">{or(f.status.map((s) => statusLabel[s]))}</span>
+        <span className="truncate">{or(f.status.map((s) => appText(statusLabelKey[s])))}</span>
       </span>,
     );
   if (f.priority?.length)
@@ -68,14 +69,14 @@ function FilterChips({ f }: { f: TicketFilters }) {
         {f.priority.map((p) => (
           <PriorityIcon key={p} priority={p} />
         ))}
-        <span className="truncate">{or(f.priority.map((p) => priorityLabel[p]))}</span>
+        <span className="truncate">{or(f.priority.map((p) => appText(priorityLabelKey[p])))}</span>
       </span>,
     );
   if (f.severity?.length)
     out.push(
       <span key="sev" className={chip}>
         {f.severity.map((s) => (s === "none" ? null : <SeverityChip key={s} severity={s} />))}
-        <span className="truncate">{or(f.severity.map((s) => (s === "none" ? t("views.noSeverity") : severityLabel[s])))}</span>
+        <span className="truncate">{or(f.severity.map((s) => (s === "none" ? t("views.noSeverity") : appText(severityLabelKey[s]))))}</span>
       </span>,
     );
   if (f.assignee) {
@@ -129,7 +130,7 @@ function FilterChips({ f }: { f: TicketFilters }) {
     out.push(
       <span key="c" className={chip}>
         <ChannelIcon channel={f.channel} />
-        {channelLabel[f.channel]}
+        {appText(channelLabelKey[f.channel])}
       </span>,
     );
   if (f.q)

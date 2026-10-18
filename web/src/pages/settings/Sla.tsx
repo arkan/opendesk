@@ -19,7 +19,7 @@ import { ListSkeleton, StatePill, SummaryStrip } from "@/components/settings2/bi
 import { orderBy, useListMutation } from "@/components/settings2/optimistic";
 import { SortableList } from "@/components/settings2/Sortable";
 import { TeamChip, TeamPick, useTeams } from "@/components/settings2/teams";
-import { PriorityIcon, PriorityPill, priorityLabel, priorityOrder } from "@/components/tickets/bits";
+import { PriorityIcon, PriorityPill, priorityLabelKey, priorityOrder } from "@/components/tickets/bits";
 import { api } from "@/lib/api/endpoints";
 import { errorMessage } from "@/lib/api/client";
 import type { Priority, SlaPolicy } from "@/lib/api/types";
@@ -386,7 +386,7 @@ function PolicyDialog({ policy, nextPosition, onClose }: { policy: SlaPolicy | n
                 ...priorityOrder.map((x) => ({
                   value: x,
                   label: t("sla.priorityOption", {
-                    priority: priorityLabel[x],
+                    priority: appText(priorityLabelKey[x]),
                   }),
                   icon: <PriorityIcon priority={x} />,
                 })),

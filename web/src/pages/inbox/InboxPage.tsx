@@ -122,6 +122,7 @@ function DetailFallback() {
 
 export default function InboxPage() {
   const { t: tr } = useTranslation("inbox");
+  const { t: appText } = useTranslation("app");
   const params = useParams({ strict: false }) as { folder?: string; viewId?: string; teamId?: string; ticketId?: string };
   const search = useSearch({ strict: false }) as InboxSearch;
   const navigate = useNavigate();
@@ -144,7 +145,7 @@ export default function InboxPage() {
   const query = useMemo(() => listQuery(base, search), [JSON.stringify(base), JSON.stringify(search)]); // eslint-disable-line react-hooks/exhaustive-deps
   const listKey = JSON.stringify(query);
   const teamCounts = teamId ? (teamId === "mine" ? counts?.my_teams : counts?.teams?.[teamId]) : undefined;
-  const title = folder?.label ?? view?.name ?? (teamId ? (teamId === "mine" ? tr("teams.myTeams") : (team?.name ?? tr("teams.team"))) : tr("list.view"));
+  const title = folder ? appText(folder.labelKey) : view?.name ?? (teamId ? (teamId === "mine" ? tr("teams.myTeams") : (team?.name ?? tr("teams.team"))) : tr("list.view"));
   const count = folder
     ? counts
       ? folder.count(counts)

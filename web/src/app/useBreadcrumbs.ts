@@ -33,7 +33,7 @@ export function useBreadcrumbs(): Crumb[] {
   if (path.startsWith("/inbox/")) {
     crumbs.push({ label: appText("Inbox"), to: "/inbox/$folder/{-$ticketId}", params: { folder: "unassigned", ticketId: undefined } });
     const f = folderById(params.folder ?? "");
-    if (f) crumbs.push({ label: f.label, to: "/inbox/$folder/{-$ticketId}", params: { folder: f.id, ticketId: undefined } });
+    if (f) crumbs.push({ label: appText(f.labelKey), to: "/inbox/$folder/{-$ticketId}", params: { folder: f.id, ticketId: undefined } });
   } else if (path.startsWith("/views/")) {
     crumbs.push({ label: appText("Views") });
     const v = views?.find((x) => x.id === params.viewId);

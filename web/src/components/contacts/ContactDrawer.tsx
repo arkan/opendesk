@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { intlLocale } from "@/i18n";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -19,7 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CopyButton } from "@/components/ui/copy-button";
 import { useConfirm } from "@/components/ui/confirm";
 import { toast } from "@/components/ui/toast";
-import { PriorityIcon, StatusIcon, priorityLabel, statusLabel } from "@/components/indicators";
+import { PriorityIcon, StatusIcon, priorityLabelKey, statusLabelKey } from "@/components/indicators";
 import { TicketNumber } from "@/components/tickets/bits";
 import { Tooltip } from "@/components/ui/tooltip";
 import { PresenceList, PresenceRow } from "@/components/motion";
@@ -307,12 +308,12 @@ function Tickets({ contactId }: { contactId: string }) {
           >
             {/* Fixed icon slots so priority and status line up down the list. */}
             <span className="flex shrink-0 items-center gap-2">
-              <Tooltip content={priorityLabel[tk.priority]}>
+              <Tooltip content={appText(priorityLabelKey[tk.priority])}>
                 <span className="flex size-4 items-center justify-center">
                   <PriorityIcon priority={tk.priority} />
                 </span>
               </Tooltip>
-              <Tooltip content={statusLabel[tk.status]}>
+              <Tooltip content={appText(statusLabelKey[tk.status])}>
                 <span className="flex size-4 items-center justify-center">
                   <StatusIcon status={tk.status} />
                 </span>
@@ -324,7 +325,7 @@ function Tickets({ contactId }: { contactId: string }) {
               </span>
               <span className="mt-1 flex items-center gap-2 text-xs text-fg-3">
                 <TicketNumber n={tk.number} />
-                <span>{statusLabel[tk.status]}</span>
+                <span>{appText(statusLabelKey[tk.status])}</span>
                 {tk.assignee && <span className="truncate">{tk.assignee.name}</span>}
               </span>
             </span>

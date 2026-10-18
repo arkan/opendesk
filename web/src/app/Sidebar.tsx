@@ -403,6 +403,7 @@ function TeamsSection({ rail, drawer, counts }: { rail: boolean; drawer?: boolea
 }
 
 export function Sidebar({ drawer }: { drawer?: boolean }) {
+  const { t: appText } = useTranslation("app");
   const { data: counts } = useQuery(q.counts());
   const { data: views } = useQuery(q.views());
   const role = useRole();
@@ -417,16 +418,16 @@ export function Sidebar({ drawer }: { drawer?: boolean }) {
         <Section id="inbox" label={t("nav.inbox")} rail={rail} first>
           <WaitingChats rail={rail} />
           {folders.map((f) => (
-            <NavTip key={f.id} rail={rail} label={f.label}>
+            <NavTip key={f.id} rail={rail} label={appText(f.labelKey)}>
               <Link
                 to="/inbox/$folder/{-$ticketId}"
                 params={{ folder: f.id, ticketId: undefined }}
                 className={cn(rowBase, rowShape(rail), rowIdle)}
                 activeProps={{ className: rowActive, "data-status": "active" } as Record<string, string>}
-                aria-label={rail ? f.label : undefined}
+                aria-label={rail ? appText(f.labelKey) : undefined}
               >{withPill(<>
                 {folderIcons[f.id]}
-                <Label rail={rail}>{f.label}</Label>
+                <Label rail={rail}>{appText(f.labelKey)}</Label>
                 {f.id === "unassigned" && <WaitingCount rail={rail} />}
                 {counts && f.id !== "solved" && f.id !== "spam" && <Count n={f.count(counts)} rail={rail} />}
                 {rail && counts && f.id === "unassigned" && (f.count(counts) ?? 0) > 0 && (

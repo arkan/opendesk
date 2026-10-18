@@ -26,7 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ui/confirm";
 import { toast } from "@/components/ui/toast";
 import { copyText } from "@/components/ui/copy-button";
-import { ChannelIcon, channelLabel, PriorityPill, SeverityChip, severityLabel, severityOrder, SlaPill, slaState, StatusPill, TicketNumber } from "../bits";
+import { ChannelIcon, channelLabelKey, PriorityPill, SeverityChip, severityLabelKey, severityOrder, SlaPill, slaState, StatusPill, TicketNumber } from "../bits";
 import { useOllieNote } from "../ollie";
 import { aiDecisions } from "@/lib/decisions";
 import type { Ticket } from "@/lib/api/types";
@@ -255,7 +255,7 @@ export default function TicketDetail({
           .filter((s) => s !== t.severity)
           .map((s) => ({
             id: `severity-${s}`,
-            label: tr("commands.setSeverity", { severity: severityLabel[s] }),
+            label: tr("commands.setSeverity", { severity: appText(severityLabelKey[s]) }),
             keywords: ["severity", "sev", s, `s${s.slice(3)}`],
             icon: <SeverityChip severity={s} />,
             run: () => update.mutate({ id: t.id, patch: { severity: s } }),
@@ -314,7 +314,7 @@ export default function TicketDetail({
           {t ? (
             <>
               {t.channel !== "email" && (
-                <Tooltip content={channelLabel[t.channel]}>
+                <Tooltip content={appText(channelLabelKey[t.channel])}>
                   <span className="hidden shrink-0 sm:flex">
                     <ChannelIcon channel={t.channel} plain />
                   </span>
@@ -459,12 +459,13 @@ export default function TicketDetail({
 
 /** The header's severity chip; its tooltip says when Ollie set it and how sure Jev was. */
 function HeaderSeverity({ t }: { t: Ticket }) {
+  const { t: appText } = useTranslation("app");
   const note = useOllieNote();
   if (!t.severity) return null;
   const d = aiDecisions(t)?.fields.severity;
   const byAi = !!d?.applied && d.value === t.severity;
   return (
-    <Tooltip content={byAi ? `${severityLabel[t.severity]} · ${note(t, "severity")}` : severityLabel[t.severity]}>
+    <Tooltip content={byAi ? `${appText(severityLabelKey[t.severity])} · ${note(t, "severity")}` : appText(severityLabelKey[t.severity])}>
       <span className="flex">
         <SeverityChip severity={t.severity} className="h-[19px] min-w-[26px] text-[10.5px]" />
       </span>

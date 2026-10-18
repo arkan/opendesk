@@ -7,7 +7,7 @@ import { expect, it, vi } from "vitest";
 import { Notice } from "@/components/auth/parts";
 import { usePublicLocale } from "@/components/help/locale";
 import { i18n, setAgentLocale } from "@/i18n";
-import { RootLayout } from "./RootLayout";
+import { RootLayout, useDocumentTitle } from "./RootLayout";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -63,6 +63,53 @@ it("keeps public notices and the root layout within public catalogs, then restor
     act(() => root.unmount());
     container.remove();
     read.mockRestore();
+    await setAgentLocale("en");
+    localStorage.clear();
+  }
+});
+
+it("keeps page titles above route defaults across language and route changes", async () => {
+  await setAgentLocale("en");
+  function FolderPage() {
+    const { t } = useTranslation("app");
+    useDocumentTitle(t("Unassigned"));
+    return <h1>{t("Unassigned")}</h1>;
+  }
+  function TicketPage() {
+    useDocumentTitle("#42 High");
+    return <h1>High</h1>;
+  }
+  const rootRoute = createRootRoute({ component: RootLayout });
+  const router = createRouter({
+    routeTree: rootRoute.addChildren([
+      createRoute({ getParentRoute: () => rootRoute, path: "/inbox/$folder", staticData: { title: "Inbox" }, component: FolderPage }),
+      createRoute({ getParentRoute: () => rootRoute, path: "/inbox/$folder/$ticketId", staticData: { title: "Inbox" }, component: TicketPage }),
+      createRoute({ getParentRoute: () => rootRoute, path: "/settings/profile", staticData: { title: "Profile" }, component: () => <div /> }),
+    ]),
+    history: createMemoryHistory({ initialEntries: ["/inbox/unassigned"] }),
+  });
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const root = createRoot(container);
+  try {
+    await router.load();
+    await act(async () => root.render(<StrictMode><RouterProvider router={router} /></StrictMode>));
+    expect(document.title).toBe("Unassigned · opendesk");
+    await act(async () => { await setAgentLocale("fr"); });
+    expect(document.title).toBe("Non attribués · opendesk");
+
+    await act(async () => { await router.navigate({ to: "/inbox/$folder/{-$ticketId}", params: { folder: "unassigned", ticketId: "42" } }); });
+    expect(document.title).toBe("#42 High · opendesk");
+    await act(async () => { await setAgentLocale("en"); });
+    expect(document.title).toBe("#42 High · opendesk");
+
+    await act(async () => { await router.navigate({ to: "/settings/profile" }); });
+    expect(document.title).toBe("Profile · opendesk");
+    await act(async () => { await setAgentLocale("fr"); });
+    expect(document.title).toBe("Profil · opendesk");
+  } finally {
+    act(() => root.unmount());
+    container.remove();
     await setAgentLocale("en");
     localStorage.clear();
   }

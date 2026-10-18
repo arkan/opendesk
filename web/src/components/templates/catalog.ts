@@ -1,26 +1,27 @@
 import { useTranslation } from "react-i18next";
-import { templateMetadataText, templateText } from "@/i18n/text";
+import type { ParseKeys } from "i18next";
+import { templateMetadataText } from "@/i18n/text";
 // The template variable list (contracts/templates.md), from the server so the
 // app never keeps its own copy, plus helpers to read tags in a template.
 
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import type { TemplateGroup, TemplateKind, TemplateSlot, TemplateVariable } from "@/lib/api/types";
+import type { TemplateFilter, TemplateGroup, TemplateKind, TemplateSlot, TemplateVariable } from "@/lib/api/types";
 import { q } from "@/lib/queries";
 
-export const GROUP_LABELS: Record<TemplateGroup, string> = {
-  get contact() { return templateText("Customer"); },
-  get company() { return templateText("Company"); },
-  get ticket() { return templateText("Ticket"); },
-  get agent() { return templateText("Sender"); },
-  get team() { return templateText("Team"); },
-  get brand() { return templateText("Brand"); },
-  get mailbox() { return templateText("Address"); },
-  get workspace() { return templateText("Workspace"); },
-  get date() { return templateText("Date"); },
+export const GROUP_LABEL_KEYS: Record<TemplateGroup, ParseKeys<"templatesUi">> = {
+  contact: "Customer",
+  company: "Company",
+  ticket: "Ticket",
+  agent: "Sender",
+  team: "Team",
+  brand: "Brand",
+  mailbox: "Address",
+  workspace: "Workspace",
+  date: "Date",
 };
 
-export const GROUP_ORDER: TemplateGroup[] = ["contact", "company", "ticket", "agent", "team", "brand", "mailbox", "workspace", "date"];
+export const GROUP_ORDER = Object.keys(GROUP_LABEL_KEYS) as TemplateGroup[];
 
 /** A tag as written: `{{ ... }}` or `{% ... %}` (a `<` only when it is not markup). */
 export const TAG_RE = /\{\{(?:[^{}<]|<(?![a-zA-Z/!])){1,400}?\}\}|\{%(?:[^{}<]|<(?![a-zA-Z/!])){1,400}?%\}/g;
@@ -57,7 +58,7 @@ export type Catalog = {
   known: Set<string>;
   byKey: Map<string, TemplateVariable>;
   /** The helpers, for "{{ x |" suggestions. */
-  filters: { name: string; args: string; description: string }[];
+  filters: TemplateFilter[];
   loading: boolean;
 };
 

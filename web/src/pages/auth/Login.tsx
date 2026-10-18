@@ -43,7 +43,7 @@ export default function Login() {
   const full = adding && accounts.length >= MAX_ACCOUNTS;
   const { data: cfg, isLoading } = useQuery(q.authConfig());
   const [token, setToken] = useState<string | null>(null);
-  const [error, setError] = useState<unknown>(oauthErrorKey(search.error));
+  const [error, setError] = useState<unknown>(search.error ? oauthErrorKey(search.error) : null);
   const [mfa, setMfa] = useState<string | null>(null);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
   const turnstile = useRef<TurnstileHandle>(null);

@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import type { ParseKeys } from "i18next";
 import { templateText } from "@/i18n/text";
 // The products an import reads (contracts/imports.md "Credentials"): what each asks for,
 // where its people find it, and its logo.
@@ -21,9 +22,9 @@ export const sourceName: Record<ImportSource, string> = {
 
 export type CredentialField = {
   key: string;
-  label: string;
+  label: ParseKeys<"templatesUi">;
   /** Where to find the value, in the source's own words. */
-  hint: string;
+  hint: ParseKeys<"templatesUi">;
   secret?: boolean;
   optional?: boolean;
   /** Shown after the input, for an account address: ".zendesk.com". */
@@ -32,17 +33,17 @@ export type CredentialField = {
   /** The source's help page that shows the value. */
   help?: string;
   /** A choice instead of text: value and label. */
-  choices?: [string, string][];
+  choices?: [string, ParseKeys<"templatesUi">][];
 };
 
 export const credentialFields: Record<Exclude<ImportSource, "csv">, CredentialField[]> = {
   zendesk: [
-    { key: "subdomain", get label() { return templateText("Zendesk address"); }, get hint() { return templateText("The part before .zendesk.com in your Zendesk links."); }, suffix: ".zendesk.com", placeholder: "acme" },
-    { key: "email", get label() { return templateText("Admin email"); }, get hint() { return templateText("The email you sign in to Zendesk with. It must be an admin."); }, placeholder: "you@company.com" },
+    { key: "subdomain", label: "Zendesk address", hint: "The part before .zendesk.com in your Zendesk links.", suffix: ".zendesk.com", placeholder: "acme" },
+    { key: "email", label: "Admin email", hint: "The email you sign in to Zendesk with. It must be an admin.", placeholder: "you@company.com" },
     {
       key: "token",
-      get label() { return templateText("API token"); },
-      get hint() { return templateText("In Admin Center, open Apps and integrations, then Zendesk API. Turn on token access and add a token."); },
+      label: "API token",
+      hint: "In Admin Center, open Apps and integrations, then Zendesk API. Turn on token access and add a token.",
       secret: true,
       help: "https://support.zendesk.com/hc/en-us/articles/4408889192858",
     },
@@ -50,26 +51,26 @@ export const credentialFields: Record<Exclude<ImportSource, "csv">, CredentialFi
   helpscout: [
     {
       key: "app_id",
-      get label() { return templateText("App ID"); },
-      get hint() { return templateText("In Help Scout, open your profile, then My apps, and create an app. Any redirect URL works."); },
+      label: "App ID",
+      hint: "In Help Scout, open your profile, then My apps, and create an app. Any redirect URL works.",
       help: "https://developer.helpscout.com/mailbox-api/overview/authentication/#client-credentials-flow",
     },
-    { key: "app_secret", get label() { return templateText("App secret"); }, get hint() { return templateText("Shown next to the App ID."); }, secret: true },
+    { key: "app_secret", label: "App secret", hint: "Shown next to the App ID.", secret: true },
     {
       key: "docs_key",
-      get label() { return templateText("Docs API key"); },
-      get hint() { return templateText("To bring your Docs articles too. In your profile, open Authentication, then API keys."); },
+      label: "Docs API key",
+      hint: "To bring your Docs articles too. In your profile, open Authentication, then API keys.",
       secret: true,
       optional: true,
       help: "https://developer.helpscout.com/docs-api/",
     },
   ],
   freshdesk: [
-    { key: "domain", get label() { return templateText("Freshdesk address"); }, get hint() { return templateText("The part before .freshdesk.com in your Freshdesk links."); }, suffix: ".freshdesk.com", placeholder: "acme" },
+    { key: "domain", label: "Freshdesk address", hint: "The part before .freshdesk.com in your Freshdesk links.", suffix: ".freshdesk.com", placeholder: "acme" },
     {
       key: "api_key",
-      get label() { return templateText("API key"); },
-      get hint() { return templateText("Click your picture in Freshdesk, open Profile settings and choose View API key. Use an admin's key."); },
+      label: "API key",
+      hint: "Click your picture in Freshdesk, open Profile settings and choose View API key. Use an admin's key.",
       secret: true,
       help: "https://support.freshdesk.com/support/solutions/articles/215517",
     },
@@ -77,18 +78,18 @@ export const credentialFields: Record<Exclude<ImportSource, "csv">, CredentialFi
   intercom: [
     {
       key: "region",
-      get label() { return templateText("Where your workspace is hosted"); },
-      get hint() { return templateText("Most workspaces are in the US. Your Intercom address says if it is in Europe or Australia."); },
-      get choices(): [string, string][] { return [
-        ["us", templateText("United States")],
-        ["eu", templateText("Europe")],
-        ["au", templateText("Australia")],
-      ]; },
+      label: "Where your workspace is hosted",
+      hint: "Most workspaces are in the US. Your Intercom address says if it is in Europe or Australia.",
+      choices: [
+        ["us", "United States"],
+        ["eu", "Europe"],
+        ["au", "Australia"],
+      ],
     },
     {
       key: "token",
-      get label() { return templateText("Access token"); },
-      get hint() { return templateText("In the Developer Hub, open your app, then Configure and Authentication. A private app in your workspace is enough."); },
+      label: "Access token",
+      hint: "In the Developer Hub, open your app, then Configure and Authentication. A private app in your workspace is enough.",
       secret: true,
       help: "https://developers.intercom.com/docs/build-an-integration/learn-more/authentication",
     },

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { appText } from "@/i18n/text";
+import type { ParseKeys } from "i18next";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
@@ -68,17 +68,18 @@ export function ListSkeleton({ rows = 4 }: { rows?: number }) {
 // Colour for meaning in settings lists: roles, states, summary figures.
 
 const roleTone = { owner: "indigo", admin: "blue", agent: "teal", viewer: "gray" } as const satisfies Record<Role, Tone>;
-const roleText: Record<Role, string> = { get owner() { return appText("Owner"); }, get admin() { return appText("Admin"); }, get agent() { return appText("Agent"); }, get viewer() { return appText("Viewer"); } };
+const roleText: Record<Role, ParseKeys<"app">> = { owner: "Owner", admin: "Admin", agent: "Agent", viewer: "Viewer" };
 
 /** A workspace role in its tone. */
 export function RolePill({ role, className }: { role: Role; className?: string }) {
+  const { t: appText } = useTranslation("app");
   return (
     <Badge tone={roleTone[role]} className={className}>
-      {roleText[role]}
+      {appText(roleText[role])}
     </Badge>
   );
 }
-export { roleTone, roleText };
+export { roleTone };
 
 export type ItemState = "active" | "failing" | "paused" | "pending" | "revoked" | "expired" | "disabled";
 const stateTone: Record<ItemState, Tone> = {

@@ -1,4 +1,4 @@
-import { diagnosticText } from "@/i18n/text";
+import type { ParseKeys } from "i18next";
 import { useTranslation } from "react-i18next";
 import { OTPInput, REGEXP_ONLY_DIGITS } from "input-otp";
 import { useEffect, useRef, useState } from "react";
@@ -54,7 +54,7 @@ export function MfaStep({ mfaToken, onDone, onBack }: { mfaToken: string; onDone
   const [mode, setMode] = useState<"totp" | "recovery">("totp");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ParseKeys<"interface"> | null>(null);
   const recoveryRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -107,7 +107,7 @@ export function MfaStep({ mfaToken, onDone, onBack }: { mfaToken: string; onDone
             spellCheck={false}
           />
         )}
-        {error && <Notice>{diagnosticText(error)}</Notice>}
+        {error && <Notice>{uiText(error)}</Notice>}
         <Button type="submit" variant="primary" size="lg" className="w-full" loading={busy} disabled={mode === "totp" && code.length !== 6}>
           {uiText("Verify")}
         </Button>

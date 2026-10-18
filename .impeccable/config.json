@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "web/src/components/templates/TemplateEditor.tsx"
+        ],
+        "createdAt": "2026-10-18T21:08:35.249Z",
+        "reason": "Agent review: the matched <img text is a regular expression in needsHtml that detects HTML needing source mode; it does not render an image."
+      }
+    ]
+  }
+}

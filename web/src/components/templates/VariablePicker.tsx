@@ -1,11 +1,9 @@
 import type { ParseKeys } from "i18next";
-import { templateMetadataText, templateText } from "@/i18n/text";
+import { appText, templateText } from "@/i18n/text";
 import { useTranslation } from "react-i18next";
-import { appText } from "@/i18n/text";
 // A searchable list of the template variables, grouped, with what each reads.
 // Used as the "Variables" button of template editors and as the reference tab.
 
-import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Braces, Check, Copy, GitBranch, Wand2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Popover } from "@/components/ui/popover";
@@ -15,8 +13,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { copyText } from "@/components/ui/copy-button";
 import type { TemplateKind, TemplateVariable } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
-import { q } from "@/lib/queries";
-import { GROUP_LABELS, GROUP_ORDER, tagFor, useCatalog } from "./catalog";
+import { GROUP_LABEL_KEYS, GROUP_ORDER, tagFor, useCatalog } from "./catalog";
 import { matchVars } from "./extension";
 import { matchSnippets } from "./snippets";
 
@@ -29,7 +26,8 @@ function rowsOf(variables: TemplateVariable[], slots: { key: string; label: stri
   ];
 }
 
-const groupLabel = (g: string) => (g === "slot" ? templateText("Places") : (GROUP_LABELS[g as keyof typeof GROUP_LABELS] ?? g));
+const groupLabel = (g: string) => g === "slot" ? templateText("Places")
+  : Object.hasOwn(GROUP_LABEL_KEYS, g) ? templateText(GROUP_LABEL_KEYS[g as keyof typeof GROUP_LABEL_KEYS]) : g;
 
 /** The grouped list itself. */
 export function VariableList({
@@ -156,19 +154,19 @@ const FILTER_GROUP_LABELS: Record<string, ParseKeys<"templatesUi">> = { text: "T
 /** The helpers (filters), each inserting its example. */
 function HelperList({ onInsert }: { onInsert: (code: string, select?: string) => void }) {
   useTranslation(["app", "templatesUi"]);
-  const { data } = useQuery(q.templateVariables());
+  const { filters } = useCatalog();
   const [query, setQuery] = useState("");
   const ql = query.toLowerCase().trim();
-  const filters = (data?.filters ?? []).map((f) => ({ ...f, description: templateMetadataText(f.description) })).filter((f) => !ql || f.name.includes(ql) || f.description.toLowerCase().includes(ql));
+  const matches = filters.filter((f) => !ql || f.name.includes(ql) || f.description.toLowerCase().includes(ql));
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="p-2 pb-1.5">
         <SearchInput value={query} onChange={setQuery} placeholder={appText("Search helpers")} autoFocus />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-1">
-        {filters.length === 0 && <div className="px-2 py-3 text-xs text-fg-3">{appText("Nothing matches “")}{query}”</div>}
+        {matches.length === 0 && <div className="px-2 py-3 text-xs text-fg-3">{appText("Nothing matches “")}{query}”</div>}
         {(["text", "list", "number", "date"] as const).map((g) => {
-          const rows = filters.filter((f) => f.group === g);
+          const rows = matches.filter((f) => f.group === g);
           if (!rows.length) return null;
           return (
             <div key={g} className="pb-1">

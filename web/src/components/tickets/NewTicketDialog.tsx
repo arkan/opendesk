@@ -1,3 +1,5 @@
+import { appText } from "@/i18n/text";
+import type { ParseKeys } from "i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
@@ -19,7 +21,7 @@ import { patchTicketEverywhere } from "@/lib/ticketCache";
 import { useSession } from "@/lib/session";
 import { useConfirm } from "@/components/ui/confirm";
 import { shell } from "@/app/shellStore";
-import { PriorityIcon, priorityLabel, priorityOrder } from "./bits";
+import { PriorityIcon, priorityLabelKey, priorityOrder } from "./bits";
 import { ChevronDown, Lock, Users } from "lucide-react";
 import { addressLabel, sortTeams, TeamDot, useTeamsCtx } from "./teams";
 
@@ -45,7 +47,7 @@ export default function NewTicketDialog() {
   const [assignee, setAssignee] = useState<string | null>(me);
   const [brandId, setBrandId] = useState<string | undefined>();
   const [team, setTeam] = useState<string | null | undefined>();
-  const [error, setError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<ParseKeys<"inbox"> | null>(null);
   const editor = useRef<RichEditorHandle>(null);
 
   // The brand's addresses the caller may send from; the default brand first.
@@ -101,17 +103,19 @@ export default function NewTicketDialog() {
       close();
       void navigate({ to: "/inbox/$folder/{-$ticketId}", params: { folder: t.assignee?.id === me ? "mine" : "open", ticketId: t.id } });
     },
-    onError: (e) => setError(errorMessage(e)),
   });
 
   const submit = () => {
-    setError(null);
-    if (!to) return setError(tr("newTicket.needTo"));
-    if (!subject.trim()) return setError(tr("newTicket.needSubject"));
-    if (!body) return setError(tr("newTicket.needBody"));
-    if (noSender) return setError(tr("newTicket.cannotSend"));
+    create.reset();
+    setValidationError(null);
+    if (!to) return setValidationError("newTicket.needTo");
+    if (!subject.trim()) return setValidationError("newTicket.needSubject");
+    if (!body) return setValidationError("newTicket.needBody");
+    if (noSender) return setValidationError("newTicket.cannotSend");
     create.mutate();
   };
+
+  const error = validationError ? tr(validationError) : create.error ? errorMessage(create.error) : null;
 
   const toItems = [
     ...(contacts.data?.data ?? []).map((c) => ({
@@ -220,13 +224,13 @@ export default function NewTicketDialog() {
         </div>
         <div className="flex items-center gap-2">
           <Picker
-            items={priorityOrder.map((p) => ({ value: p, label: priorityLabel[p], icon: <PriorityIcon priority={p} /> }))}
+            items={priorityOrder.map((p) => ({ value: p, label: appText(priorityLabelKey[p]), icon: <PriorityIcon priority={p} /> }))}
             value={priority}
             onSelect={(v) => setPriority(v as Priority)}
             placeholder={tr("props.setPriority")}
             trigger={
               <Button size="sm" icon={<PriorityIcon priority={priority} />} iconRight={<ChevronDown className="size-3 text-fg-4" />}>
-                {priorityLabel[priority]}
+                {appText(priorityLabelKey[priority])}
               </Button>
             }
           />

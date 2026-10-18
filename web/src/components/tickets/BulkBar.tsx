@@ -15,7 +15,7 @@ import { toast } from "@/components/ui/toast";
 import type { Priority, Severity, Ticket, TicketStatus } from "@/lib/api/types";
 import { cachedTicket } from "@/lib/ticketCache";
 import { q } from "@/lib/queries";
-import { PriorityIcon, priorityLabel, priorityOrder, SeverityChip, severityHint, severityLabel, severityOrder, StatusIcon, statusLabel, statusOrder } from "./bits";
+import { PriorityIcon, priorityLabelKey, priorityOrder, SeverityChip, severityHintKey, severityLabelKey, severityOrder, StatusIcon, statusLabelKey, statusOrder } from "./bits";
 import { useLabelChoices } from "./detail/LabelPicker";
 import { useDisplay } from "./fields";
 import { useBulkUpdate } from "./useTicketActions";
@@ -105,7 +105,7 @@ export function BulkBar({ ids, onClear, spamView, compact }: { ids: string[]; on
             placeholder={t("bulk.setStatus")}
             value={null}
             items={statusOrder.map((s) => ({ value: s, label: display.status(s), icon: <StatusIcon status={s} /> }))}
-            onSelect={(v) => run({ ids, patch: { status: v as TicketStatus } }, t("bulk.marked", { count: n, status: statusLabel[v as TicketStatus].toLowerCase() }))}
+            onSelect={(v) => run({ ids, patch: { status: v as TicketStatus } }, t("bulk.marked", { count: n, status: appText(statusLabelKey[v as TicketStatus]).toLowerCase() }))}
             trigger={
               <Act compact={compact} icon={<CircleDot className="size-3.5" />} label={t("bulk.status")} />
             }
@@ -115,7 +115,7 @@ export function BulkBar({ ids, onClear, spamView, compact }: { ids: string[]; on
             placeholder={t("bulk.setPriority")}
             value={null}
             items={priorityOrder.map((p) => ({ value: p, label: display.priority(p), icon: <PriorityIcon priority={p} /> }))}
-            onSelect={(v) => run({ ids, patch: { priority: v as Priority } }, t("bulk.prioritised", { count: n, priority: priorityLabel[v as Priority].toLowerCase() }))}
+            onSelect={(v) => run({ ids, patch: { priority: v as Priority } }, t("bulk.prioritised", { count: n, priority: appText(priorityLabelKey[v as Priority]).toLowerCase() }))}
             trigger={
               <Act compact={compact} icon={<Signal className="size-3.5" />} label={t("bulk.priority")} />
             }
@@ -125,13 +125,13 @@ export function BulkBar({ ids, onClear, spamView, compact }: { ids: string[]; on
             placeholder={t("bulk.setSeverity")}
             value={null}
             items={[
-              ...severityOrder.map((v) => ({ value: v, label: severityLabel[v], hint: severityHint[v], icon: <SeverityChip severity={v} /> })),
+              ...severityOrder.map((v) => ({ value: v, label: appText(severityLabelKey[v]), hint: appText(severityHintKey[v]), icon: <SeverityChip severity={v} /> })),
               { value: "__none", label: t("bulk.noSeverity"), icon: <span className="h-[16px] w-[22px] rounded-[4px] border border-dashed border-line-strong" /> },
             ]}
             onSelect={(v) =>
               v === "__none"
                 ? run({ ids, patch: { severity: null } }, t("bulk.severityCleared", { count: n }))
-                : run({ ids, patch: { severity: v as Severity } }, t("bulk.severitySet", { count: n, severity: severityLabel[v as Severity] }))
+                : run({ ids, patch: { severity: v as Severity } }, t("bulk.severitySet", { count: n, severity: appText(severityLabelKey[v as Severity]) }))
             }
             trigger={
               <Act compact={compact} icon={<Siren className="size-3.5" />} label={t("bulk.severity")} />

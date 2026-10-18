@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { motion, useReducedMotion } from "motion/react";
 import { AlarmClock, Check, UserPlus } from "lucide-react";
 import { forwardRef, memo, type ReactNode } from "react";
@@ -9,7 +10,7 @@ import { ease } from "@/lib/motion";
 import { Avatar, AvatarStack } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip } from "@/components/ui/tooltip";
-import { ChannelIcon, channelLabel, PriorityIcon, SeverityChip, severityLabel, SlaPill, slaState, StatusIcon } from "./bits";
+import { ChannelIcon, channelLabelKey, PriorityIcon, SeverityChip, severityLabelKey, SlaPill, slaState, StatusIcon } from "./bits";
 import { useDisplay } from "./fields";
 import { SetByOllie, useOllieNote } from "./ollie";
 import { aiDecisions } from "@/lib/decisions";
@@ -164,7 +165,7 @@ const Row = forwardRef<HTMLDivElement, RowProps>(function TicketRow(
 
   // Severity is optional: a compact chip before the subject, only when set.
   const severity = t.severity && (
-    <Tooltip content={aiSeverity ? `${severityLabel[t.severity]} · ${note(t, "severity")}` : severityLabel[t.severity]}>
+    <Tooltip content={aiSeverity ? `${appText(severityLabelKey[t.severity])} · ${note(t, "severity")}` : appText(severityLabelKey[t.severity])}>
       <span className="flex shrink-0">
         <SeverityChip severity={t.severity} />
       </span>
@@ -182,7 +183,7 @@ const Row = forwardRef<HTMLDivElement, RowProps>(function TicketRow(
   const channel = t.channel === "chat" ? (
     <LiveChatBadge urgent={urgent} handedOff={wait?.handedOff} bot={bot} />
   ) : t.channel !== "email" && (
-    <Tooltip content={channelLabel[t.channel]}>
+    <Tooltip content={appText(channelLabelKey[t.channel])}>
       <span className="flex shrink-0">
         <ChannelIcon channel={t.channel} plain className="size-3" />
       </span>

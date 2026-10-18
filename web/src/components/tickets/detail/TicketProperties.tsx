@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight, ChevronDown, Clock, CornerDownRight, Hash, Import as ImportIcon, Inbox, Lock, Mail, Route, Star, Users } from "lucide-react";
 import { forwardRef, useEffect, useState, type ReactNode } from "react";
@@ -15,7 +16,7 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ContactCard } from "@/components/contacts/ContactCard";
 import { OlliePanel } from "@/components/ai/ticket/OlliePanel";
-import { ChannelIcon, channelLabel, PriorityIcon, priorityOrder, SeverityChip, severityHint, severityLabel, severityOrder, slaState, StatusIcon, statusOrder } from "../bits";
+import { ChannelIcon, channelLabelKey, PriorityIcon, priorityOrder, SeverityChip, severityHintKey, severityLabelKey, severityOrder, slaState, StatusIcon, statusOrder } from "../bits";
 import { aiDecisions } from "@/lib/decisions";
 import { LabelPicker } from "./LabelPicker";
 import { SetByOllie, useAISet, useOllieNote } from "../ollie";
@@ -215,14 +216,14 @@ export function TicketProperties({ t, picker, onPicker }: { t: Ticket; picker: P
             value={t.severity ?? "__none"}
             placeholder={tr("props.setSeverity")}
             items={[
-              ...severityOrder.map((s) => ({ value: s, label: severityLabel[s], hint: severityHint[s], icon: <SeverityChip severity={s} /> })),
+              ...severityOrder.map((s) => ({ value: s, label: appText(severityLabelKey[s]), hint: appText(severityHintKey[s]), icon: <SeverityChip severity={s} /> })),
               { value: "__none", label: tr("props.noSeverity"), icon: <span className="h-[16px] w-[22px] rounded-[4px] border border-dashed border-line-strong" /> },
             ]}
             onSelect={(v) => patch({ severity: v === "__none" ? null : (v as Severity) })}
             trigger={
               <PropButton disabled={!canEdit} placeholder={!t.severity}>
                 {t.severity ? <SeverityChip severity={t.severity} /> : <span className="h-[16px] w-[22px] shrink-0 rounded-[4px] border border-dashed border-line-strong" />}
-                {t.severity ? severityLabel[t.severity] : tr("props.noSeverity")}
+                {t.severity ? appText(severityLabelKey[t.severity]) : tr("props.noSeverity")}
                 {aiSet.severity && <SetByOllie note={decided?.severity?.applied ? note(t, "severity") : undefined} />}
               </PropButton>
             }
@@ -392,7 +393,7 @@ export function TicketProperties({ t, picker, onPicker }: { t: Ticket; picker: P
         <div className="flex items-center gap-2 text-fg-3">
           <ChannelIcon channel={t.channel} />
           <span className="flex-1">{tr("props.channel")}</span>
-          <span className="text-fg-2">{channelLabel[t.channel]}</span>
+          <span className="text-fg-2">{appText(channelLabelKey[t.channel])}</span>
         </div>
         {receivedAt ? (
           <div className="flex items-center gap-2 text-fg-3">

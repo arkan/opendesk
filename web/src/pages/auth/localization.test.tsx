@@ -8,8 +8,10 @@ import { ApiError } from "@/lib/api/client";
 import { api } from "@/lib/api/endpoints";
 import { qk } from "@/lib/queries";
 import Callback from "./Callback";
+import Forgot from "./Forgot";
 import Login from "./Login";
 import Register from "./Register";
+import Reset from "./Reset";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -40,6 +42,8 @@ async function renderPage(path: string) {
   const auth = createRoute({ getParentRoute: () => rootRoute, id: "auth", component: Outlet });
   const routeTree = rootRoute.addChildren([auth.addChildren([
     createRoute({ getParentRoute: () => auth, path: "login", component: Login }),
+    createRoute({ getParentRoute: () => auth, path: "forgot", component: Forgot }),
+    createRoute({ getParentRoute: () => auth, path: "reset", component: Reset }),
     createRoute({ getParentRoute: () => auth, path: "register", component: Register }),
     createRoute({ getParentRoute: () => auth, path: "auth/callback", component: Callback }),
   ])]);
@@ -81,6 +85,13 @@ it("updates an incomplete callback error without remounting the page", async () 
   expect(alert()).toBe("This sign-in link is incomplete. Start again.");
 });
 
+it.each(["constructor", "toString", "__proto__", "unknown_provider_error"])("handles unknown OAuth code %s as a translatable error", async (code) => {
+  await renderPage(`/auth/callback?error=${code}`);
+  expect(alert()).toBe("La connexion a échoué. Réessayez.");
+  await act(async () => { await setAgentLocale("en"); });
+  expect(alert()).toBe("Sign-in failed. Try again.");
+});
+
 it("updates a registration error and its login link without resubmitting", async () => {
   vi.spyOn(api.auth, "register").mockRejectedValue(new ApiError({ status: 409, code: "email_taken" }));
   await renderPage("/register");
@@ -90,4 +101,32 @@ it("updates a registration error and its login link without resubmitting", async
   expect(alert()).toContain("An account already uses this email.");
   expect(container.querySelector('[role="alert"] a')?.textContent?.trim()).toBe("Log in instead");
   expect(api.auth.register).toHaveBeenCalledOnce();
+});
+
+it.each([undefined, new ApiError({ status: 404, code: "not_found" })])("keeps password recovery private across language changes (%s)", async (error) => {
+  const forgot = vi.spyOn(api.auth, "forgot");
+  if (error) forgot.mockRejectedValue(error);
+  else forgot.mockResolvedValue(undefined);
+  await renderPage("/forgot");
+  await submit({ email: "agent@example.com" });
+  expect(alert()).toBeUndefined();
+  expect(container.querySelector("h1")?.textContent).toBe("Consultez vos e-mails");
+  expect(container.textContent).toContain("agent@example.com");
+
+  await act(async () => { await setAgentLocale("en"); });
+  expect(container.querySelector("h1")?.textContent).toBe("Check your email");
+  expect(alert()).toBeUndefined();
+  expect(forgot).toHaveBeenCalledExactlyOnceWith("agent@example.com", undefined);
+});
+
+it.each(["invalid_token", "not_found"])("updates the reset-link error for %s without losing the entered password", async (code) => {
+  vi.spyOn(api.auth, "reset").mockRejectedValue(new ApiError({ status: 400, code }));
+  await renderPage("/reset?token=expired-link");
+  await submit({ password: "example-password", confirm: "example-password" });
+  expect(alert()).toBe("Ce lien de réinitialisation a expiré ou a déjà été utilisé. Demandez-en un nouveau.");
+
+  await act(async () => { await setAgentLocale("en"); });
+  expect(alert()).toBe("This reset link has expired or was already used. Request a new one.");
+  expect(container.querySelector<HTMLInputElement>('input[name="password"]')?.value).toBe("example-password");
+  expect(api.auth.reset).toHaveBeenCalledExactlyOnceWith("expired-link", "example-password");
 });

@@ -1,20 +1,20 @@
-import { appText } from "@/i18n/text";
+import type { ParseKeys } from "i18next";
 import type { TicketListQuery } from "./api/endpoints";
 import type { FieldFilter, TicketCounts } from "./api/types";
 
 export type FolderId = "unassigned" | "mine" | "open" | "pending" | "solved" | "spam";
 
-export type Folder = { id: FolderId; label: string; query: TicketListQuery; count: (c: TicketCounts) => number | null };
+export type Folder = { id: FolderId; labelKey: ParseKeys<"app">; query: TicketListQuery; count: (c: TicketCounts) => number | null };
 
 const active = ["open", "pending", "on_hold"] as TicketListQuery["status"];
 
 export const folders: Folder[] = [
-  { id: "unassigned", get label() { return appText("Unassigned"); }, query: { status: active, assignee: "none" }, count: (c) => c.unassigned },
-  { id: "mine", get label() { return appText("Mine"); }, query: { status: active, assignee: "me" }, count: (c) => c.mine },
-  { id: "open", get label() { return appText("All open"); }, query: { status: ["open"] }, count: (c) => c.open },
-  { id: "pending", get label() { return appText("Pending"); }, query: { status: ["pending", "on_hold"] }, count: (c) => c.pending + c.on_hold },
-  { id: "solved", get label() { return appText("Solved"); }, query: { status: ["solved", "closed"] }, count: () => null },
-  { id: "spam", get label() { return appText("Spam"); }, query: { spam: true }, count: (c) => c.spam },
+  { id: "unassigned", labelKey: "Unassigned", query: { status: active, assignee: "none" }, count: (c) => c.unassigned },
+  { id: "mine", labelKey: "Mine", query: { status: active, assignee: "me" }, count: (c) => c.mine },
+  { id: "open", labelKey: "All open", query: { status: ["open"] }, count: (c) => c.open },
+  { id: "pending", labelKey: "Pending", query: { status: ["pending", "on_hold"] }, count: (c) => c.pending + c.on_hold },
+  { id: "solved", labelKey: "Solved", query: { status: ["solved", "closed"] }, count: () => null },
+  { id: "spam", labelKey: "Spam", query: { spam: true }, count: (c) => c.spam },
 ];
 
 export function folderById(id: string): Folder | undefined {

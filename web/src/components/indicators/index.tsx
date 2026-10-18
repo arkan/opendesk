@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import type { ParseKeys } from "i18next";
 import { appText } from "@/i18n/text";
 // One family of indicators for status, priority, SLA, sentiment and channel.
 // All glyphs are drawn on the same 16px grid with a 1.5 stroke, sized 14px by
@@ -12,27 +13,27 @@ import { minutes } from "@/lib/format";
 import { channelTone, isTone, priorityTone, sentimentTone, severityTone, statusTone, tone, toneVar, type Tone } from "@/lib/tones";
 import { Tooltip } from "@/components/ui/tooltip";
 
-export const statusLabel: Record<TicketStatus, string> = {
-  get open() { return appText("Open"); },
-  get pending() { return appText("Pending"); },
-  get on_hold() { return appText("On hold"); },
-  get solved() { return appText("Solved"); },
-  get closed() { return appText("Closed"); },
+export const statusLabelKey: Record<TicketStatus, ParseKeys<"app">> = {
+  open: "Open",
+  pending: "Pending",
+  on_hold: "On hold",
+  solved: "Solved",
+  closed: "Closed",
 };
 export const statusOrder: TicketStatus[] = ["open", "pending", "on_hold", "solved", "closed"];
-export const priorityLabel: Record<Priority, string> = { get urgent() { return appText("Urgent"); }, get high() { return appText("High"); }, get normal() { return appText("Normal"); }, get low() { return appText("Low"); } };
+export const priorityLabelKey: Record<Priority, ParseKeys<"app">> = { urgent: "Urgent", high: "High", normal: "Normal", low: "Low" };
 export const priorityOrder: Priority[] = ["urgent", "high", "normal", "low"];
-export const severityLabel: Record<Severity, string> = { get sev1() { return appText("Sev 1"); }, get sev2() { return appText("Sev 2"); }, get sev3() { return appText("Sev 3"); }, get sev4() { return appText("Sev 4"); } };
+export const severityLabelKey: Record<Severity, ParseKeys<"app">> = { sev1: "Sev 1", sev2: "Sev 2", sev3: "Sev 3", sev4: "Sev 4" };
 /** What each level means, for pickers and tooltips. */
-export const severityHint: Record<Severity, string> = {
-  get sev1() { return appText("Critical outage"); },
-  get sev2() { return appText("Major impact"); },
-  get sev3() { return appText("Minor impact"); },
-  get sev4() { return appText("Low impact"); },
+export const severityHintKey: Record<Severity, ParseKeys<"app">> = {
+  sev1: "Critical outage",
+  sev2: "Major impact",
+  sev3: "Minor impact",
+  sev4: "Low impact",
 };
 export const severityOrder: Severity[] = ["sev1", "sev2", "sev3", "sev4"];
-export const channelLabel: Record<Channel, string> = { get email() { return appText("Email"); }, get chat() { return appText("Chat"); }, api: "API", get portal() { return appText("Portal"); } };
-export const sentimentLabel: Record<Sentiment, string> = { get positive() { return appText("Positive"); }, get neutral() { return appText("Neutral"); }, get negative() { return appText("Negative"); }, get frustrated() { return appText("Frustrated"); } };
+export const channelLabelKey: Record<Channel, ParseKeys<"app">> = { email: "Email", chat: "Chat", api: "API", portal: "Portal" };
+export const sentimentLabelKey: Record<Sentiment, ParseKeys<"app">> = { positive: "Positive", neutral: "Neutral", negative: "Negative", frustrated: "Frustrated" };
 
 const SW = 1.5;
 
@@ -55,9 +56,10 @@ function Glyph({ k, label, className, children }: { k: string; label: string; cl
 // Status: rings that fill as the ticket moves along, in the status tone.
 
 export function StatusIcon({ status, className }: { status: TicketStatus; className?: string }) {
+  const { t: appText } = useTranslation("app");
   const c = toneVar(statusTone[status]);
   return (
-    <Glyph k={status} label={statusLabel[status]} className={className}>
+    <Glyph k={status} label={appText(statusLabelKey[status])} className={className}>
       {status === "open" && (
         <>
           <circle cx="8" cy="8" r="5.75" stroke={c} strokeWidth={SW} />
@@ -100,10 +102,11 @@ export function SpamIcon({ className }: { className?: string }) {
 
 /** `label` and `hue` carry the workspace's display overrides (status_labels). */
 export function StatusPill({ status, className, label, hue }: { status: TicketStatus; className?: string; label?: string; hue?: string | null }) {
+  const { t: appText } = useTranslation("app");
   return (
     <span className={cn("inline-flex h-[19px] shrink-0 items-center gap-1 rounded-sm pl-1 pr-1.5 text-[10.5px] font-medium", tone[isTone(hue) ? hue : statusTone[status]].chip, className)}>
       <StatusIcon status={status} className="size-3" />
-      {label || statusLabel[status]}
+      {label || appText(statusLabelKey[status])}
     </span>
   );
 }
@@ -122,7 +125,7 @@ export function PriorityIcon({ priority, className, muted }: { priority: Priorit
     );
   if (priority === "urgent")
     return (
-      <Glyph k={priority} label={priorityLabel.urgent} className={className}>
+      <Glyph k={priority} label={appText(priorityLabelKey.urgent)} className={className}>
         <rect x="1.5" y="1.5" width="13" height="13" rx="3" fill={toneVar("red")} />
         <path d="M8 4.6v4.1" stroke="white" strokeWidth="1.75" strokeLinecap="round" />
         <circle cx="8" cy="11.1" r="1" fill="white" />
@@ -131,7 +134,7 @@ export function PriorityIcon({ priority, className, muted }: { priority: Priorit
   const level = { low: 1, normal: 2, high: 3 }[priority];
   const on = muted ? "var(--fg-3)" : toneVar(priorityTone[priority]);
   return (
-    <Glyph k={priority} label={priorityLabel[priority]} className={className}>
+    <Glyph k={priority} label={appText(priorityLabelKey[priority])} className={className}>
       {[0, 1, 2].map((i) => (
         <rect key={i} x={2.25 + i * 4.25} y={10 - i * 3.5} width="3" height={4 + i * 3.5} rx="0.9" fill={i < level ? on : "var(--line-strong)"} />
       ))}
@@ -141,11 +144,12 @@ export function PriorityIcon({ priority, className, muted }: { priority: Priorit
 
 /** `label` and `hue` carry the workspace's display overrides (priority_labels). */
 export function PriorityPill({ priority, className, label, hue: override }: { priority: Priority; className?: string; label?: string; hue?: string | null }) {
+  const { t: appText } = useTranslation("app");
   const hue: Tone = isTone(override) ? override : priorityTone[priority];
   return (
     <span className={cn("inline-flex h-[19px] shrink-0 items-center gap-1 rounded-sm pl-1 pr-1.5 text-[10.5px] font-medium", tone[hue].chip, className)}>
       <PriorityIcon priority={priority} className="size-3" />
-      {label || priorityLabel[priority]}
+      {label || appText(priorityLabelKey[priority])}
     </span>
   );
 }
@@ -154,13 +158,14 @@ export function PriorityPill({ priority, className, label, hue: override }: { pr
 // beside the priority glyph and stays out of the way when a ticket has none.
 
 export function SeverityChip({ severity, className, title }: { severity: Severity | null | undefined; className?: string; title?: string }) {
+  const { t: appText } = useTranslation("app");
   if (!severity) return null;
   const hue: Tone = severityTone[severity];
   return (
     <span
       key={severity}
       role="img"
-      aria-label={title ?? severityLabel[severity]}
+      aria-label={title ?? appText(severityLabelKey[severity])}
       className={cn(
         "mono inline-flex h-[16px] min-w-[22px] shrink-0 items-center justify-center rounded-[4px] px-1 text-[10px] font-semibold leading-none tabular-nums animate-indicator-in motion-reduce:animate-none",
         tone[hue].chip,
@@ -174,10 +179,11 @@ export function SeverityChip({ severity, className, title }: { severity: Severit
 
 /** The chip with its name, for pickers and the ticket header. */
 export function SeverityPill({ severity, className }: { severity: Severity; className?: string }) {
+  const { t: appText } = useTranslation("app");
   return (
     <span className={cn("inline-flex shrink-0 items-center gap-1.5 text-[12px]", className)}>
       <SeverityChip severity={severity} />
-      {severityLabel[severity]}
+      {appText(severityLabelKey[severity])}
     </span>
   );
 }
@@ -236,7 +242,8 @@ export function SlaPill({ ticket, className }: { ticket: SlaInput; className?: s
 // Sentiment: a small face, coloured by mood.
 
 export function SentimentIcon({ sentiment, className }: { sentiment: Sentiment | string; className?: string }) {
-  const s = (sentiment in sentimentLabel ? sentiment : "neutral") as Sentiment;
+  const { t: appText } = useTranslation("app");
+  const s = (sentiment in sentimentLabelKey ? sentiment : "neutral") as Sentiment;
   const hue: Tone = s === "frustrated" ? "red" : s === "negative" ? "amber" : sentimentTone[s as "positive" | "neutral"];
   const c = toneVar(hue);
   const mouth = {
@@ -246,7 +253,7 @@ export function SentimentIcon({ sentiment, className }: { sentiment: Sentiment |
     frustrated: "M5.6 11c1.3-1.6 3.5-1.6 4.8 0",
   }[s];
   return (
-    <Glyph k={s} label={sentimentLabel[s]} className={className}>
+    <Glyph k={s} label={appText(sentimentLabelKey[s])} className={className}>
       <circle cx="8" cy="8" r="6.25" stroke={c} strokeWidth={SW} />
       {s === "frustrated" ? (
         <path d="M5.2 6l1.6.7M10.8 6l-1.6.7" stroke={c} strokeWidth={SW} strokeLinecap="round" />
@@ -264,9 +271,10 @@ export function SentimentIcon({ sentiment, className }: { sentiment: Sentiment |
 // Channel: envelope, bubble, braces, globe; drawn to match the family.
 
 export function ChannelIcon({ channel, className, plain }: { channel: Channel; className?: string; plain?: boolean }) {
+  const { t: appText } = useTranslation("app");
   const c = plain ? "var(--fg-3)" : toneVar(channelTone[channel]);
   return (
-    <Glyph k={channel} label={channelLabel[channel]} className={className}>
+    <Glyph k={channel} label={appText(channelLabelKey[channel])} className={className}>
       {channel === "email" && (
         <>
           <rect x="1.75" y="3.25" width="12.5" height="9.5" rx="2" stroke={c} strokeWidth={SW} />

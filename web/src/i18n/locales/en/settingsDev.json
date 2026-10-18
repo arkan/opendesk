@@ -170,6 +170,8 @@
     "save": "Save webhook",
     "create": "Create webhook",
     "url": "Endpoint URL",
+    "httpsRequired": "Use an https:// URL.",
+    "invalidUrl": "Enter a full URL, like https://example.com/hooks/opendesk.",
     "descriptionLabel": "Description",
     "descriptionPlaceholder": "Sync tickets to the data warehouse",
     "events": "Events",

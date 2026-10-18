@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { intlLocale } from "@/i18n";
 import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
@@ -21,7 +22,7 @@ import { AgentTable } from "@/components/reports/AgentTable";
 import { AnimatedNumber } from "@/components/motion";
 import { Bar, BreakdownBars, ShareBar, type BarRow } from "@/components/reports/Bars";
 import { BrandFilter, GroupTable, NO_TEAM, TeamFilter, brandRows, teamRows, useReportScope, type GroupRow } from "@/components/reports/TeamBrand";
-import { PriorityIcon, StatusIcon, priorityLabel, priorityOrder, statusLabel } from "@/components/tickets/bits";
+import { PriorityIcon, StatusIcon, priorityLabelKey, priorityOrder, statusLabelKey } from "@/components/tickets/bits";
 import type { ReportsOverview, ReportsQuery, ReportsRange, Ticket } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { minutes, shortDate } from "@/lib/format";
@@ -351,8 +352,8 @@ function BacklogCard({ filter, openNow }: { filter: ReportsQuery; openNow: numbe
   const rows: BarRow[] = c
     ? (["open", "pending", "on_hold"] as const).map((s) => ({
         id: s,
-        label: statusLabel[s],
-        text: statusLabel[s],
+        label: appText(statusLabelKey[s]),
+        text: appText(statusLabelKey[s]),
         value: c[s],
         tone: statusTone[s],
         icon: <StatusIcon status={s} />,
@@ -421,8 +422,8 @@ function OpenWorkCards({ filter }: { filter: ReportsQuery }) {
 
   const priorities: BarRow[] = priorityOrder.map((pr) => ({
     id: pr,
-    label: priorityLabel[pr],
-    text: priorityLabel[pr],
+    label: appText(priorityLabelKey[pr]),
+    text: appText(priorityLabelKey[pr]),
     value: tickets.filter((x) => x.priority === pr).length,
     tone: priorityTone[pr],
     icon: <PriorityIcon priority={pr} />,

@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Ollie in the ticket side panel: one light section where the assistant sums up
 // the conversation, proposes properties (its own below-threshold decisions,
 // contracts/ai.md "Decisions", and on-demand triage) and answers questions about
@@ -27,7 +28,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { OllieMark } from "@/components/assistant/OllieMark";
 import { useAssistantName } from "@/components/assistant/name";
 import { ollie } from "@/components/assistant/store";
-import { PriorityPill, SeverityChip, severityLabel } from "@/components/tickets/bits";
+import { PriorityPill, SeverityChip, severityLabelKey } from "@/components/tickets/bits";
 import { useDisplay } from "@/components/tickets/fields";
 import { useDismissSuggestion, useUpdateTicket } from "@/components/tickets/useTicketActions";
 import { AiTooltip, useCostLabel } from "../bits";
@@ -233,10 +234,11 @@ type Row = {
 type AskedKey = "priority" | "severity" | "team" | "tags" | "new_tags";
 
 function SeverityValue({ s }: { s: Severity }) {
+  const { t: appText } = useTranslation("app");
   return (
     <span className="flex items-center gap-1.5">
       <SeverityChip severity={s} />
-      {severityLabel[s]}
+      {appText(severityLabelKey[s])}
     </span>
   );
 }
@@ -298,7 +300,7 @@ function useSuggestions(ticket: Ticket, run: Run, say: (s: string) => void) {
     if (result.priority !== ticket.priority)
       asked.push(askedRow("priority", t("suggest.fields.priority"), <PriorityPill priority={result.priority} label={display.priority(result.priority)} hue={display.priorityTone(result.priority)} />, display.priority(result.priority), { priority: result.priority }));
     if (result.severity && result.severity !== ticket.severity)
-      asked.push(askedRow("severity", t("suggest.fields.severity"), <SeverityValue s={result.severity} />, severityLabel[result.severity], { severity: result.severity }));
+      asked.push(askedRow("severity", t("suggest.fields.severity"), <SeverityValue s={result.severity} />, appText(severityLabelKey[result.severity]), { severity: result.severity }));
     if (result.team_id && result.team_id !== ticket.team_id)
       asked.push(askedRow("team", t("suggest.fields.team"), <span className="truncate">{teamName(result.team_id)}</span>, teamName(result.team_id), { team_id: result.team_id }));
     if (addTags.length) asked.push(askedRow("tags", t("suggest.fields.labels"), tagList(addTags), addTags.join(", "), { add_tags: addTags }));
@@ -332,7 +334,7 @@ function useSuggestions(ticket: Ticket, run: Run, say: (s: string) => void) {
           value = <PriorityPill priority={s.value as Priority} label={text} hue={display.priorityTone(s.value as Priority)} />;
           break;
         case "severity":
-          text = severityLabel[s.value as Severity];
+          text = appText(severityLabelKey[s.value as Severity]);
           value = <SeverityValue s={s.value as Severity} />;
           break;
         case "team":

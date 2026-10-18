@@ -16,7 +16,7 @@ import { cn } from "@/lib/cn";
 import { useHotkeys } from "@/lib/hotkeys";
 import { AnimatedNumber } from "@/components/motion";
 import { TagSwatch } from "./TagSwatch";
-import { ChannelIcon, PriorityIcon, SeverityChip, channelLabel, priorityLabel, priorityOrder, severityLabel, severityOrder } from "./bits";
+import { ChannelIcon, PriorityIcon, SeverityChip, channelLabelKey, priorityLabelKey, priorityOrder, severityLabelKey, severityOrder } from "./bits";
 import { addressLabel, BrandChip, sortTeams, TeamDot, useTeamsCtx } from "./teams";
 
 /** Address picker values for an alias: the address a ticket was written to. */
@@ -255,14 +255,14 @@ export function ListToolbar({
             <MenuSub label={t("filter.priority")}>
               {priorityOrder.map((p) => (
                 <MenuCheckItem key={p} checked={priorities.includes(p)} onSelect={() => togglePriority(p)} icon={<PriorityIcon priority={p} />}>
-                  {priorityLabel[p]}
+                  {appText(priorityLabelKey[p])}
                 </MenuCheckItem>
               ))}
             </MenuSub>
             <MenuSub label={t("filter.severity")}>
               {severityOrder.map((v) => (
                 <MenuCheckItem key={v} checked={severities.includes(v)} onSelect={() => toggleSeverity(v)} icon={<SeverityChip severity={v} />}>
-                  {severityLabel[v]}
+                  {appText(severityLabelKey[v])}
                 </MenuCheckItem>
               ))}
               <MenuCheckItem checked={severities.includes("none")} onSelect={() => toggleSeverity("none")} icon={noSeverityMark}>
@@ -277,7 +277,7 @@ export function ListToolbar({
                   onSelect={() => onSearch({ ...search, channel: search.channel === c ? undefined : c })}
                   icon={<ChannelIcon channel={c} />}
                 >
-                  {channelLabel[c]}
+                  {appText(channelLabelKey[c])}
                 </MenuCheckItem>
               ))}
             </MenuSub>
@@ -480,19 +480,19 @@ export function ListToolbar({
                 {priorities.map((p) => (
                   <Chip key={p} label={t("filter.remove")} onRemove={() => togglePriority(p)}>
                     <PriorityIcon priority={p} />
-                    {priorityLabel[p]}
+                    {appText(priorityLabelKey[p])}
                   </Chip>
                 ))}
                 {severities.map((v) => (
                   <Chip key={`sev-${v}`} label={t("filter.remove")} onRemove={() => toggleSeverity(v)}>
                     {v === "none" ? noSeverityMark : <SeverityChip severity={v} />}
-                    {v === "none" ? t("filter.noSeverity") : severityLabel[v]}
+                    {v === "none" ? t("filter.noSeverity") : appText(severityLabelKey[v])}
                   </Chip>
                 ))}
                 {search.channel && (
                   <Chip key="channel" label={t("filter.remove")} onRemove={() => onSearch({ ...search, channel: undefined })}>
                     <ChannelIcon channel={search.channel as Channel} />
-                    {channelLabel[search.channel as Channel] ?? search.channel}
+                    {channelLabelKey[search.channel as Channel] ? appText(channelLabelKey[search.channel as Channel]) : search.channel}
                   </Chip>
                 )}
                 {search.tag && (

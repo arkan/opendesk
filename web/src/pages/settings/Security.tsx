@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import type { ParseKeys } from "i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { Download, Laptop, ShieldCheck, Smartphone } from "lucide-react";
@@ -45,7 +46,7 @@ function PasswordSection() {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [validation, setValidation] = useState<ParseKeys<"app"> | null>(null);
   const change = useMutation({
     mutationFn: () => api.me.password(current, next),
     onSuccess: () => {
@@ -54,15 +55,19 @@ function PasswordSection() {
       setConfirmPw("");
       toast.success(appText("Password changed"), { description: appText("Other devices were signed out.") });
     },
-    onError: (e) =>
-      setError(isApiError(e, "invalid_credentials") ? appText("Your current password is not right.") : errorMessage(e)),
   });
+  const error = validation
+    ? appText(validation)
+    : change.isError
+      ? isApiError(change.error, "invalid_credentials") ? appText("Your current password is not right.") : errorMessage(change.error)
+      : null;
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    if (next.length < 12) return setError(appText("Use at least 12 characters."));
-    if (next.length > 128) return setError(appText("Use at most 128 characters."));
-    if (next !== confirmPw) return setError(appText("The new passwords don't match."));
+    setValidation(null);
+    change.reset();
+    if (next.length < 12) return setValidation("Use at least 12 characters.");
+    if (next.length > 128) return setValidation("Use at most 128 characters.");
+    if (next !== confirmPw) return setValidation("The new passwords don't match.");
     change.mutate();
   };
   return (

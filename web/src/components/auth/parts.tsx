@@ -302,7 +302,7 @@ export function ProviderButtons({ next, verb }: { next?: string | null; verb?: s
   const grid = !!desktop && providers.length > 1;
   return (
     <div className="flex flex-col gap-2">
-      {error && <Notice>{error === "timeout" ? t("desktop.oauthTimeout") : error === "browser_unavailable" ? t("desktop.oauthBrowser") : uiText(oauthErrorKey(error)!)}</Notice>}
+      {error && <Notice>{error === "timeout" ? t("desktop.oauthTimeout") : error === "browser_unavailable" ? t("desktop.oauthBrowser") : uiText(oauthErrorKey(error))}</Notice>}
       {grid ? (
         <div className="grid grid-cols-2 gap-2">
           {providers.map((p, i) => (
@@ -364,7 +364,7 @@ export function providerName(id: string | undefined): string {
   return { google: "Google", microsoft: "Microsoft", github: "GitHub", oidc: "SSO" }[id ?? ""] ?? uiText("your provider");
 }
 
-export const oauthErrors: Record<string, ParseKeys<"interface">> = {
+const oauthErrors: Record<string, ParseKeys<"interface">> = {
   access_denied: "Sign-in was cancelled.",
   invalid_state: "That sign-in link expired. Start again.",
   invalid_request: "The sign-in request was not valid. Start again.",
@@ -376,9 +376,8 @@ export const oauthErrors: Record<string, ParseKeys<"interface">> = {
   invalid_code: "That sign-in link expired. Start again.",
 };
 
-export function oauthErrorKey(code: string | undefined): ParseKeys<"interface"> | null {
-  if (!code) return null;
-  return oauthErrors[code] ?? "Sign-in failed. Try again.";
+export function oauthErrorKey(code: string): ParseKeys<"interface"> {
+  return Object.hasOwn(oauthErrors, code) ? oauthErrors[code] : "Sign-in failed. Try again.";
 }
 
 /** A labelled field used across the auth screens. */

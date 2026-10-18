@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, useMatches, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { ConfirmProvider } from "@/components/ui/confirm";
 import { Toaster } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,13 +10,16 @@ import { queryClient } from "@/lib/queryClient";
 import { onAccountFallback } from "@/lib/session";
 import { useDesktopNavigation } from "./useDesktopBridge";
 
-function useRouteTitle() {
+const PageTitleContext = createContext<((title: string | null) => void) | null>(null);
+
+function useRouteTitle(pageTitle: string | null) {
   const { t } = useTranslation("app");
   const matches = useMatches();
   const title = [...matches].reverse().find((m) => m.staticData?.title)?.staticData.title;
   useEffect(() => {
-    document.title = title ? `${t(title)} · opendesk` : "opendesk";
-  }, [title, t]);
+    const text = pageTitle || (title ? t(title) : "");
+    document.title = text ? `${text} · opendesk` : "opendesk";
+  }, [pageTitle, title, t]);
 }
 
 function usePageviews() {
@@ -42,12 +45,15 @@ function useAccountFallback() {
 }
 
 function AgentRoot() {
-  useRouteTitle();
+  const [pageTitle, setPageTitle] = useState<string | null>(null);
+  useRouteTitle(pageTitle);
   return (
-    <ConfirmProvider>
-      <Outlet />
-      <Toaster />
-    </ConfirmProvider>
+    <PageTitleContext.Provider value={setPageTitle}>
+      <ConfirmProvider>
+        <Outlet />
+        <Toaster />
+      </ConfirmProvider>
+    </PageTitleContext.Provider>
   );
 }
 
@@ -67,12 +73,10 @@ export function RootLayout() {
 
 /** Set a page-specific tab title (a ticket subject, an article). */
 export function useDocumentTitle(title: string | null | undefined) {
+  const setPageTitle = useContext(PageTitleContext);
   useEffect(() => {
-    if (!title) return;
-    const prev = document.title;
-    document.title = `${title} · opendesk`;
-    return () => {
-      document.title = prev;
-    };
-  }, [title]);
+    if (!title || !setPageTitle) return;
+    setPageTitle(title);
+    return () => setPageTitle(null);
+  }, [title, setPageTitle]);
 }
