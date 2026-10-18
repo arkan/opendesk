@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Company tools for the agent (contracts/agent.md "MCP connections"): the
 // add/edit connection dialog and the panel that runs a tool once with a form
 // built from its input schema. Secrets are write-only: a stored one shows as
@@ -135,7 +136,7 @@ export function ServerDialog({ server, onClose, onSaved }: { server: McpServer |
         }}
       >
         <Field label={t("tools.name")} hint={t("tools.nameHint")} error={tried && nameBad ? t("tools.nameInvalid") : null}>
-          {(p) => <TextInput {...p} autoFocus maxLength={60} placeholder="Shop" value={name} onChange={(e) => setName(e.target.value)} />}
+          {(p) => <TextInput {...p} autoFocus maxLength={60} placeholder={appText("Shop")} value={name} onChange={(e) => setName(e.target.value)} />}
         </Field>
         <Field label={t("tools.url")} hint={t("tools.urlHint")} error={tried && urlBad ? t(`tools.url_${urlBad}`) : null}>
           {(p) => (

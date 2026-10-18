@@ -1,3 +1,5 @@
+import { uiText } from "@/i18n/ui";
+import { useTranslation } from "react-i18next";
 import { forwardRef, useEffect, useId, useRef, useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
 import { Search, X } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -82,7 +84,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
 export function SearchInput({
   value,
   onChange,
-  placeholder = "Search",
+  placeholder = uiText("Search"),
   className,
   autoFocus,
   inputSize = "sm",
@@ -98,6 +100,7 @@ export function SearchInput({
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
   inputRef?: React.Ref<HTMLInputElement>;
 }) {
+  useTranslation("interface");
   return (
     <TextInput
       ref={inputRef}
@@ -122,7 +125,7 @@ export function SearchInput({
         value ? (
           <button
             type="button"
-            aria-label="Clear search"
+            aria-label={uiText("Clear search")}
             onClick={() => onChange("")}
             className="flex size-5 items-center justify-center rounded text-fg-3 hover:bg-hover hover:text-fg"
           >
@@ -135,10 +138,11 @@ export function SearchInput({
 }
 
 export function Label({ children, htmlFor, className, optional }: { children: ReactNode; htmlFor?: string; className?: string; optional?: boolean }) {
+  useTranslation("interface");
   return (
     <label htmlFor={htmlFor} className={cn("flex items-center gap-1.5 text-[12.5px] font-medium text-fg", className)}>
       {children}
-      {optional && <span className="font-normal text-fg-4">Optional</span>}
+      {optional && <span className="font-normal text-fg-4">{uiText("Optional")}</span>}
     </label>
   );
 }
@@ -161,6 +165,7 @@ export function Field({
   className?: string;
   id?: string;
 }) {
+  useTranslation("interface");
   const auto = useId();
   const id = idProp ?? auto;
   const describedBy = error ? `${id}-err` : hint ? `${id}-hint` : undefined;
@@ -174,7 +179,7 @@ export function Field({
       {children({ id, "aria-describedby": describedBy, invalid: !!error })}
       {error ? (
         <p id={`${id}-err`} role="alert" className="animate-rise-in text-xs text-danger-fg">
-          {error}
+          {typeof error === "string" ? uiText(error) : error}
         </p>
       ) : hint ? (
         <p id={`${id}-hint`} className="text-xs text-fg-3">

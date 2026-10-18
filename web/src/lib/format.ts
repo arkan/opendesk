@@ -124,11 +124,17 @@ export function minutes(n: number | null | undefined): string {
   const rm = m % 60;
   if (h < 24) return rm ? `${h}h ${rm}m` : `${h}h`;
   const d = Math.floor(h / 24);
+  const day = intlLocale().startsWith("fr") ? "j" : "d";
   const rh = h % 24;
-  return rh ? `${d}d ${rh}h` : `${d}d`;
+  return rh ? `${d}${day} ${rh}h` : `${d}${day}`;
 }
 
 export function bytes(n: number): string {
+  if (intlLocale().startsWith("fr")) {
+    const unit = n < 1024 ? "byte" : n < 1024 * 1024 ? "kilobyte" : "megabyte";
+    const size = n / (unit === "byte" ? 1 : unit === "kilobyte" ? 1024 : 1024 * 1024);
+    return nf({ style: "unit", unit, unitDisplay: "short", maximumFractionDigits: 1 }).format(size);
+  }
   if (n < 1024) return `${number(n)} B`;
   if (n < 1024 * 1024) return `${number(n / 1024, { maximumFractionDigits: n < 10 * 1024 ? 1 : 0 })} KB`;
   return `${number(n / 1024 / 1024, { maximumFractionDigits: 1, minimumFractionDigits: 1 })} MB`;

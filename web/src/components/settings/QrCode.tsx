@@ -1,9 +1,12 @@
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 import qrcode from "qrcode-generator";
 import { useMemo } from "react";
 import { cn } from "@/lib/cn";
 
 /** A QR code drawn as one SVG path, always dark on paper so every scanner reads it. */
-export function QrCode({ value, className, label = "QR code" }: { value: string; className?: string; label?: string }) {
+export function QrCode({ value, className, label = appText("QR code") }: { value: string; className?: string; label?: string }) {
+  useTranslation("app");
   const { d, size } = useMemo(() => {
     const qr = qrcode(0, "M");
     qr.addData(value);

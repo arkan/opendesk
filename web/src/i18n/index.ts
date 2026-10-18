@@ -2,10 +2,8 @@
 // ./locales/<lng>/<ns>.json. English is bundled; other languages load on demand,
 // so a page only downloads the catalogs it shows.
 //
-// The agent app ships English (every string lives in the en catalogs). The
-// customer-facing surfaces (help center, CSAT, widget) ship every SUPPORTED
-// language, picked from the visitor's browser with the workspace default as
-// the fallback (see pickLocale).
+// Agent language is chosen manually and remembered per browser. Public surfaces
+// independently choose from SUPPORTED using visitor and workspace preferences.
 
 import i18n, { type BackendModule, type ReadCallback } from "i18next";
 import { initReactI18next } from "react-i18next";
@@ -67,7 +65,7 @@ const lazyBackend: BackendModule = {
   },
 };
 
-void i18n
+export const i18nReady = i18n
   .use(lazyBackend)
   .use(initReactI18next)
   .init({
@@ -83,33 +81,103 @@ void i18n
     react: { useSuspense: false },
   });
 
-// The language a customer-facing page chose, so Intl formatting follows the
-// page (an English page for a German browser formats dates in English).
-let pageLocale: string | null = null;
+export type AgentLocale = "en" | "fr";
+const AGENT_KEY = "od-agent-lang";
 
-/** Switch language for the page (customer surfaces) and set <html lang dir>. */
-export async function setLocale(lng: Locale, ns: Namespace[] = ["common"]): Promise<void> {
-  pageLocale = lng;
-  await i18n.loadLanguages(lng);
-  await i18n.loadNamespaces(ns);
-  await i18n.changeLanguage(lng);
-  if (typeof document !== "undefined") {
-    document.documentElement.lang = lng;
-    document.documentElement.dir = RTL.has(lng) ? "rtl" : "ltr";
+export function readAgentLocale(): AgentLocale {
+  try {
+    return localStorage.getItem(AGENT_KEY) === "fr" ? "fr" : "en";
+  } catch {
+    return "en";
   }
 }
 
-/** Back to the agent app's language (English) when leaving a public page. */
-export function resetLocale() {
-  pageLocale = null;
-  if (i18n.language !== "en") void i18n.changeLanguage("en");
-  if (typeof document !== "undefined") {
-    document.documentElement.lang = "en";
-    document.documentElement.dir = "ltr";
+let agentLocale = readAgentLocale();
+let pageLocale: Locale | null = null;
+let transition = 0;
+let commits = Promise.resolve();
+
+export function getAgentLocale(): AgentLocale {
+  return agentLocale;
+}
+
+async function prepare(lng: Locale, namespaces: readonly Namespace[]) {
+  await i18nReady;
+  await new Promise<void>((resolve, reject) => {
+    i18n.loadLanguages(lng, (err) => err ? reject(new Error("Could not load language catalogs")) : resolve());
+  });
+  const missing = namespaces.filter((ns) => !i18n.hasResourceBundle(lng, ns) || !Object.keys(i18n.getResourceBundle(lng, ns)).length);
+  if (missing.length) {
+    await new Promise<void>((resolve, reject) => {
+      i18n.reloadResources(lng, [...missing], (err?: unknown) => err ? reject(new Error("Could not load language catalogs")) : resolve());
+    });
+    if (missing.some((ns) => !Object.keys(i18n.getResourceBundle(lng, ns) ?? {}).length)) {
+      throw new Error("Could not load language catalogs");
+    }
   }
 }
 
-/** The active locale for Intl formatting. Agent app: the browser's locale; public pages: the page language. */
+function documentLocale(lng: Locale) {
+  if (typeof document === "undefined") return;
+  document.documentElement.lang = lng;
+  document.documentElement.dir = RTL.has(lng) ? "rtl" : "ltr";
+}
+
+/** Only the newest request may commit, including public-page cleanup. */
+async function applyLocale(lng: Locale, namespaces: readonly Namespace[], publicPage: boolean, remember = false): Promise<void> {
+  const request = ++transition;
+  try {
+    await prepare(lng, namespaces);
+  } catch (err) {
+    if (request === transition) throw err;
+    return;
+  }
+  const commit = commits.then(async () => {
+    if (request !== transition) return;
+    await i18n.changeLanguage(lng);
+    if (request !== transition) return;
+    pageLocale = publicPage ? lng : null;
+    if (remember) {
+      agentLocale = lng as AgentLocale;
+      try {
+        localStorage.setItem(AGENT_KEY, agentLocale);
+      } catch {
+        /* The in-memory preference still applies when storage is unavailable. */
+      }
+    }
+    documentLocale(lng);
+  });
+  commits = commit.catch(() => {});
+  await commit;
+}
+
+/** Called before mounting React, so remembered French never flashes English. */
+export async function initAgentLocale(): Promise<void> {
+  agentLocale = readAgentLocale();
+  try {
+    await applyLocale(agentLocale, NAMESPACES, false);
+  } catch {
+    // Keep the stored choice for a retry on the next visit.
+    agentLocale = "en";
+    await applyLocale("en", NAMESPACES, false);
+  }
+}
+
+export function setAgentLocale(lng: AgentLocale): Promise<void> {
+  return applyLocale(lng, NAMESPACES, false, true);
+}
+
+/** Apply a public surface's independent language. */
+export function setLocale(lng: Locale, ns: Namespace[] = ["common"]): Promise<void> {
+  return applyLocale(lng, ns, true);
+}
+
+/** Restore the manual agent preference after leaving a public surface. */
+export function resetLocale(): Promise<void> {
+  return applyLocale(agentLocale, NAMESPACES, false).catch(() => applyLocale("en", NAMESPACES, false));
+}
+
+/** Public language, chosen French, or the existing English browser formatting. */
 export function intlLocale(): string {
   if (pageLocale) return pageLocale;
   if (i18n.language && i18n.language !== "en") return i18n.language;

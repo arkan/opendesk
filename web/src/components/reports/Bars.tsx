@@ -1,3 +1,4 @@
+import { intlLocale } from "@/i18n";
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -37,7 +38,7 @@ export function BreakdownBars({ rows, unit, empty }: { rows: BarRow[]; unit: (n:
                 <div className="mb-1.5 flex items-center gap-2 text-[12.5px]">
                   {r.icon}
                   <span className="min-w-0 truncate text-fg-2">{r.label}</span>
-                  <span className="mono ml-auto text-xs tabular-nums text-fg">{r.value.toLocaleString()}</span>
+                  <span className="mono ml-auto text-xs tabular-nums text-fg">{r.value.toLocaleString(intlLocale())}</span>
                   <span className="mono w-9 text-right text-[11px] tabular-nums text-fg-4">{share}%</span>
                 </div>
                 <Bar pct={Math.max(r.value ? 2 : 0, (r.value / max) * 100)} tone={r.tone} />

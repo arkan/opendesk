@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Settings > AI agent > Knowledge: websites, files and Q&A snippets the agent
 // (and drafts and copilot) answer from, besides the help center. Status moves
 // live over realtime (ai_knowledge.*); a source opens in a drawer with its
@@ -147,7 +148,7 @@ export default function AgentKnowledge() {
       <div
         className="relative"
         onDragOver={(e) => {
-          if (!e.dataTransfer.types.includes("Files")) return;
+          if (!e.dataTransfer.types.includes(appText("Files"))) return;
           e.preventDefault();
           setDragging(true);
         }}

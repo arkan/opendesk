@@ -1,3 +1,5 @@
+import { uiText } from "@/i18n/ui";
+import { useTranslation } from "react-i18next";
 import { Command } from "cmdk";
 import { Popover as P } from "radix-ui";
 import { Check, Plus } from "lucide-react";
@@ -51,7 +53,8 @@ type Multi = Common & { multi: true; values: string[]; onChange: (v: string[]) =
  * Assignee, team, status, priority, tags, mailboxes, saved replies all use it.
  */
 export function Picker(props: Single | Multi) {
-  const { trigger, items, placeholder = "Search", emptyText = "No matches", align = "start", side = "bottom", width = 240 } = props;
+  useTranslation("interface");
+  const { trigger, items, placeholder = uiText("Search"), emptyText = uiText("No matches"), align = "start", side = "bottom", width = 240 } = props;
   const [innerOpen, setInnerOpen] = useState(false);
   const open = props.open ?? innerOpen;
   const setOpen = (o: boolean) => {
@@ -141,7 +144,7 @@ export function Picker(props: Single | Multi) {
                   className="flex h-7 cursor-default items-center gap-2 rounded-md px-2 text-[12.5px] text-fg-2 data-[selected=true]:bg-hover"
                 >
                   <Plus className="size-3.5" />
-                  {props.createLabel ?? "Create"} <span className="font-medium text-fg">“{query.trim()}”</span>
+                  {props.createLabel ?? uiText("Create")} <span className="font-medium text-fg">“{query.trim()}”</span>
                 </Command.Item>
               )}
             </Command.List>

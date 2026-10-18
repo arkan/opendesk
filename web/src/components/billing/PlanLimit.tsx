@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Limits shown up front on Free: "1 of 1 mailboxes on Free" with an upgrade
 // prompt, where mailboxes are added and members invited.
 
@@ -12,8 +13,8 @@ import { Meter } from "./Meter";
 
 export function limitDetail(kind: LimitKind, max: number) {
   return kind === "mailboxes"
-    ? `The Free plan includes ${max} mailbox. Upgrade to Pro for unlimited mailboxes.`
-    : `The Free plan includes ${max} member. Upgrade to Pro to invite your team.`;
+    ? appText("The Free plan includes {{max}} mailbox. Upgrade to Pro for unlimited mailboxes.", { max })
+    : appText("The Free plan includes {{max}} member. Upgrade to Pro to invite your team.", { max });
 }
 
 /** Opens the shared upgrade dialog for this limit. */

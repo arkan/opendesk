@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, Columns2, Filter, Lock, Mail, Rows3, Search, Users, X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -217,7 +218,7 @@ export function ListToolbar({
         )}
         {!searchOpen && (
           <Tooltip content={t("toolbar.search")} shortcut="/">
-            <Button variant="ghost" size="sm" square aria-label="Search" icon={<Search className="size-3.5" />} onClick={() => setSearchOpen(true)} />
+            <Button variant="ghost" size="sm" square aria-label={appText("Search")} icon={<Search className="size-3.5" />} onClick={() => setSearchOpen(true)} />
           </Tooltip>
         )}
         <Menu>
@@ -227,7 +228,7 @@ export function ListToolbar({
                 variant="ghost"
                 size="sm"
                 square={compact || !activeFilters}
-                aria-label="Filter"
+                aria-label={appText("Filter")}
                 icon={<Filter className="size-3.5" />}
                 className={cn(activeFilters > 0 && "bg-hover text-fg")}
               >
@@ -407,7 +408,7 @@ export function ListToolbar({
                 variant="ghost"
                 size="sm"
                 square
-                aria-label="Sort"
+                aria-label={appText("Sort")}
                 icon={order === "asc" ? <ArrowUpNarrowWide className="size-3.5" /> : <ArrowDownWideNarrow className="size-3.5" />}
                 className={cn(sort !== "last_message_at" && "bg-hover text-fg")}
               />

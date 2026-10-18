@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { EyeOff, KeyRound, MoreHorizontal, Pencil, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
@@ -28,11 +29,11 @@ import { atLeast, useRole } from "@/lib/session";
 import { cn } from "@/lib/cn";
 
 const scopeGroups: { resource: string; label: string; scopes: { id: string; label: string }[] }[] = [
-  { resource: "tickets", label: "Tickets", scopes: [{ id: "tickets:read", label: "Read" }, { id: "tickets:write", label: "Write" }] },
-  { resource: "contacts", label: "Contacts", scopes: [{ id: "contacts:read", label: "Read" }, { id: "contacts:write", label: "Write" }] },
-  { resource: "kb", label: "Knowledge base", scopes: [{ id: "kb:read", label: "Read" }, { id: "kb:write", label: "Write" }] },
-  { resource: "settings", label: "Settings", scopes: [{ id: "settings:read", label: "Read" }, { id: "settings:write", label: "Write" }] },
-  { resource: "realtime", label: "Realtime", scopes: [{ id: "realtime", label: "Subscribe" }] },
+  { resource: "tickets", get label() { return appText("Tickets"); }, scopes: [{ id: "tickets:read", get label() { return appText("Read"); } }, { id: "tickets:write", get label() { return appText("Write"); } }] },
+  { resource: "contacts", get label() { return appText("Contacts"); }, scopes: [{ id: "contacts:read", get label() { return appText("Read"); } }, { id: "contacts:write", get label() { return appText("Write"); } }] },
+  { resource: "kb", get label() { return appText("Knowledge base"); }, scopes: [{ id: "kb:read", get label() { return appText("Read"); } }, { id: "kb:write", get label() { return appText("Write"); } }] },
+  { resource: "settings", get label() { return appText("Settings"); }, scopes: [{ id: "settings:read", get label() { return appText("Read"); } }, { id: "settings:write", get label() { return appText("Write"); } }] },
+  { resource: "realtime", get label() { return appText("Realtime"); }, scopes: [{ id: "realtime", get label() { return appText("Subscribe"); } }] },
 ];
 const allScopes = scopeGroups.flatMap((g) => g.scopes.map((s) => s.id));
 const readScopes = allScopes.filter((s) => s.endsWith(":read"));
@@ -191,7 +192,7 @@ export default function ApiKeys() {
                         <MenuTrigger asChild>
                           <button
                             type="button"
-                            aria-label={`Actions for ${k.name}`}
+                            aria-label={appText("Actions for {{name}}", { name: k.name })}
                             className="flex size-7 items-center justify-center rounded-md text-fg-3 transition-colors hover:bg-hover hover:text-fg max-md:absolute max-md:right-3 max-md:top-3"
                           >
                             <MoreHorizontal className="size-4" />
@@ -286,6 +287,7 @@ function keyState(k: ApiKey, now: number): "active" | "expiring" | "expired" {
 }
 
 function InlineName({ initial, onDone }: { initial: string; onDone: (v: string | null) => void }) {
+  useTranslation("app");
   const [v, setV] = useState(initial);
   const cancelled = useRef(false);
   return (
@@ -294,7 +296,7 @@ function InlineName({ initial, onDone }: { initial: string; onDone: (v: string |
       inputSize="sm"
       value={v}
       maxLength={80}
-      aria-label="Key name"
+      aria-label={appText("Key name")}
       className="max-w-[260px]"
       onChange={(e) => setV(e.target.value)}
       onBlur={() => onDone(cancelled.current ? null : v.trim())}

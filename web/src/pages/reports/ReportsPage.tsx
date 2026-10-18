@@ -1,3 +1,5 @@
+import { dateLocale } from "@/lib/dateLocale";
+import { intlLocale } from "@/i18n";
 import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 import { differenceInCalendarDays, format, parseISO, subDays } from "date-fns";
@@ -184,7 +186,7 @@ type Tile = {
 
 function Kpis({ d, p }: { d: ReportsOverview; p?: ReportsOverview }) {
   const { t } = useTranslation("reports");
-  const int = (n: number) => Math.round(n).toLocaleString();
+  const int = (n: number) => Math.round(n).toLocaleString(intlLocale());
   const dur = (n: number) => minutes(Math.round(n));
   const tiles: Tile[] = [
     { label: t("kpi.created"), value: d.created, format: int, icon: <Inbox />, tone: SERIES[0], delta: { now: d.created, before: p?.created ?? null, upIsGood: null }, trend: d.by_day.map((x) => x.created) },
@@ -319,7 +321,7 @@ function VolumeCard({ d, className }: { d: ReportsOverview; className?: string }
         <Figure
           label={t("volume.busiest")}
           value={busiest && busiest.created ? <AnimatedNumber value={busiest.created} /> : "–"}
-          sub={busiest && busiest.created ? format(parseISO(busiest.date), "EEE, MMM d") : undefined}
+          sub={busiest && busiest.created ? format(parseISO(busiest.date), "EEE, MMM d", { locale: dateLocale() }) : undefined}
         />
         <Figure label={t("volume.solveRate")} value={rate === null ? "–" : <AnimatedNumber value={rate} format={(n) => `${Math.round(n)}%`} />} sub={t("volume.solvedOfCreated")} />
       </div>

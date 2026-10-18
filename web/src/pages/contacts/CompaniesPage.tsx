@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { Building2, Plus } from "lucide-react";
@@ -193,8 +194,9 @@ export default function CompaniesPage() {
 }
 
 function TableSkeleton({ rows = 10 }: { rows?: number }) {
+  useTranslation("app");
   return (
-    <div aria-busy="true" aria-label="Loading">
+    <div aria-busy="true" aria-label={appText("Loading")}>
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className={`${colsPlain} h-11 border-b border-line-soft px-4 md:px-5`} style={{ opacity: 1 - i * (0.75 / rows) }}>
           <span className="flex items-center gap-2.5">

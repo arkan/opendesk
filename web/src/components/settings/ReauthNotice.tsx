@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { errorMessage, isApiError } from "@/lib/api/client";
@@ -9,6 +11,7 @@ export function isReauthError(e: unknown) {
 }
 
 export function ReauthNotice({ error }: { error: unknown }) {
+  useTranslation("app");
   const navigate = useNavigate();
   if (!error) return null;
   if (!isReauthError(error)) return <p className="text-xs text-danger-fg">{errorMessage(error)}</p>;
@@ -16,7 +19,7 @@ export function ReauthNotice({ error }: { error: unknown }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-md border border-line bg-sunken px-3 py-2.5">
       <p className="text-[12.5px] text-fg-2">
-        {mfa ? "Turn on two-factor and sign in again to do this." : "Sign in again to confirm it's you."}
+        {mfa ? appText("Turn on two-factor and sign in again to do this.") : appText("Sign in again to confirm it's you.")}
       </p>
       <Button
         size="xs"
@@ -29,7 +32,8 @@ export function ReauthNotice({ error }: { error: unknown }) {
           void navigate({ to: "/login", search: { next, email, add: "1" } });
         }}
       >
-        Sign in again
+
+        {appText("Sign in again")}
       </Button>
     </div>
   );

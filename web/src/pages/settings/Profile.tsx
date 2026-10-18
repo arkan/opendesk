@@ -1,3 +1,5 @@
+import { AgentLanguageSelect } from "@/components/AgentLanguageSelect";
+import { appText } from "@/i18n/text";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Check, Volume2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -165,6 +167,10 @@ export default function Profile() {
             problems={saveProfile.problems}
           />
         )}
+      </Section>
+
+      <Section title={appText("Language")} description={appText("Choose your interface language. Saved in this browser.")}>
+        <div className="py-3"><AgentLanguageSelect /></div>
       </Section>
 
       <Section title={t("profile.appearance")} description={t("profile.appearanceHint")}>

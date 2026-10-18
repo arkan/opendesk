@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import { useState } from "react";
@@ -33,7 +34,7 @@ export default function Workspace() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return setError("Give your workspace a name.");
+    if (!name.trim()) return setError(appText("Give your workspace a name."));
     setBusy(true);
     setError(null);
     try {
@@ -54,30 +55,34 @@ export default function Workspace() {
       {hasWorkspaces && current && (
         <Link to="/" className="-ml-1 mb-6 inline-flex h-6 items-center gap-0.5 rounded-md pl-0.5 pr-1.5 text-[12.5px] text-fg-3 hover:bg-hover hover:text-fg">
           <ChevronLeft className="size-3.5" />
-          Back to {current.name}
+
+          {appText("Back to")} {current.name}
         </Link>
       )}
       <OnboardingSteps current={1} />
-      <AuthHeading title="Create your workspace" subtitle="A workspace holds your team's inboxes, contacts and help center. You can rename it and set up your help center address later." />
+      <AuthHeading title={appText("Create your workspace")} subtitle={appText("A workspace holds your team's inboxes, contacts and help center. You can rename it and set up your help center address later.")} />
       {error && <Notice className="mb-4">{error}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-        <AuthField label="Workspace name">
-          {(id) => <TextInput id={id} className="h-9" autoFocus value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Acme support" />}
+        <AuthField label={appText("Workspace name")}>
+          {(id) => <TextInput id={id} className="h-9" autoFocus value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder={appText("Acme support")} />}
         </AuthField>
         <Button type="submit" variant="primary" size="lg" className="mt-1 w-full" loading={busy}>
-          Continue
+
+          {appText("Continue")}
         </Button>
       </form>
       {!hasWorkspaces && (
         // Without a workspace the app's account menu and settings are out of reach.
         <p className="mt-8 text-center text-[12px] text-fg-3">
-          Signed in as <span className="text-fg-2">{email}</span> ·{" "}
+
+          {appText("Signed in as")} <span className="text-fg-2">{email}</span> ·{" "}
           <button
             type="button"
             className="underline-offset-2 hover:text-fg hover:underline"
             onClick={() => void logOut()}
           >
-            Log out
+
+            {appText("Log out")}
           </button>{" "}
           {other && (
             <>
@@ -93,7 +98,8 @@ export default function Workspace() {
           )}
           ·{" "}
           <button type="button" className="underline-offset-2 hover:text-fg hover:underline" onClick={() => setDeleting(true)}>
-            Delete account
+
+            {appText("Delete account")}
           </button>
         </p>
       )}

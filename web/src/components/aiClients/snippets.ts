@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Setup snippets for AI clients connecting to opendesk's MCP server
 // (contracts/agent.md "opendesk MCP server"; docs/api/mcp). Each client either
 // signs in with OAuth (only the URL is needed) or sends an API key in a header.
@@ -71,7 +72,7 @@ export function clientSetups(url: string, key?: string | null): ClientSetup[] {
         },
       ],
     },
-    { id: "other", label: "Other", auth: "oauth", snippets: [{ value: url }, { value: `Authorization: Bearer ${k}` }] },
+    { id: "other", label: appText("Other"), auth: "oauth", snippets: [{ value: url }, { value: `Authorization: Bearer ${k}` }] },
   ];
 }
 

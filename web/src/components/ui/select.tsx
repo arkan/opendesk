@@ -1,3 +1,5 @@
+import { uiText } from "@/i18n/ui";
+import { useTranslation } from "react-i18next";
 import { Select as S } from "radix-ui";
 import { Check, ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
@@ -10,7 +12,7 @@ export function Select<V extends string>({
   value,
   onChange,
   options,
-  placeholder = "Select",
+  placeholder = uiText("Select"),
   className,
   size = "md",
   id,
@@ -27,6 +29,7 @@ export function Select<V extends string>({
   disabled?: boolean;
   "aria-label"?: string;
 }) {
+  useTranslation("interface");
   return (
     <S.Root value={value} onValueChange={(v) => onChange(v as V)} disabled={disabled}>
       <S.Trigger

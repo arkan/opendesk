@@ -1,3 +1,7 @@
+import { dateLocale } from "@/lib/dateLocale";
+import { intlLocale } from "@/i18n";
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 import { format, parseISO } from "date-fns";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
@@ -19,8 +23,8 @@ const MR = 40;
 const MT = 12;
 
 export const series = [
-  { key: "created", label: "Created", color: toneVar(SERIES[0]) },
-  { key: "solved", label: "Solved", color: toneVar(SERIES[2]) },
+  { key: "created", get label() { return appText("Created"); }, color: toneVar(SERIES[0]) },
+  { key: "solved", get label() { return appText("Solved"); }, color: toneVar(SERIES[2]) },
 ] as const;
 
 /**
@@ -30,12 +34,13 @@ export const series = [
 export function VolumeChart<D extends Row = Day>({
   days,
   series: lines = series as unknown as LineSeries<D>[],
-  label = `Tickets created and solved per day, ${days.length} days. Use the arrow keys to read each day.`,
+  label = appText("Tickets created and solved per day, {{count}} days. Use the arrow keys to read each day.", { count: days.length }),
 }: {
   days: D[];
   series?: LineSeries<D>[];
   label?: string;
 }) {
+  useTranslation("app");
   const val = (d: D, k: keyof D) => Number(d[k]) || 0;
   const [ref, width] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
@@ -82,14 +87,14 @@ export function VolumeChart<D extends Row = Day>({
             <g key={t}>
               <line x1={ML} x2={ML + plotW} y1={y(t)} y2={y(t)} stroke="var(--line-soft)" strokeWidth={1} shapeRendering="crispEdges" />
               <text x={ML - 8} y={y(t)} dy="0.32em" textAnchor="end" className="mono" fontSize={10.5} fill="var(--fg-4)">
-                {t.toLocaleString()}
+                {t.toLocaleString(intlLocale())}
               </text>
             </g>
           ))}
           <line x1={ML} x2={ML + plotW} y1={y(0)} y2={y(0)} stroke="var(--line)" strokeWidth={1} shapeRendering="crispEdges" />
           {xTicks.map(({ d, i }) => (
             <text key={d.date} x={x(i)} y={MT + H + 18} textAnchor="middle" className="mono" fontSize={10.5} fill="var(--fg-4)">
-              {format(parseISO(d.date), "MMM d")}
+              {format(parseISO(d.date), "MMM d", { locale: dateLocale() })}
             </text>
           ))}
 
@@ -159,7 +164,7 @@ export function VolumeChart<D extends Row = Day>({
           className="pointer-events-none absolute z-10 min-w-[148px] rounded-lg border border-line bg-raised px-3 py-2 shadow-pop transition-[left] duration-100 ease-out motion-reduce:transition-none"
           style={{ left: flip ? tipLeft - 12 : tipLeft + 12, top: MT + 4, transform: flip ? "translateX(-100%)" : undefined }}
         >
-          <div className="mono mb-1.5 text-[10.5px] text-fg-3">{format(parseISO(h.date), "EEE, MMM d")}</div>
+          <div className="mono mb-1.5 text-[10.5px] text-fg-3">{format(parseISO(h.date), "EEE, MMM d", { locale: dateLocale() })}</div>
           {lines.map((s) => (
             <div key={s.key} className="flex items-center gap-2 py-px">
               <span className="size-2 rounded-xs" style={{ background: s.color }} />
@@ -187,21 +192,22 @@ export function VolumeLegend<D extends Row = Day>({ series: lines = series as un
 }
 
 export function VolumeTable({ days }: { days: Day[] }) {
+  useTranslation("app");
   return (
     <div className="max-h-[268px] overflow-y-auto">
       <table className="w-full text-[12.5px]">
-        <caption className="sr-only">Tickets created and solved per day</caption>
+        <caption className="sr-only">{appText("Tickets created and solved per day")}</caption>
         <thead className="sticky top-0 bg-surface">
           <tr className="border-b border-line text-left">
-            <th className="label-caps py-2 font-normal">Day</th>
-            <th className="label-caps py-2 text-right font-normal">Created</th>
-            <th className="label-caps py-2 text-right font-normal">Solved</th>
+            <th className="label-caps py-2 font-normal">{appText("Day")}</th>
+            <th className="label-caps py-2 text-right font-normal">{appText("Created")}</th>
+            <th className="label-caps py-2 text-right font-normal">{appText("Solved")}</th>
           </tr>
         </thead>
         <tbody>
           {[...days].reverse().map((d) => (
             <tr key={d.date} className="border-b border-line-soft">
-              <td className="py-1.5 text-fg-2">{format(parseISO(d.date), "EEE, MMM d")}</td>
+              <td className="py-1.5 text-fg-2">{format(parseISO(d.date), "EEE, MMM d", { locale: dateLocale() })}</td>
               <td className="mono py-1.5 text-right tabular-nums">{d.created}</td>
               <td className="mono py-1.5 text-right tabular-nums text-fg-2">{d.solved}</td>
             </tr>

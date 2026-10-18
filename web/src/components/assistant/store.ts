@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Ollie's panel state and runs. One conversation is live at a time; its blocks
 // (text and tool steps, in the order they happened) render the transcript, and
 // runs stream into the last assistant entry.
@@ -148,7 +149,7 @@ async function run(go: (signal: AbortSignal) => Promise<void>) {
   try {
     await go(c.signal);
   } catch (err) {
-    if ((err as Error)?.name !== "AbortError") patchLast((en) => ({ ...en, error: errorMessage(err, "Ollie could not answer. Try again.") }));
+    if ((err as Error)?.name !== "AbortError") patchLast((en) => ({ ...en, error: errorMessage(err, appText("Ollie could not answer. Try again.")) }));
   } finally {
     if (controller === c) controller = null;
     useOllie.setState({ running: false });

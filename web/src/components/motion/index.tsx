@@ -1,3 +1,4 @@
+import { intlLocale } from "@/i18n";
 // Shared motion primitives. Use these instead of one-off animations so the app
 // moves with one voice; each respects reduced motion.
 
@@ -12,7 +13,7 @@ import { dur, ease, springs } from "@/lib/motion";
  */
 export function AnimatedNumber({
   value,
-  format = (n) => Math.round(n).toLocaleString(),
+  format = (n) => Math.round(n).toLocaleString(intlLocale()),
   className,
   flash,
 }: {

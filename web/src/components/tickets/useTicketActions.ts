@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 // Ticket mutations. Property edits (status, priority, assignee, team, tags,
 // spam, snooze) are predictable, so they patch every cache at once and roll
 // back on failure. Merge and delete wait for the server.
@@ -100,6 +102,7 @@ export function applyPatch(qc: QueryClient, t: Ticket, p: TicketPatch): Ticket {
 }
 
 export function useUpdateTicket() {
+  useTranslation("app");
   const qc = useQueryClient();
   const me = useSession((s) => s.user?.id ?? "");
   return useMutation({
@@ -116,14 +119,14 @@ export function useUpdateTicket() {
       const missing = requiredFieldKeys(e);
       if (missing.length) {
         focusField(missing[0]);
-        toast.error(isApiError(e) && e.detail ? e.detail : "Fill in the required fields before solving");
+        toast.error(isApiError(e) && e.detail ? e.detail : appText("Fill in the required fields before solving"));
         return;
       }
       if (isUnknownLabel(e)) {
-        toast.error(isApiError(e) && e.detail ? e.detail : "Only admins can create labels. Pick an existing one.");
+        toast.error(isApiError(e) && e.detail ? e.detail : appText("Only admins can create labels. Pick an existing one."));
         return;
       }
-      toast.error(e, "Couldn't update the ticket");
+      toast.error(e, appText("Couldn't update the ticket"));
     },
     onSuccess: (t) => {
       settle(qc, t, me);
@@ -134,6 +137,7 @@ export function useUpdateTicket() {
 }
 
 export function useBulkUpdate() {
+  useTranslation("app");
   const qc = useQueryClient();
   const me = useSession((s) => s.user?.id ?? "");
   return useMutation({
@@ -155,10 +159,10 @@ export function useBulkUpdate() {
     },
     onError: (e, _v, ctx) => {
       ctx?.prev.forEach((t) => patchTicketEverywhere(qc, t, me));
-      if (isUnknownLabel(e)) return void toast.error(isApiError(e) && e.detail ? e.detail : "Only admins can create labels. Pick an existing one.");
+      if (isUnknownLabel(e)) return void toast.error(isApiError(e) && e.detail ? e.detail : appText("Only admins can create labels. Pick an existing one."));
       const missing = requiredFieldKeys(e);
-      if (missing.length) return void toast.error(isApiError(e) && e.detail ? e.detail : "Some tickets have required fields to fill in before solving");
-      toast.error(e, "Couldn't update those tickets");
+      if (missing.length) return void toast.error(isApiError(e) && e.detail ? e.detail : appText("Some tickets have required fields to fill in before solving"));
+      toast.error(e, appText("Couldn't update those tickets"));
     },
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: qk.counts });
@@ -197,11 +201,12 @@ export function useMergeTicket() {
 }
 
 export function teamName(teams: Team[] | undefined, id: string | null) {
-  return id ? teams?.find((t) => t.id === id)?.name ?? "Team" : null;
+  return id ? teams?.find((t) => t.id === id)?.name ?? appText("Team") : null;
 }
 
 /** Dismiss Ollie's suggestion for a field, optimistically. */
 export function useDismissSuggestion() {
+  useTranslation("app");
   const qc = useQueryClient();
   const me = useSession((s) => s.user?.id ?? "");
   return useMutation({
@@ -213,7 +218,7 @@ export function useDismissSuggestion() {
     },
     onError: (e, _v, ctx) => {
       if (ctx?.prev) patchTicketEverywhere(qc, ctx.prev, me);
-      toast.error(e, "Couldn't dismiss the suggestion");
+      toast.error(e, appText("Couldn't dismiss the suggestion"));
     },
   });
 }

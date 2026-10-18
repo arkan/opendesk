@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Check, Download, FileText, Globe, ImageOff, Lock, MoreHorizontal, Reply, RotateCw, ShieldAlert } from "lucide-react";
 import { memo, useMemo, useState } from "react";
@@ -26,7 +27,7 @@ function authorName(m: Message): string {
   if (m.author.contact) return m.author.contact.name || m.author.contact.email || m.from_email;
   if (m.author.type === "system") return "opendesk";
   if (m.author.type === "api") return m.from_name || "API";
-  return m.from_name || m.from_email || "Unknown";
+  return m.from_name || m.from_email || appText("Unknown");
 }
 
 type SanitizedBody = Sanitized & { designed: boolean };

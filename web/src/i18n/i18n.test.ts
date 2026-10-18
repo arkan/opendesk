@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { matchLocale, pickLocale, RTL, SUPPORTED } from "./index";
+import { NAMESPACES } from "./resources";
 
 const files = import.meta.glob<Record<string, unknown>>("./locales/*/*.json", { eager: true, import: "default" });
 const PLURAL = /_(zero|one|two|few|many|other)$/;
@@ -62,9 +63,9 @@ describe("catalogs", () => {
   });
 
   // Customer-facing namespaces are fully translated, with each language's plural forms.
-  for (const ns of ["public", "common"]) {
+  for (const ns of NAMESPACES) {
     const en = flatten(read("en", ns));
-    for (const lng of SUPPORTED.filter((l) => l !== "en")) {
+    for (const lng of SUPPORTED.filter((l) => l !== "en" && (l === "fr" || ns === "public" || ns === "common"))) {
       it(`${lng}/${ns}.json has exactly the English keys`, () => {
         const keys = flatten(read(lng, ns)).sort();
         expect(keys).toEqual(expected(lng, en));
@@ -72,7 +73,7 @@ describe("catalogs", () => {
       it(`${lng}/${ns}.json keeps every interpolation`, () => {
         const enCat = read("en", ns);
         const cat = read(lng, ns);
-        const get = (o: Record<string, unknown>, path: string) => path.split(".").reduce<unknown>((x, k) => (x as Record<string, unknown>)?.[k], o);
+        const get = (o: Record<string, unknown>, path: string) => path in o ? o[path] : path.split(".").reduce<unknown>((x, k) => (x as Record<string, unknown>)?.[k], o);
         for (const k of en) {
           const base = k.replace(PLURAL, "");
           const vars = new Set((String(get(enCat, k)).match(/\{\{\s*\w+\s*\}\}/g) ?? []).map((v) => v.replace(/\s/g, "")));

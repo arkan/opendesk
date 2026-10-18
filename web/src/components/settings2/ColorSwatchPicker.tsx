@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 // A row of tone swatches for things people colour (tags, labels). Arrow keys
 // move between swatches like a radio group; the current one carries a ring.
 
@@ -8,28 +10,28 @@ import { cn } from "@/lib/cn";
 import { TAG_TONES, tone as tones, type Tone } from "@/lib/tones";
 
 const toneName: Record<Tone, string> = {
-  gray: "Gray",
-  blue: "Blue",
-  indigo: "Indigo",
-  violet: "Violet",
-  purple: "Purple",
-  pink: "Pink",
-  rose: "Rose",
-  red: "Red",
-  orange: "Orange",
-  amber: "Amber",
-  yellow: "Yellow",
-  lime: "Lime",
-  green: "Green",
-  teal: "Teal",
-  cyan: "Cyan",
+  get gray() { return appText("Gray"); },
+  get blue() { return appText("Blue"); },
+  get indigo() { return appText("Indigo"); },
+  get violet() { return appText("Violet"); },
+  get purple() { return appText("Purple"); },
+  get pink() { return appText("Pink"); },
+  get rose() { return appText("Rose"); },
+  get red() { return appText("Red"); },
+  get orange() { return appText("Orange"); },
+  get amber() { return appText("Amber"); },
+  get yellow() { return appText("Yellow"); },
+  get lime() { return appText("Lime"); },
+  get green() { return appText("Green"); },
+  get teal() { return appText("Teal"); },
+  get cyan() { return appText("Cyan"); },
 };
 
 export function ColorSwatchPicker({
   value,
   onChange,
   tones: choices = TAG_TONES,
-  label = "Colour",
+  label = appText("Colour"),
   size = "md",
   className,
 }: {
@@ -40,6 +42,7 @@ export function ColorSwatchPicker({
   size?: "sm" | "md";
   className?: string;
 }) {
+  useTranslation("app");
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const current = value && choices.includes(value) ? value : null;
   const focusIndex = current ? choices.indexOf(current) : 0;

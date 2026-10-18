@@ -90,7 +90,7 @@ describe("format, German page", () => {
   it("sets right to left for Arabic and resets after", async () => {
     await setLocale("ar", ["common"]);
     expect(document.documentElement.dir).toBe("rtl");
-    resetLocale();
+    await resetLocale();
     expect(document.documentElement.dir).toBe("ltr");
     expect(document.documentElement.lang).toBe("en");
   });

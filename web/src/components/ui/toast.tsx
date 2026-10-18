@@ -1,3 +1,5 @@
+import { uiText } from "@/i18n/ui";
+import { useTranslation } from "react-i18next";
 import { Toaster as Sonner, toast as sonner } from "sonner";
 import { errorMessage } from "@/lib/api/client";
 import { useTheme } from "@/lib/theme";
@@ -12,9 +14,11 @@ function ToastIcon({ hue, children }: { hue: Tone; children: React.ReactNode }) 
 }
 
 export function Toaster() {
+  useTranslation("interface");
   const { dark } = useTheme();
   return (
     <Sonner
+      containerAriaLabel={uiText("Notifications")}
       theme={dark ? "dark" : "light"}
       position="bottom-right"
       gap={6}
@@ -22,6 +26,7 @@ export function Toaster() {
       offset={16}
       swipeDirections={["right", "bottom"]}
       toastOptions={{
+        closeButtonAriaLabel: uiText("Close notification"),
         unstyled: true,
         classNames: {
           toast:
@@ -71,7 +76,7 @@ export const toast = {
   success: (msg: string, opts?: Opts) => sonner.success(msg, { ...withAction(opts), icon: <ToastIcon hue="green"><Check /></ToastIcon> }),
   info: (msg: string, opts?: Opts) => sonner(msg, { ...withAction(opts), icon: <ToastIcon hue="blue"><Info /></ToastIcon> }),
   /** A done destructive action with a way back. */
-  undo: (msg: string, onUndo: () => void, label = "Undo") =>
+  undo: (msg: string, onUndo: () => void, label = uiText("Undo")) =>
     sonner(msg, { ...withAction({ action: { label, onClick: onUndo } }), icon: <ToastIcon hue="gray"><Undo2 /></ToastIcon> }),
   error: (e: unknown, fallback?: string) =>
     sonner.error(typeof e === "string" ? e : errorMessage(e, fallback), { icon: <ToastIcon hue="red"><X /></ToastIcon> }),

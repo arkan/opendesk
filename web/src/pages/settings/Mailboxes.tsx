@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { Forward, MoreHorizontal, Plus, Power, Trash2, Users, Zap } from "lucide-react";
@@ -204,8 +205,9 @@ export default function Mailboxes() {
 }
 
 function MailboxSkeleton() {
+  useTranslation("app");
   return (
-    <div aria-busy="true" aria-label="Loading">
+    <div aria-busy="true" aria-label={appText("Loading")}>
       {[0, 1, 2].map((i) => (
         <div key={i} className="flex min-h-12 items-center gap-3 border-b border-line-soft px-4 py-2.5 last:border-0">
           <Skeleton className="size-8 rounded-md" />

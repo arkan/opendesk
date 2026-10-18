@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRightLeft, Check, ChevronDown, Loader2, Lock, MessageSquareText, Paperclip, TriangleAlert, X } from "lucide-react";
 import { Morph } from "@/components/motion";
@@ -52,6 +53,7 @@ export type ComposerHandle = { focus: (mode?: Mode) => void; retry: (m: Message)
 const emailRe = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
 
 function EmailChips({ label, values, onChange }: { label: string; values: string[]; onChange: (v: string[]) => void }) {
+  useTranslation("app");
   const [text, setText] = useState("");
   const commit = () => {
     const parts = text.split(/[\s,;]+/).filter(Boolean);
@@ -66,7 +68,7 @@ function EmailChips({ label, values, onChange }: { label: string; values: string
         {values.map((v) => (
           <span key={v} className="mono inline-flex h-5 items-center gap-1 rounded-sm bg-hover pl-1.5 pr-0.5 text-[11.5px] animate-pop-in motion-reduce:animate-none" data-ph-mask>
             {v}
-            <button type="button" aria-label={`Remove ${v}`} onClick={() => onChange(values.filter((x) => x !== v))} className="flex size-4 items-center justify-center rounded-xs text-fg-4 hover:text-fg">
+            <button type="button" aria-label={appText("Remove {{name}}", { name: v })} onClick={() => onChange(values.filter((x) => x !== v))} className="flex size-4 items-center justify-center rounded-xs text-fg-4 hover:text-fg">
               <X className="size-3" />
             </button>
           </span>
@@ -94,6 +96,7 @@ function EmailChips({ label, values, onChange }: { label: string; values: string
 }
 
 function useSend(ticket: Ticket, ctx: TeamsCtx) {
+  useTranslation("app");
   const qc = useQueryClient();
   const user = useSession((s) => s.user!);
   return useMutation({
@@ -141,7 +144,7 @@ function useSend(ticket: Ticket, ctx: TeamsCtx) {
     },
     onError: (e, { tempId }, ctx) => {
       qc.setQueryData<Message[]>(qk.messages(ticket.id), (old) =>
-        old?.map((x) => (x.id === tempId ? { ...x, delivery_status: "failed", delivery_error: errorMessage(e, "Not sent") } : x)),
+        old?.map((x) => (x.id === tempId ? { ...x, delivery_status: "failed", delivery_error: errorMessage(e, appText("Not sent")) } : x)),
       );
       if (ctx?.prevTicket) patchTicketEverywhere(qc, ctx.prevTicket, user.id);
     },
@@ -401,7 +404,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
         </AnimatePresence>
         <div
           onDragOver={(e) => {
-            if (e.dataTransfer.types.includes("Files")) {
+            if (e.dataTransfer.types.includes(appText("Files"))) {
               e.preventDefault();
               setDragging(true);
             }
@@ -476,7 +479,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
                 className="overflow-hidden"
               >
                 <EmailChips label="Cc" values={draft.cc} onChange={(cc) => setDraft({ cc })} />
-                <EmailChips label="Bcc" values={draft.bcc} onChange={(bcc) => setDraft({ bcc })} />
+                <EmailChips label={appText("Bcc")} values={draft.bcc} onChange={(bcc) => setDraft({ bcc })} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -500,7 +503,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
               onKeyDown={onKeyDown}
               editable={!disabled && !ai.busy}
               contentClassName={cn("max-h-[40vh] transition-[min-height] duration-200 ease-out motion-reduce:transition-none", open ? "min-h-[96px]" : "min-h-[44px]")}
-              ariaLabel={note ? "Note" : "Reply"}
+              ariaLabel={note ? appText("Note") : appText("Reply")}
               toolbarEnd={
                 <>
                   <ComposerAiMenu ai={ai} hasDraft={!!draft.html} disabled={disabled} />
@@ -508,7 +511,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
                   <Tooltip content={t("composer.attach")}>
                     <button
                       type="button"
-                      aria-label="Attach files"
+                      aria-label={appText("Attach files")}
                       onClick={() => fileInput.current?.click()}
                       className="flex size-7 items-center justify-center rounded-md text-fg-3 transition-colors hover:bg-hover hover:text-fg active:scale-95"
                     >
@@ -529,7 +532,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
                     }}
                     trigger={
                       <Tooltip content={t("composer.savedReplies")}>
-                        <button type="button" aria-label="Saved replies" aria-busy={filling > 0} className="flex size-7 items-center justify-center rounded-md text-fg-3 transition-colors hover:bg-hover hover:text-fg active:scale-95">
+                        <button type="button" aria-label={appText("Saved replies")} aria-busy={filling > 0} className="flex size-7 items-center justify-center rounded-md text-fg-3 transition-colors hover:bg-hover hover:text-fg active:scale-95">
                           {filling > 0 ? <Loader2 className="size-[15px] animate-spin motion-reduce:animate-none" /> : <MessageSquareText className="size-[15px]" />}
                         </button>
                       </Tooltip>
@@ -555,7 +558,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
                   {u.status === "uploading" ? (
                     <Loader2 className="size-3.5 shrink-0 animate-spin text-fg-4" />
                   ) : (
-                    <button type="button" aria-label={`Remove ${u.file.name}`} onClick={() => setUploads((x) => x.filter((y) => y.key !== u.key))} className="flex size-5 shrink-0 items-center justify-center rounded-sm text-fg-4 hover:bg-hover hover:text-fg">
+                    <button type="button" aria-label={appText("Remove {{name}}", { name: u.file.name })} onClick={() => setUploads((x) => x.filter((y) => y.key !== u.key))} className="flex size-5 shrink-0 items-center justify-center rounded-sm text-fg-4 hover:bg-hover hover:text-fg">
                       <X className="size-3" />
                     </button>
                   )}

@@ -1,3 +1,4 @@
+import { uiText } from "@/i18n/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -51,7 +52,7 @@ export default function Invite() {
     } catch (e) {
       setBusy(false);
       if (isApiError(e, "invitation_email_mismatch"))
-        setError(`This invitation is for ${lookup.data?.email ?? "another address"}. Sign in with that address to accept.`);
+        setError(uiText("This invitation is for {{email}}. Sign in with that address to accept.", { email: lookup.data?.email ?? "another address" }));
       else setError(errorMessage(e));
     }
   };
@@ -59,9 +60,9 @@ export default function Invite() {
   if (!token || lookup.isError)
     return (
       <div>
-        <AuthHeading title="This invitation isn't valid" subtitle="It may have expired or been revoked. Ask the person who invited you to send a new one." />
+        <AuthHeading title={uiText("This invitation isn't valid")} subtitle={uiText("It may have expired or been revoked. Ask the person who invited you to send a new one.")} />
         <Button variant="secondary" size="lg" className="w-full" asChild>
-          <Link to="/">Go to opendesk</Link>
+          <Link to="/">{uiText("Go to opendesk")}</Link>
         </Button>
       </div>
     );
@@ -85,10 +86,10 @@ export default function Invite() {
         <WorkspaceGlyph name={inv.workspace_name} />
       </div>
       <AuthHeading
-        title={`Join ${inv.workspace_name}`}
+        title={uiText("Join {{workspace}}", { workspace: inv.workspace_name })}
         subtitle={
           <>
-            You've been invited as {roleCopy[inv.role]}. The invitation is for <span className="font-medium text-fg">{inv.email}</span>.
+             {uiText("You've been invited as")} {uiText(roleCopy[inv.role])}{uiText(". The invitation is for")} <span className="font-medium text-fg">{inv.email}</span>.
           </>
         }
       />
@@ -97,11 +98,11 @@ export default function Invite() {
         <div className="flex flex-col gap-3">
           {mismatch && (
             <Notice tone="info">
-              You're signed in as <span className="font-medium text-fg">{me.email}</span>. The invitation may only work for {inv.email}.
+               {uiText("You're signed in as")} <span className="font-medium text-fg">{me.email}</span>{uiText(". The invitation may only work for")} {inv.email}.
             </Notice>
           )}
           <Button variant="primary" size="lg" className="w-full" loading={busy} onClick={accept}>
-            Accept invitation
+            {uiText("Accept invitation")}
           </Button>
           {mismatch && (
             // Signs in to the invited address beside this account (or switches to it when it is already signed in here).
@@ -116,12 +117,12 @@ export default function Invite() {
         <div className="flex flex-col gap-2">
           <Button variant="primary" size="lg" className="w-full" asChild>
             <Link to="/register" search={{ next, email: inv.email }}>
-              Create an account
+              {uiText("Create an account")}
             </Link>
           </Button>
           <Button variant="secondary" size="lg" className="w-full" asChild>
             <Link to="/login" search={{ next }}>
-              I already have an account
+              {uiText("I already have an account")}
             </Link>
           </Button>
         </div>

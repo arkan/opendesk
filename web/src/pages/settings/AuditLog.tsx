@@ -1,3 +1,5 @@
+import { i18n } from "@/i18n";
+import { appText } from "@/i18n/text";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   Building2,
@@ -77,66 +79,66 @@ function glyph(action: string): { icon: ReactNode; tone: Tone } {
 }
 
 const verbs: Record<string, string> = {
-  "login.succeeded": "signed in",
-  login: "signed in",
-  "login.failed": "failed to sign in",
-  "member.invited": "invited",
-  logout: "signed out",
-  "session.revoked": "revoked a session",
-  "password.changed": "changed their password",
-  "password.reset": "reset their password",
-  "totp.enabled": "turned on two-factor authentication",
-  "totp.disabled": "turned off two-factor authentication",
-  "recovery_codes.used": "used a recovery code",
-  "member.added": "added a member",
-  "member.removed": "removed a member",
-  "member.role_changed": "changed a member's role",
-  "invitation.created": "invited someone",
-  "invitation.revoked": "revoked an invitation",
-  "invitation.accepted": "accepted an invitation",
-  "api_key.created": "created an API key",
-  "api_key.revoked": "revoked an API key",
-  "api_key.deleted": "revoked an API key",
-  "webhook.created": "created a webhook",
-  "webhook.updated": "updated a webhook",
-  "webhook.deleted": "deleted a webhook",
-  "mailbox.connected": "connected a mailbox",
-  "mailbox.created": "added a mailbox",
-  "mailbox.disconnected": "disconnected a mailbox",
-  "mailbox.deleted": "removed a mailbox",
-  "workspace.updated": "updated workspace settings",
-  "workspace.transferred": "transferred ownership",
-  "widget.secret_rotated": "rotated the widget secret",
-  "widget_secret.rotated": "rotated the widget secret",
-  "workspace.widget_secret_rotated": "rotated the widget secret",
-  "workspace.created": "created the workspace",
-  "2fa.enabled": "turned on two-factor authentication",
-  "2fa.disabled": "turned off two-factor authentication",
-  "member.joined": "joined the workspace",
-  "member.left": "left the workspace",
-  "member.account_deleted": "deleted their account",
-  "identity.linked": "linked a sign-in provider",
-  "session.refresh_reused": "had a reused session token refused",
-  "api_key.updated": "renamed an API key",
-  "mailbox.updated": "updated a mailbox",
-  "team.created": "created a team",
-  "team.updated": "updated a team",
-  "team.deleted": "deleted a team",
-  "view.created": "created a view",
-  "view.updated": "updated a view",
-  "view.deleted": "deleted a view",
-  "widget.settings_updated": "updated the chat widget",
-  "ai.settings_updated": "updated AI settings",
-  "billing.updated": "changed the subscription",
-  "billing.ai_top_up_purchased": "added AI usage",
-  "billing.ai_recharged": "auto-recharged the AI balance",
-  "billing.auto_recharge_updated": "changed auto-recharge",
-  "billing.auto_recharge_failed": "had an auto-recharge fail",
+  get "login.succeeded"() { return appText("signed in"); },
+  get login() { return appText("signed in"); },
+  get "login.failed"() { return appText("failed to sign in"); },
+  get "member.invited"() { return appText("invited"); },
+  get logout() { return appText("signed out"); },
+  get "session.revoked"() { return appText("revoked a session"); },
+  get "password.changed"() { return appText("changed their password"); },
+  get "password.reset"() { return appText("reset their password"); },
+  get "totp.enabled"() { return appText("turned on two-factor authentication"); },
+  get "totp.disabled"() { return appText("turned off two-factor authentication"); },
+  get "recovery_codes.used"() { return appText("used a recovery code"); },
+  get "member.added"() { return appText("added a member"); },
+  get "member.removed"() { return appText("removed a member"); },
+  get "member.role_changed"() { return appText("changed a member's role"); },
+  get "invitation.created"() { return appText("invited someone"); },
+  get "invitation.revoked"() { return appText("revoked an invitation"); },
+  get "invitation.accepted"() { return appText("accepted an invitation"); },
+  get "api_key.created"() { return appText("created an API key"); },
+  get "api_key.revoked"() { return appText("revoked an API key"); },
+  get "api_key.deleted"() { return appText("revoked an API key"); },
+  get "webhook.created"() { return appText("created a webhook"); },
+  get "webhook.updated"() { return appText("updated a webhook"); },
+  get "webhook.deleted"() { return appText("deleted a webhook"); },
+  get "mailbox.connected"() { return appText("connected a mailbox"); },
+  get "mailbox.created"() { return appText("added a mailbox"); },
+  get "mailbox.disconnected"() { return appText("disconnected a mailbox"); },
+  get "mailbox.deleted"() { return appText("removed a mailbox"); },
+  get "workspace.updated"() { return appText("updated workspace settings"); },
+  get "workspace.transferred"() { return appText("transferred ownership"); },
+  get "widget.secret_rotated"() { return appText("rotated the widget secret"); },
+  get "widget_secret.rotated"() { return appText("rotated the widget secret"); },
+  get "workspace.widget_secret_rotated"() { return appText("rotated the widget secret"); },
+  get "workspace.created"() { return appText("created the workspace"); },
+  get "2fa.enabled"() { return appText("turned on two-factor authentication"); },
+  get "2fa.disabled"() { return appText("turned off two-factor authentication"); },
+  get "member.joined"() { return appText("joined the workspace"); },
+  get "member.left"() { return appText("left the workspace"); },
+  get "member.account_deleted"() { return appText("deleted their account"); },
+  get "identity.linked"() { return appText("linked a sign-in provider"); },
+  get "session.refresh_reused"() { return appText("had a reused session token refused"); },
+  get "api_key.updated"() { return appText("renamed an API key"); },
+  get "mailbox.updated"() { return appText("updated a mailbox"); },
+  get "team.created"() { return appText("created a team"); },
+  get "team.updated"() { return appText("updated a team"); },
+  get "team.deleted"() { return appText("deleted a team"); },
+  get "view.created"() { return appText("created a view"); },
+  get "view.updated"() { return appText("updated a view"); },
+  get "view.deleted"() { return appText("deleted a view"); },
+  get "widget.settings_updated"() { return appText("updated the chat widget"); },
+  get "ai.settings_updated"() { return appText("updated AI settings"); },
+  get "billing.updated"() { return appText("changed the subscription"); },
+  get "billing.ai_top_up_purchased"() { return appText("added AI usage"); },
+  get "billing.ai_recharged"() { return appText("auto-recharged the AI balance"); },
+  get "billing.auto_recharge_updated"() { return appText("changed auto-recharge"); },
+  get "billing.auto_recharge_failed"() { return appText("had an auto-recharge fail"); },
   // Older entries, from before AI usage was counted in US dollars.
-  "billing.credits_purchased": "added AI usage",
-  "billing.credits_recharged": "auto-recharged the AI balance",
-  "billing.payment_failed": "had a payment fail",
-  "billing.seats_synced": "synced billed seats",
+  get "billing.credits_purchased"() { return appText("added AI usage"); },
+  get "billing.credits_recharged"() { return appText("auto-recharged the AI balance"); },
+  get "billing.payment_failed"() { return appText("had a payment fail"); },
+  get "billing.seats_synced"() { return appText("synced billed seats"); },
 };
 
 function str(v: unknown): string | null {
@@ -151,8 +153,20 @@ function generic(e: Entry): string | null {
   const verb = i < 0 ? "" : a.slice(i + 1);
   if (!genericVerbs.has(verb)) return null;
   const thing = (i < 0 ? a : a.slice(0, i)).replace(/_/g, " ");
+  if (i18n.language === "fr") {
+    const nouns: Record<string, string> = {
+      automation: "Automation", tag: "Tag", sla_policy: "SLA policy", "sla policy": "SLA policy",
+      "api key": "API key", integration: "Integration", "custom field": "Custom field",
+      "saved reply": "Saved reply", "business hours": "Business hours", template: "Template",
+      bot: "Bot", widget: "Widget", team: "Team", workspace: "Workspace", member: "Agent",
+      contact: "Contact", company: "Company", mailbox: "Mailbox", webhook: "Webhook", view: "View",
+    };
+    const noun = Object.hasOwn(nouns, thing) ? nouns[thing] : undefined;
+    if (!noun) return null;
+    return appText("{{verb}}: {{thing}}", { verb: appText(verb), thing: appText(noun).toLocaleLowerCase("fr") });
+  }
   const article = /^[aeiou]/.test(thing) || thing.startsWith("sla") ? "an" : "a";
-  return `${verb} ${article} ${thing === "sla policy" ? "SLA policy" : thing === "api key" ? "API key" : thing}`;
+  return `${verb} ${article} ${thing === "sla policy" ? appText("SLA policy") : thing === "api key" ? appText("API key") : thing}`;
 }
 
 /** A plain sentence for an entry, with the object named when the data has it. */
@@ -160,7 +174,10 @@ function describe(e: Entry): ReactNode {
   const verb = verbs[norm(e.action)] ?? verbs[e.action] ?? generic(e);
   const d = e.data;
   const object = str(d.email) ?? str(d.name) ?? str(d.url) ?? str(d.title);
-  const role = norm(e.action) === "member.role_changed" && str(d.to) ? ` to ${str(d.to)}` : "";
+  const roles: Record<string, string> = { owner: "Owner", admin: "Admin", agent: "Agent", viewer: "Viewer" };
+  const nextRole = str(d.to);
+  const role = norm(e.action) === "member.role_changed" && nextRole
+    ? appText(" to {{role}}", { role: appText(Object.hasOwn(roles, nextRole) ? roles[nextRole] : nextRole) }) : "";
   if (!verb)
     return (
       <>
@@ -179,15 +196,16 @@ function describe(e: Entry): ReactNode {
 
 /** Who did it. The row's tile already says what kind of change it was, so the actor stays text. */
 function Actor({ e }: { e: Entry }) {
+  useTranslation("app");
   if (e.actor.type === "user" && e.actor.user) return <span className="truncate font-medium text-fg">{e.actor.user.name || e.actor.user.email}</span>;
   if (e.actor.type === "api_key")
     return (
       <span className="flex items-center gap-1.5">
-        <span className="font-medium text-fg">API key</span>
+        <span className="font-medium text-fg">{appText("API key")}</span>
         {e.actor.api_key_id && <span className="mono text-[11px] text-fg-4">{e.actor.api_key_id.slice(0, 8)}</span>}
       </span>
     );
-  return <span className="font-medium text-fg">{e.actor.type === "user" ? "Someone" : "System"}</span>;
+  return <span className="font-medium text-fg">{e.actor.type === "user" ? appText("Someone") : appText("System")}</span>;
 }
 
 function formatValue(v: unknown): string {
@@ -258,7 +276,7 @@ function haystack(e: Entry): string {
 }
 
 export default function AuditLog() {
-  const { t } = useTranslation("settingsDev");
+  const { t, i18n } = useTranslation("settingsDev");
   const role = useRole();
   const admin = atLeast(role, "admin");
   const list = useInfiniteQuery({ ...q.auditLogs(), enabled: admin });
@@ -268,16 +286,16 @@ export default function AuditLog() {
 
   const entries = useMemo(() => (list.data?.pages ?? []).flatMap((p) => p.data), [list.data]);
   const shown = useMemo(() => {
-    const needle = term.trim().toLowerCase();
+    const needle = term.trim().toLocaleLowerCase(i18n.language);
     return entries.filter((e) => (cat === "all" || categoryOf(e.action) === cat) && (!needle || haystack(e).includes(needle)));
-  }, [entries, cat, term]);
+  }, [entries, cat, term, i18n.language]);
   const days = useMemo(() => {
-    const groups: { day: string; label: string; rows: Entry[] }[] = [];
+    const groups: { day: string; rows: Entry[] }[] = [];
     for (const e of shown) {
       const day = new Date(e.created_at).toDateString();
       const last = groups[groups.length - 1];
       if (last?.day === day) last.rows.push(e);
-      else groups.push({ day, label: dayLabel(e.created_at), rows: [e] });
+      else groups.push({ day, rows: [e] });
     }
     return groups;
   }, [shown]);
@@ -368,7 +386,7 @@ export default function AuditLog() {
           {days.map((g) => (
             <section key={g.day} className="animate-rise-in motion-reduce:animate-none">
               <div className="mb-2 flex items-baseline gap-2 px-1">
-                <h2 className="label-caps">{g.label}</h2>
+                <h2 className="label-caps">{dayLabel(g.rows[0].created_at)}</h2>
                 <span className="mono text-[10.5px] tabular-nums text-fg-4">{g.rows.length}</span>
               </div>
               <div className="overflow-hidden rounded-lg border border-line bg-surface shadow-xs">

@@ -1,3 +1,5 @@
+import { uiText } from "@/i18n/ui";
+import { useTranslation } from "react-i18next";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +25,7 @@ const schema = z
 type Values = z.infer<typeof schema>;
 
 export default function Reset() {
+  useTranslation("interface");
   const { token } = route.useSearch();
   const {
     register,
@@ -37,9 +40,9 @@ export default function Reset() {
   if (!token)
     return (
       <div>
-        <AuthHeading title="This link is incomplete" subtitle="Open the reset link from your email again, or request a new one." />
+        <AuthHeading title={uiText("This link is incomplete")} subtitle={uiText("Open the reset link from your email again, or request a new one.")} />
         <Button variant="secondary" size="lg" className="w-full" asChild>
-          <Link to="/forgot">Request a new link</Link>
+          <Link to="/forgot">{uiText("Request a new link")}</Link>
         </Button>
       </div>
     );
@@ -50,9 +53,9 @@ export default function Reset() {
         <span className={cn("mb-5 flex size-10 animate-indicator-in items-center justify-center rounded-lg", tone.green.chip)}>
           <Check className="size-[18px]" strokeWidth={2.5} />
         </span>
-        <AuthHeading title="Password updated" subtitle="You were signed out everywhere. Log in with your new password." />
+        <AuthHeading title={uiText("Password updated")} subtitle={uiText("You were signed out everywhere. Log in with your new password.")} />
         <Button variant="primary" size="lg" className="w-full" asChild>
-          <Link to="/login">Log in</Link>
+          <Link to="/login">{uiText("Log in")}</Link>
         </Button>
       </div>
     );
@@ -70,10 +73,10 @@ export default function Reset() {
 
   return (
     <div>
-      <AuthHeading title="Choose a new password" subtitle="Use 12 or more characters. A short sentence works well." />
+      <AuthHeading title={uiText("Choose a new password")} subtitle={uiText("Use 12 or more characters. A short sentence works well.")} />
       {error && <Notice className="mb-4">{error}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-        <AuthField label="New password">
+        <AuthField label={uiText("New password")}>
           {(id) => (
             <div className="flex flex-col gap-2">
               <PasswordInput id={id} autoFocus autoComplete="new-password" maxLength={128} invalid={!!errors.password} {...register("password")} />
@@ -81,7 +84,7 @@ export default function Reset() {
             </div>
           )}
         </AuthField>
-        <AuthField label="Confirm password">
+        <AuthField label={uiText("Confirm password")}>
           {(id) => (
             <div className="flex flex-col gap-1.5">
               <PasswordInput id={id} autoComplete="new-password" maxLength={128} invalid={!!errors.confirm} {...register("confirm")} />
@@ -90,7 +93,7 @@ export default function Reset() {
           )}
         </AuthField>
         <Button type="submit" variant="primary" size="lg" className="mt-1 w-full" loading={isSubmitting}>
-          Update password
+          {uiText("Update password")}
         </Button>
       </form>
     </div>

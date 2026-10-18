@@ -1,3 +1,5 @@
+import { uiText } from "@/i18n/ui";
+import { useTranslation } from "react-i18next";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -5,8 +7,9 @@ const steps = ["Workspace", "Mailbox"] as const;
 
 /** Two-step progress for onboarding: 1 Workspace, 2 Mailbox. */
 export function OnboardingSteps({ current }: { current: 1 | 2 }) {
+  useTranslation("interface");
   return (
-    <ol className="mb-8 flex items-center gap-2" aria-label="Setup progress">
+    <ol className="mb-8 flex items-center gap-2" aria-label={uiText("Setup progress")}>
       {steps.map((label, i) => {
         const n = i + 1;
         const done = n < current;
@@ -22,7 +25,7 @@ export function OnboardingSteps({ current }: { current: 1 | 2 }) {
             >
               {done ? <Check className="size-3" strokeWidth={3} /> : n}
             </span>
-            <span className={cn("text-[12.5px]", active ? "font-medium text-fg" : "text-fg-3")}>{label}</span>
+            <span className={cn("text-[12.5px]", active ? "font-medium text-fg" : "text-fg-3")}>{uiText(label)}</span>
           </li>
         );
       })}

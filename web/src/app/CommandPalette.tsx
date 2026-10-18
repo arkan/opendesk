@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Command } from "cmdk";
@@ -106,7 +107,7 @@ export function CommandPalette() {
           aria-describedby={undefined}
           className="fixed left-1/2 top-[14vh] z-50 w-[calc(100vw-32px)] max-w-[620px] -translate-x-1/2 overflow-hidden rounded-xl border border-line bg-raised shadow-float origin-top outline-none data-[state=open]:animate-palette-in data-[state=closed]:animate-palette-out motion-reduce:animate-none"
         >
-          <D.Title className="sr-only">Command menu</D.Title>
+          <D.Title className="sr-only">{appText("Command menu")}</D.Title>
           <Command loop shouldFilter={!aiMode} className="flex flex-col">
             <div className="relative flex h-12 items-center gap-2.5 border-b border-line px-4">
               {aiMode ? (
@@ -135,7 +136,7 @@ export function CommandPalette() {
                     setAiMode(false);
                   }
                 }}
-                placeholder={aiMode ? t("palette.placeholder") : "Search tickets, contacts, articles, or type a command"}
+                placeholder={aiMode ? t("palette.placeholder") : appText("Search tickets, contacts, articles, or type a command")}
                 className="h-full flex-1 bg-transparent text-[14px] text-fg outline-none placeholder:text-fg-4 focus-visible:shadow-none"
               />
               {!aiMode && search.isFetching && <Spinner className="size-3.5 text-fg-4" />}
@@ -165,15 +166,15 @@ export function CommandPalette() {
               {!(ai.enabled && query.trim().length > 2) && (
                 <Command.Empty>
                   {deferred.length > 1 && search.isFetching ? (
-                    <p className="py-10 text-center text-[13px] text-fg-3">Searching</p>
+                    <p className="py-10 text-center text-[13px] text-fg-3">{appText("Searching")}</p>
                   ) : (
-                    <EmptyState compact lit={2} title="No results" description="Try another word, a ticket number or an email." />
+                    <EmptyState compact lit={2} title={appText("No results")} description={appText("Try another word, a ticket number or an email.")} />
                   )}
                 </Command.Empty>
               )}
 
               {hasResults && results.tickets.length > 0 && (
-                <Command.Group heading="Tickets" forceMount className={groupCls}>
+                <Command.Group heading={appText("Tickets")} forceMount className={groupCls}>
                   {results.tickets.map((t) => (
                     <Item
                       forceMount
@@ -195,7 +196,7 @@ export function CommandPalette() {
                 </Command.Group>
               )}
               {hasResults && results.contacts.length > 0 && (
-                <Command.Group heading="Contacts" forceMount className={groupCls}>
+                <Command.Group heading={appText("Contacts")} forceMount className={groupCls}>
                   {results.contacts.map((c) => (
                     <Item
                       forceMount
@@ -216,14 +217,14 @@ export function CommandPalette() {
                 </Command.Group>
               )}
               {hasResults && results.articles.length > 0 && (
-                <Command.Group heading="Articles" forceMount className={groupCls}>
+                <Command.Group heading={appText("Articles")} forceMount className={groupCls}>
                   {results.articles.map((a) => (
                     <Item
                       forceMount
                       key={a.id}
                       value={`article ${a.title} ${a.id}`}
                       icon={<FileText />}
-                      hint={a.status === "draft" ? "Draft" : undefined}
+                      hint={a.status === "draft" ? appText("Draft") : undefined}
                       onSelect={() => go(() => void navigate({ to: "/kb/articles/$articleId", params: { articleId: a.id }, search: { collection: undefined } }))}
                     >
                       {a.title}
@@ -233,7 +234,7 @@ export function CommandPalette() {
               )}
 
               {pageCommands.length > 0 && (
-                <Command.Group heading="This ticket" className={groupCls}>
+                <Command.Group heading={appText("This ticket")} className={groupCls}>
                   {pageCommands.map((c) => (
                     <Item key={c.id} value={`${c.label} ${c.id}`} keywords={c.keywords} icon={c.icon} hint={c.shortcut && <Kbd>{c.shortcut}</Kbd>} onSelect={() => go(c.run)}>
                       {c.label}
@@ -242,7 +243,7 @@ export function CommandPalette() {
                 </Command.Group>
               )}
 
-              <Command.Group heading="Go to" className={groupCls}>
+              <Command.Group heading={appText("Go to")} className={groupCls}>
                 {folders.map((f) => (
                   <Item
                     key={f.id}
@@ -279,68 +280,75 @@ export function CommandPalette() {
                     key={v.id}
                     value={`go view ${v.name}`}
                     icon={<Layers />}
-                    hint="View"
+                    hint={appText("View")}
                     onSelect={() => go(() => void navigate({ to: "/views/$viewId/{-$ticketId}", params: { viewId: v.id, ticketId: undefined } }))}
                   >
                     {v.name}
                   </Item>
                 ))}
                 <Item value="go contacts" icon={<Users />} onSelect={() => go(() => void navigate({ to: "/contacts/{-$contactId}", params: { contactId: undefined } }))}>
-                  Contacts
+
+                  {appText("Contacts")}
                 </Item>
                 <Item value="go companies" icon={<Building2 />} onSelect={() => go(() => void navigate({ to: "/companies/{-$companyId}", params: { companyId: undefined } }))}>
-                  Companies
+
+                  {appText("Companies")}
                 </Item>
                 <Item value="go knowledge base kb articles" icon={<BookOpen />} onSelect={() => go(() => void navigate({ to: "/kb" }))}>
-                  Knowledge base
+
+                  {appText("Knowledge base")}
                 </Item>
                 <Item value="go reports analytics" icon={<BarChart3 />} onSelect={() => go(() => void navigate({ to: "/reports" }))}>
-                  Reports
+
+                  {appText("Reports")}
                 </Item>
                 {(
                   [
-                    ["/settings/profile", "Profile"],
-                    ["/settings/security", "Security"],
-                    ["/settings/notifications", "Notifications"],
-                    ["/settings/workspace", "Workspace settings"],
-                    ["/settings/members", "Members"],
-                    ["/settings/teams", "Teams"],
-                    ["/settings/mailboxes", "Mailboxes"],
-                    ["/settings/email-design", "Email design"],
-                    ["/settings/tags", "Labels"],
-                    ["/settings/saved-replies", "Saved replies"],
-                    ["/settings/views", "Views"],
-                    ["/settings/sla", "SLA policies"],
-                    ["/settings/automations", "Automations"],
-                    ["/settings/ai", "AI settings"],
-                    ["/settings/ai/agent", "AI agent overview"],
-                    ["/settings/ai/bots", "AI bots"],
-                    ["/settings/ai/behaviour", "AI agent behaviour"],
-                    ["/settings/ai/knowledge", "AI agent knowledge"],
-                    ["/settings/ai/tools", "AI agent tools"],
-                    ["/settings/ai/playground", "AI agent playground"],
-                    ["/settings/widget", "Chat widget"],
-                    ["/settings/api-keys", "API keys"],
-                    ["/settings/webhooks", "Webhooks"],
-                    ["/settings/audit-log", "Audit log"],
-                    ["/settings/import", "Import history from Zendesk, Help Scout, Freshdesk, Intercom or CSV"],
+                    ["/settings/profile", appText("Profile")],
+                    ["/settings/security", appText("Security")],
+                    ["/settings/notifications", appText("Notifications")],
+                    ["/settings/workspace", appText("Workspace settings")],
+                    ["/settings/members", appText("Members")],
+                    ["/settings/teams", appText("Teams")],
+                    ["/settings/mailboxes", appText("Mailboxes")],
+                    ["/settings/email-design", appText("Email design")],
+                    ["/settings/tags", appText("Labels")],
+                    ["/settings/saved-replies", appText("Saved replies")],
+                    ["/settings/views", appText("Views")],
+                    ["/settings/sla", appText("SLA policies")],
+                    ["/settings/automations", appText("Automations")],
+                    ["/settings/ai", appText("AI settings")],
+                    ["/settings/ai/agent", appText("AI agent overview")],
+                    ["/settings/ai/bots", appText("AI bots")],
+                    ["/settings/ai/behaviour", appText("AI agent behaviour")],
+                    ["/settings/ai/knowledge", appText("AI agent knowledge")],
+                    ["/settings/ai/tools", appText("AI agent tools")],
+                    ["/settings/ai/playground", appText("AI agent playground")],
+                    ["/settings/widget", appText("Chat widget")],
+                    ["/settings/api-keys", appText("API keys")],
+                    ["/settings/webhooks", appText("Webhooks")],
+                    ["/settings/audit-log", appText("Audit log")],
+                    ["/settings/import", appText("Import history from Zendesk, Help Scout, Freshdesk, Intercom or CSV")],
                   ] as const
                 ).map(([to, label]) => (
-                  <Item key={to} value={`settings ${label}`} icon={<Settings />} hint="Settings" onSelect={() => go(() => void navigate({ to }))}>
+                  <Item key={to} value={`settings ${label}`} icon={<Settings />} hint={appText("Settings")} onSelect={() => go(() => void navigate({ to }))}>
                     {label}
                   </Item>
                 ))}
               </Command.Group>
 
-              <Command.Group heading="Actions" className={groupCls}>
+              <Command.Group heading={appText("Actions")} className={groupCls}>
                 <Item value="new ticket compose create" icon={<SquarePen />} hint={<Kbd>c</Kbd>} onSelect={() => go(() => shell.newTicket())}>
-                  New ticket
+
+                  {appText("New ticket")}
                 </Item>
                 <Item value="toggle theme dark light mode" icon={dark ? <Sun /> : <Moon />} onSelect={() => go(() => setTheme(dark ? "light" : "dark"))}>
-                  Switch to {dark ? "light" : "dark"} theme
+
+                  {appText("Switch to {{theme}} theme", { theme: appText(dark ? "light" : "dark") })}
                 </Item>
                 <Item value="keyboard shortcuts help" icon={<Keyboard />} hint={<Kbd>?</Kbd>} onSelect={() => go(() => shell.shortcuts())}>
-                  Keyboard shortcuts
+
+                  {appText("Keyboard shortcuts")}
                 </Item>
                 {desktop && (
                   <Item value="switch server instance cloud self-hosted" icon={<Server />} onSelect={() => go(() => desktop?.switchServer())}>
@@ -358,7 +366,7 @@ export function CommandPalette() {
                         icon={<ArrowRight />}
                         onSelect={() => go(() => void switchTo(account.user.id, m.workspace.id))}
                       >
-                        {other ? tShell("accounts.paletteSwitch", { workspace: m.workspace.name, email: account.user.email }) : `Switch to ${m.workspace.name}`}
+                        {other ? tShell("accounts.paletteSwitch", { workspace: m.workspace.name, email: account.user.email }) : appText("Switch to {{name}}", { name: m.workspace.name })}
                       </Item>
                     );
                   })}
@@ -379,10 +387,10 @@ export function CommandPalette() {
             <div className="flex h-9 items-center gap-4 border-t border-line px-4 text-[11.5px] text-fg-4">
               <span className="flex items-center gap-1.5">
                 <Kbd>↑</Kbd>
-                <Kbd>↓</Kbd> to move
+                <Kbd>↓</Kbd>  {appText("to move")}
               </span>
               <span className="flex items-center gap-1.5">
-                <Kbd>enter</Kbd> to open
+                <Kbd>enter</Kbd>  {appText("to open")}
               </span>
               {ai.enabled && (
                 <span className="ml-auto flex items-center gap-1.5">
@@ -480,7 +488,7 @@ function AiResults({
       {articles.length > 0 && (
         <Command.Group heading={heading(t("palette.articles"))} className={groupCls}>
           {articles.map((a) => (
-            <Item key={a.id} value={`ai article ${a.id}`} icon={<FileText />} hint={a.status === "draft" ? "Draft" : undefined} onSelect={() => onArticle(a.id)}>
+            <Item key={a.id} value={`ai article ${a.id}`} icon={<FileText />} hint={a.status === "draft" ? appText("Draft") : undefined} onSelect={() => onArticle(a.id)}>
               <span className="truncate">{a.title}</span>
               {a.excerpt && <span className="hidden min-w-0 truncate text-xs text-fg-3 sm:inline">{a.excerpt}</span>}
             </Item>

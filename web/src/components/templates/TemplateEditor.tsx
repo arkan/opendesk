@@ -1,3 +1,6 @@
+import { templateText } from "./text";
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 // The editor of every customer-facing template (contracts/templates.md):
 // signatures, auto-replies, saved replies, footers, layouts and the CSAT email.
 // Visual mode is the rich editor with tags as pills and "{{" to insert one;
@@ -45,6 +48,7 @@ export const TemplateEditor = forwardRef<TemplateEditorHandle, TemplateEditorPro
   { value, onChange, kind, ariaLabel, placeholder, html: allowHtml, htmlOnly, toolbar = "compact", minHeight = 96, disabled, framed = true, className, problems },
   ref,
 ) {
+  useTranslation(["app", "templatesUi"]);
   const confirm = useConfirm();
   const catalog = useCatalog(kind);
   const [mode, setMode] = useState<"visual" | "html">(() => (htmlOnly || (allowHtml && needsHtml(value)) ? "html" : "visual"));
@@ -57,7 +61,7 @@ export const TemplateEditor = forwardRef<TemplateEditorHandle, TemplateEditorPro
   filtersRef.current = catalog.filters;
   itemsRef.current = useMemo(
     () => [
-      ...catalog.slots.map((s) => ({ key: s.key, label: s.label, group: "Place" })),
+      ...catalog.slots.map((s) => ({ key: s.key, label: s.label, group: templateText("Place") })),
       ...catalog.variables.map((v) => ({ key: v.key, label: v.label, group: GROUP_LABELS[v.group] ?? v.group, value: v.example })),
     ],
     [catalog.slots, catalog.variables],
@@ -127,12 +131,12 @@ export const TemplateEditor = forwardRef<TemplateEditorHandle, TemplateEditorPro
     if (next === mode) return;
     if (next === "visual" && needsHtml(value)) {
       confirm.show(
-        "The visual editor keeps text, links, lists and images. Tables, inline styles and layout in this HTML will be removed.",
+        templateText("The visual editor keeps text, links, lists and images. Tables, inline styles and layout in this HTML will be removed."),
         () => {
           simplified.current = value;
           setMode("visual");
         },
-        { title: "Switch to the visual editor?", confirmLabel: "Switch and simplify" },
+        { title: templateText("Switch to the visual editor?"), confirmLabel: templateText("Switch and simplify") },
       );
       return;
     }
@@ -146,7 +150,7 @@ export const TemplateEditor = forwardRef<TemplateEditorHandle, TemplateEditorPro
       value={mode}
       onChange={switchMode}
       options={[
-        { value: "visual", label: "Visual", icon: <Type /> },
+        { value: "visual", label: templateText("Visual"), icon: <Type /> },
         { value: "html", label: "HTML", icon: <Code2 /> },
       ]}
     />
@@ -194,7 +198,7 @@ export const TemplateEditor = forwardRef<TemplateEditorHandle, TemplateEditorPro
               className="mono rounded-none border-0 bg-transparent px-3 py-2.5 text-[12px] leading-[18px] shadow-none focus:shadow-none"
             />
             <div className="flex items-center gap-1 border-t border-line-soft px-1.5 py-1">
-              <span className="px-1.5 text-[11.5px] text-fg-4">Scripts, forms and remote styles are removed when you save.</span>
+              <span className="px-1.5 text-[11.5px] text-fg-4">{appText("Scripts, forms and remote styles are removed when you save.")}</span>
               <div className="ml-auto flex items-center gap-1">
                 {modeToggle}
                 {picker}
@@ -229,15 +233,17 @@ export function Problems({ problems, className }: { problems: TemplateProblem[];
 
 /** Tells everyone writing a template what it can do. */
 export function TemplateHint({ className }: { className?: string }) {
+  useTranslation(["app", "templatesUi"]);
   return (
     <p className={cn("mt-1.5 flex flex-wrap items-center gap-x-1 text-[11.5px] leading-[17px] text-fg-4", className)}>
-      <span>Type</span>
+      <span>{appText("Type")}</span>
       <kbd className="mono rounded-sm bg-hover px-1 text-[10.5px] text-fg-3">{"{{"}</kbd>
-      <span>for a variable or</span>
+      <span>{appText("for a variable or")}</span>
       <kbd className="mono rounded-sm bg-hover px-1 text-[10.5px] text-fg-3">{"{%"}</kbd>
-      <span>for logic like if and loops.</span>
+      <span>{appText("for logic like if and loops.")}</span>
       <a href="https://docs.opendesk.sh/guides/email-templates/variables/" target="_blank" rel="noreferrer" className="text-fg-3 underline-offset-2 hover:text-fg hover:underline">
-        Template guide
+
+        {appText("Template guide")}
       </a>
     </p>
   );

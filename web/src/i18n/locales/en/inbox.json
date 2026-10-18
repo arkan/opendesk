@@ -92,7 +92,9 @@
     "soundOn": "Mute chat alert sounds",
     "soundOff": "Play a sound when a visitor is waiting",
     "title_one": "● {{count}} customer waiting",
-    "title_other": "● {{count}} customers waiting"
+    "title_other": "● {{count}} customers waiting",
+    "new_one": "{{count}} new",
+    "new_other": "{{count}} new"
   },
   "presence": {
     "viewing": "{{name}} is viewing",

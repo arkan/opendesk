@@ -1,3 +1,6 @@
+import { dateLocale } from "@/lib/dateLocale";
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 import { endOfMonth, format, parseISO, startOfMonth, subDays, subMonths } from "date-fns";
 import { CalendarDays, Check, ChevronDown } from "lucide-react";
 import { useState } from "react";
@@ -11,11 +14,11 @@ const day = (d: Date) => format(d, "yyyy-MM-dd");
 
 export function presets(now = new Date()): { id: string; label: string; range: ReportsRange }[] {
   return [
-    { id: "7", label: "Last 7 days", range: { from: day(subDays(now, 6)), to: day(now) } },
-    { id: "30", label: "Last 30 days", range: { from: day(subDays(now, 29)), to: day(now) } },
-    { id: "90", label: "Last 90 days", range: { from: day(subDays(now, 89)), to: day(now) } },
-    { id: "month", label: "This month", range: { from: day(startOfMonth(now)), to: day(now) } },
-    { id: "last-month", label: "Last month", range: { from: day(startOfMonth(subMonths(now, 1))), to: day(endOfMonth(subMonths(now, 1))) } },
+    { id: "7", label: appText("Last 7 days"), range: { from: day(subDays(now, 6)), to: day(now) } },
+    { id: "30", label: appText("Last 30 days"), range: { from: day(subDays(now, 29)), to: day(now) } },
+    { id: "90", label: appText("Last 90 days"), range: { from: day(subDays(now, 89)), to: day(now) } },
+    { id: "month", label: appText("This month"), range: { from: day(startOfMonth(now)), to: day(now) } },
+    { id: "last-month", label: appText("Last month"), range: { from: day(startOfMonth(subMonths(now, 1))), to: day(endOfMonth(subMonths(now, 1))) } },
   ];
 }
 
@@ -25,10 +28,11 @@ export function rangeLabel(r: ReportsRange) {
   const a = parseISO(r.from);
   const b = parseISO(r.to);
   const sameYear = a.getFullYear() === b.getFullYear();
-  return `${format(a, sameYear ? "MMM d" : "MMM d, yyyy")} – ${format(b, "MMM d, yyyy")}`;
+  return `${format(a, sameYear ? "MMM d" : "MMM d, yyyy", { locale: dateLocale() })} – ${format(b, "MMM d, yyyy", { locale: dateLocale() })}`;
 }
 
 export function RangePicker({ value, onChange }: { value: ReportsRange; onChange: (r: ReportsRange) => void }) {
+  useTranslation("app");
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState(value.from);
   const [to, setTo] = useState(value.to);
@@ -54,7 +58,7 @@ export function RangePicker({ value, onChange }: { value: ReportsRange; onChange
         </Button>
       }
     >
-      <div role="listbox" aria-label="Date range">
+      <div role="listbox" aria-label={appText("Date range")}>
         {list.map((p) => (
           <button
             key={p.id}
@@ -71,7 +75,7 @@ export function RangePicker({ value, onChange }: { value: ReportsRange; onChange
             )}
           >
             <span className="flex-1">{p.label}</span>
-            <span className="mono text-[10.5px] text-fg-4">{format(parseISO(p.range.from), "MMM d")}</span>
+            <span className="mono text-[10.5px] text-fg-4">{format(parseISO(p.range.from), "MMM d", { locale: dateLocale() })}</span>
             <Check className={cn("size-4", active === p.id ? "text-fg" : "invisible")} strokeWidth={2.5} />
           </button>
         ))}
@@ -85,19 +89,22 @@ export function RangePicker({ value, onChange }: { value: ReportsRange; onChange
           setOpen(false);
         }}
       >
-        <div className="label-caps mb-2">Custom range</div>
+        <div className="label-caps mb-2">{appText("Custom range")}</div>
         <div className="grid grid-cols-2 gap-2">
           <label className="flex flex-col gap-1 text-xs text-fg-3">
-            From
-            <DateField size="sm" aria-label="From" value={from} max={to} onChange={setFrom} />
+
+            {appText("From")}
+            <DateField size="sm" aria-label={appText("From")} value={from} max={to} onChange={setFrom} />
           </label>
           <label className="flex flex-col gap-1 text-xs text-fg-3">
-            To
-            <DateField size="sm" aria-label="To" value={to} min={from} max={day(new Date())} onChange={setTo} />
+
+            {appText("To")}
+            <DateField size="sm" aria-label={appText("To")} value={to} min={from} max={day(new Date())} onChange={setTo} />
           </label>
         </div>
         <Button type="submit" variant="primary" size="sm" className="mt-2.5 w-full" disabled={invalid}>
-          Apply range
+
+          {appText("Apply range")}
         </Button>
       </form>
     </Popover>

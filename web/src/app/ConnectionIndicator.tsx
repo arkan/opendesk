@@ -1,13 +1,14 @@
+import { appText } from "@/i18n/text";
 import { useRealtime } from "@/lib/realtime/store";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
 
 const copy = {
-  idle: { label: "Not connected", tone: "bg-fg-4", pulse: false },
-  connecting: { label: "Connecting", tone: "bg-fg-4", pulse: true },
-  live: { label: "Live: updates appear as they happen", tone: "bg-ok", pulse: false },
-  reconnecting: { label: "Reconnecting. Changes will sync when the connection is back.", tone: "bg-warn", pulse: true },
-  offline: { label: "Offline. Retrying.", tone: "bg-danger", pulse: true },
+  idle: { get label() { return appText("Not connected"); }, tone: "bg-fg-4", pulse: false },
+  connecting: { get label() { return appText("Connecting"); }, tone: "bg-fg-4", pulse: true },
+  live: { get label() { return appText("Live: updates appear as they happen"); }, tone: "bg-ok", pulse: false },
+  reconnecting: { get label() { return appText("Reconnecting. Changes will sync when the connection is back."); }, tone: "bg-warn", pulse: true },
+  offline: { get label() { return appText("Offline. Retrying."); }, tone: "bg-danger", pulse: true },
 } as const;
 
 export function ConnectionIndicator({ className }: { className?: string }) {

@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // The message box: Enter sends, Shift+Enter breaks the line, "/" lists quick
 // asks. Every keystroke boops the blob.
 
@@ -52,7 +53,7 @@ export const Composer = forwardRef<ComposerHandle, { running: boolean; onSend: (
   return (
     <div className="relative">
       {open && (
-        <div role="listbox" aria-label="Quick asks" className="absolute inset-x-0 bottom-full mb-1.5 overflow-hidden rounded-lg border border-line bg-raised p-1 shadow-pop">
+        <div role="listbox" aria-label={appText("Quick asks")} className="absolute inset-x-0 bottom-full mb-1.5 overflow-hidden rounded-lg border border-line bg-raised p-1 shadow-pop">
           {slash.map((k, i) => (
             <button
               key={k}

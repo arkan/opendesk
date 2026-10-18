@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Picture uploads, availability and the auto-away heartbeat
 // (contracts/api.md "Profile pictures and logos" and "Assignment").
 
@@ -15,8 +16,8 @@ export const IMAGE_ACCEPT = IMAGE_TYPES.join(",");
 
 /** Checks a picked file before upload; the server checks the bytes again. */
 export function imageFileError(file: File): string | null {
-  if (!(IMAGE_TYPES as readonly string[]).includes(file.type)) return "Use a PNG, JPEG, GIF or WebP image.";
-  if (file.size > MAX_IMAGE_BYTES) return "Images can be at most 5 MB.";
+  if (!(IMAGE_TYPES as readonly string[]).includes(file.type)) return appText("Use a PNG, JPEG, GIF or WebP image.");
+  if (file.size > MAX_IMAGE_BYTES) return appText("Images can be at most 5 MB.");
   return null;
 }
 

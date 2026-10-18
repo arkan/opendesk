@@ -1,3 +1,4 @@
+import { uiText } from "@/i18n/ui";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useRouter } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -73,9 +74,9 @@ export default function Register() {
       if (isApiError(err, "email_taken") || isApiError(err, "conflict"))
         setError(
           <>
-            An account already uses this email.{" "}
+             {uiText("An account already uses this email.")}{" "}
             <Link to="/login" search={{ next: search.next, add }} className="font-medium text-fg underline underline-offset-2">
-              Log in instead
+               {uiText("Log in instead")}
             </Link>
           </>,
         );
@@ -88,25 +89,25 @@ export default function Register() {
   if (closed)
     return (
       <div>
-        <AuthHeading title="Sign-ups are closed" subtitle="This opendesk instance only accepts new accounts by invitation." />
+        <AuthHeading title={uiText("Sign-ups are closed")} subtitle={uiText("This opendesk instance only accepts new accounts by invitation.")} />
         <Button variant="secondary" size="lg" className="w-full" asChild>
-          <Link to="/login">Back to log in</Link>
+          <Link to="/login">{uiText("Back to log in")}</Link>
         </Button>
       </div>
     );
 
   return (
     <div>
-      <AuthHeading title="Create your account" subtitle={invite ? "You're joining a workspace. Create an account to accept." : "Set up a shared inbox for your team in a few minutes."} />
+      <AuthHeading title={uiText("Create your account")} subtitle={invite ? uiText("You're joining a workspace. Create an account to accept.") : uiText("Set up a shared inbox for your team in a few minutes.")} />
       {!invite && (
         <>
-          <ProviderButtons next={search.next} verb="Sign up" />
+          <ProviderButtons next={search.next} verb={uiText("Sign up")} />
           {!!cfg?.providers.length && <OrDivider />}
         </>
       )}
       {error && <Notice className="mb-4">{error}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-        <AuthField label="Name">
+        <AuthField label={uiText("Name")}>
           {(id) => (
             <div className="flex flex-col gap-1.5">
               <TextInput id={id} inputSize="lg" autoComplete="name" autoFocus placeholder="Ada Lovelace" invalid={!!errors.name} {...register("name")} />
@@ -114,7 +115,7 @@ export default function Register() {
             </div>
           )}
         </AuthField>
-        <AuthField label="Work email">
+        <AuthField label={uiText("Work email")}>
           {(id) => (
             <div className="flex flex-col gap-1.5">
               <TextInput id={id} inputSize="lg" type="email" autoComplete="email" readOnly={!!invite && !!search.email} placeholder="you@company.com" invalid={!!errors.email} {...register("email")} />
@@ -122,7 +123,7 @@ export default function Register() {
             </div>
           )}
         </AuthField>
-        <AuthField label="Password">
+        <AuthField label={uiText("Password")}>
           {(id) => (
             <div className="flex flex-col gap-2">
               <PasswordInput id={id} autoComplete="new-password" maxLength={128} invalid={!!errors.password} {...register("password")} />
@@ -132,18 +133,18 @@ export default function Register() {
         </AuthField>
         <Turnstile ref={turnstile} onToken={setToken} action="register" />
         <Button type="submit" variant="primary" size="lg" className="mt-1 w-full" loading={isSubmitting}>
-          Create account
+          {uiText("Create account")}
         </Button>
         <p className="text-center text-[11.5px] leading-4 text-fg-4">
-          By continuing you agree to the{" "}
-          <a href="https://opendesk.sh/terms" className="underline underline-offset-2 hover:text-fg-2">terms</a> and{" "}
-          <a href="https://opendesk.sh/privacy" className="underline underline-offset-2 hover:text-fg-2">privacy policy</a>.
+           {uiText("By continuing you agree to the")}{" "}
+          <a href="https://opendesk.sh/terms" className="underline underline-offset-2 hover:text-fg-2">{uiText("terms")}</a>  {uiText("and")}{" "}
+          <a href="https://opendesk.sh/privacy" className="underline underline-offset-2 hover:text-fg-2">{uiText("privacy policy")}</a>.
         </p>
       </form>
       <p className="mt-7 text-center text-[12.5px] text-fg-3">
-        Already have an account?{" "}
+         {uiText("Already have an account?")}{" "}
         <Link to="/login" search={{ next: search.next, add }} className="font-medium text-fg hover:underline">
-          Log in
+          {uiText("Log in")}
         </Link>
       </p>
       {adding && (

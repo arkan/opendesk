@@ -1,3 +1,4 @@
+import { uiText } from "@/i18n/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useRouter } from "@tanstack/react-router";
@@ -161,7 +162,7 @@ export default function Login() {
           }
         />
       ) : (
-        <AuthHeading title="Log in to opendesk" subtitle="Welcome back. Pick up where your team left off." />
+        <AuthHeading title={uiText("Log in to opendesk")} subtitle={uiText("Welcome back. Pick up where your team left off.")} />
       )}
       {isLoading ? (
         <div className="flex flex-col gap-3">
@@ -174,7 +175,7 @@ export default function Login() {
           <div className="flex flex-col gap-2">
             {passkeysOn && (
               <Button variant="secondary" size="lg" className="w-full" icon={<KeyRound className="size-4" />} loading={passkeyBusy} onClick={() => void passkey()}>
-                Sign in with a passkey
+                {uiText("Sign in with a passkey")}
               </Button>
             )}
             <ProviderButtons next={search.next} />
@@ -183,7 +184,7 @@ export default function Login() {
           {error && <Notice className="mb-4">{error}</Notice>}
           {passwordLogin && (
             <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-              <AuthField label="Email">
+              <AuthField label={uiText("Email")}>
                 {(id) => (
                   <div className="flex flex-col gap-1.5">
                     <TextInput
@@ -201,10 +202,10 @@ export default function Login() {
                 )}
               </AuthField>
               <AuthField
-                label="Password"
+                label={uiText("Password")}
                 aside={
                   <Link to="/forgot" className="text-xs text-fg-3 transition-colors hover:text-fg">
-                    Forgot password?
+                    {uiText("Forgot password?")}
                   </Link>
                 }
               >
@@ -217,15 +218,15 @@ export default function Login() {
               </AuthField>
               <Turnstile ref={turnstile} onToken={setToken} action="login" />
               <Button type="submit" variant="primary" size="lg" className="mt-1 w-full" loading={isSubmitting}>
-                Log in
+                {uiText("Log in")}
               </Button>
             </form>
           )}
           {cfg?.signup_enabled !== false && (
             <p className="mt-7 text-center text-[12.5px] text-fg-3">
-              New to opendesk?{" "}
+               {uiText("New to opendesk?")}{" "}
               <Link to="/register" search={{ next: search.next, add: adding ? "1" : undefined }} className="font-medium text-fg hover:underline">
-                Create an account
+                {uiText("Create an account")}
               </Link>
             </p>
           )}

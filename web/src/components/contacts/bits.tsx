@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Small shared pieces for the contacts and companies directory.
 
 import type { ReactNode } from "react";
@@ -19,7 +20,7 @@ export function fieldLabel(key: string): string {
 }
 export function fieldText(v: unknown): string {
   if (Array.isArray(v)) return v.join(", ");
-  if (typeof v === "boolean") return v ? "Yes" : "No";
+  if (typeof v === "boolean") return v ? appText("Yes") : appText("No");
   if (typeof v === "string" || typeof v === "number") return String(v);
   return JSON.stringify(v);
 }

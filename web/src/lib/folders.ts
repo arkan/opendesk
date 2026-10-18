@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import type { TicketListQuery } from "./api/endpoints";
 import type { FieldFilter, TicketCounts } from "./api/types";
 
@@ -8,12 +9,12 @@ export type Folder = { id: FolderId; label: string; query: TicketListQuery; coun
 const active = ["open", "pending", "on_hold"] as TicketListQuery["status"];
 
 export const folders: Folder[] = [
-  { id: "unassigned", label: "Unassigned", query: { status: active, assignee: "none" }, count: (c) => c.unassigned },
-  { id: "mine", label: "Mine", query: { status: active, assignee: "me" }, count: (c) => c.mine },
-  { id: "open", label: "All open", query: { status: ["open"] }, count: (c) => c.open },
-  { id: "pending", label: "Pending", query: { status: ["pending", "on_hold"] }, count: (c) => c.pending + c.on_hold },
-  { id: "solved", label: "Solved", query: { status: ["solved", "closed"] }, count: () => null },
-  { id: "spam", label: "Spam", query: { spam: true }, count: (c) => c.spam },
+  { id: "unassigned", get label() { return appText("Unassigned"); }, query: { status: active, assignee: "none" }, count: (c) => c.unassigned },
+  { id: "mine", get label() { return appText("Mine"); }, query: { status: active, assignee: "me" }, count: (c) => c.mine },
+  { id: "open", get label() { return appText("All open"); }, query: { status: ["open"] }, count: (c) => c.open },
+  { id: "pending", get label() { return appText("Pending"); }, query: { status: ["pending", "on_hold"] }, count: (c) => c.pending + c.on_hold },
+  { id: "solved", get label() { return appText("Solved"); }, query: { status: ["solved", "closed"] }, count: () => null },
+  { id: "spam", get label() { return appText("Spam"); }, query: { spam: true }, count: (c) => c.spam },
 ];
 
 export function folderById(id: string): Folder | undefined {

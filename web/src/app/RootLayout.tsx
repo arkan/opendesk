@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, useMatches, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
@@ -10,11 +12,12 @@ import { onAccountFallback } from "@/lib/session";
 import { useDesktopNavigation } from "./useDesktopBridge";
 
 function useRouteTitle() {
+  const { i18n } = useTranslation("app");
   const matches = useMatches();
   const title = [...matches].reverse().find((m) => m.staticData?.title)?.staticData.title;
   useEffect(() => {
-    document.title = title ? `${title} · opendesk` : "opendesk";
-  }, [title]);
+    document.title = title ? `${appText(title)} · opendesk` : "opendesk";
+  }, [title, i18n.language]);
 }
 
 function usePageviews() {

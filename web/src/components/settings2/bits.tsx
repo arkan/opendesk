@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
@@ -21,17 +23,18 @@ export function ReorderButtons({
   label: string;
   disabled?: boolean;
 }) {
+  useTranslation("app");
   const btn =
     "flex size-6 items-center justify-center rounded-md text-fg-3 transition-colors hover:bg-hover hover:text-fg disabled:pointer-events-none disabled:opacity-30";
   return (
     <span className="flex items-center" onClick={(e) => e.stopPropagation()}>
-      <Tooltip content="Move up">
-        <button type="button" aria-label={`Move ${label} up`} disabled={first || disabled} onClick={onUp} className={btn}>
+      <Tooltip content={appText("Move up")}>
+        <button type="button" aria-label={appText("Move {{name}} up", { name: label })} disabled={first || disabled} onClick={onUp} className={btn}>
           <ArrowUp className="size-3.5" />
         </button>
       </Tooltip>
-      <Tooltip content="Move down">
-        <button type="button" aria-label={`Move ${label} down`} disabled={last || disabled} onClick={onDown} className={btn}>
+      <Tooltip content={appText("Move down")}>
+        <button type="button" aria-label={appText("Move {{name}} down", { name: label })} disabled={last || disabled} onClick={onDown} className={btn}>
           <ArrowDown className="size-3.5" />
         </button>
       </Tooltip>
@@ -49,8 +52,9 @@ export function MonoChip({ children, className }: { children: React.ReactNode; c
 }
 
 export function ListSkeleton({ rows = 4 }: { rows?: number }) {
+  useTranslation("app");
   return (
-    <div aria-busy="true" aria-label="Loading">
+    <div aria-busy="true" aria-label={appText("Loading")}>
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="flex h-12 items-center gap-3 border-b border-line-soft px-4 last:border-0">
           <div className="skeleton h-2.5" style={{ width: `${28 + ((i * 13) % 25)}%` }} />
@@ -64,7 +68,7 @@ export function ListSkeleton({ rows = 4 }: { rows?: number }) {
 // Colour for meaning in settings lists: roles, states, summary figures.
 
 const roleTone = { owner: "indigo", admin: "blue", agent: "teal", viewer: "gray" } as const satisfies Record<Role, Tone>;
-const roleText: Record<Role, string> = { owner: "Owner", admin: "Admin", agent: "Agent", viewer: "Viewer" };
+const roleText: Record<Role, string> = { get owner() { return appText("Owner"); }, get admin() { return appText("Admin"); }, get agent() { return appText("Agent"); }, get viewer() { return appText("Viewer"); } };
 
 /** A workspace role in its tone. */
 export function RolePill({ role, className }: { role: Role; className?: string }) {

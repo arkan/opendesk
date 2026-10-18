@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Teams and brands in settings (contracts/teams.md): the chips, dots, marks and
 // pickers every settings page uses. Brand UI shows once a workspace has a
 // second brand; team UI once it has a team.
@@ -44,6 +45,7 @@ export function TeamDot({ team, className }: { team: Pick<Team, "color" | "name"
 
 /** A team as a soft pill: its dot, its name and a lock when private. */
 export function TeamChip({ team, className, size = "sm" }: { team: Pick<Team, "color" | "name" | "private">; className?: string; size?: "xs" | "sm" }) {
+  useTranslation("app");
   return (
     <span
       className={cn(
@@ -55,7 +57,7 @@ export function TeamChip({ team, className, size = "sm" }: { team: Pick<Team, "c
     >
       <span aria-hidden className={cn("size-1.5 shrink-0 rounded-[2px]", tone[teamTone(team)].solid)} />
       <span className="truncate">{team.name}</span>
-      {team.private && <Lock aria-label="Private" className="size-2.5 shrink-0 opacity-70" />}
+      {team.private && <Lock aria-label={appText("Private")} className="size-2.5 shrink-0 opacity-70" />}
     </span>
   );
 }
@@ -77,7 +79,7 @@ export function teamItems(teams: Team[]): PickerItem[] {
     value: t.id,
     label: t.name,
     icon: <TeamDot team={t} />,
-    hint: t.private ? <Lock className="size-3 text-fg-4" aria-label="Private" /> : undefined,
+    hint: t.private ? <Lock className="size-3 text-fg-4" aria-label={appText("Private")} /> : undefined,
   }));
 }
 
@@ -150,7 +152,7 @@ export function BrandMark({ brand, size = "md", className }: { brand: Pick<Brand
 }
 
 export function brandItems(brands: Brand[]): PickerItem[] {
-  return brands.map((b) => ({ value: b.id, label: b.name, icon: <BrandMark brand={b} size="xs" />, hint: b.is_default ? "Default" : undefined }));
+  return brands.map((b) => ({ value: b.id, label: b.name, icon: <BrandMark brand={b} size="xs" />, hint: b.is_default ? appText("Default") : undefined }));
 }
 
 /** One brand, as a builder-style value button. */
@@ -178,7 +180,7 @@ export function mailboxItems(mailboxes: Mailbox[], brands: Brand[] = []): Picker
     label: m.email,
     keywords: [m.name, ...m.aliases],
     group: multi ? brands.find((b) => b.id === m.brand_id)?.name : undefined,
-    hint: m.private ? <Lock className="size-3 text-fg-4" aria-label="Private" /> : m.name !== m.email ? m.name : undefined,
+    hint: m.private ? <Lock className="size-3 text-fg-4" aria-label={appText("Private")} /> : m.name !== m.email ? m.name : undefined,
   }));
 }
 

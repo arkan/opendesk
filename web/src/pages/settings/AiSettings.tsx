@@ -1,3 +1,4 @@
+import { intlLocale } from "@/i18n";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
@@ -348,7 +349,7 @@ function CostChip({ usd, className }: { usd: number; className?: string }) {
 function Counter({ n, max }: { n: number; max: number }) {
   return (
     <span className={cn("mono self-end text-[11px] tabular-nums", n > max ? "text-danger-fg" : "text-fg-4")}>
-      {n.toLocaleString()} / {max.toLocaleString()}
+      {n.toLocaleString(intlLocale())} / {max.toLocaleString(intlLocale())}
     </span>
   );
 }

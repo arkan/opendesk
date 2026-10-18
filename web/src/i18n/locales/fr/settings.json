@@ -1,0 +1,613 @@
+{
+  "sortable": {
+    "handle": "Faites glisser pour réordonner. Maintenez Alt et appuyez sur les flèches pour déplacer.",
+    "hint": "Faites glisser pour réordonner"
+  },
+  "cancel": "Annuler",
+  "labels": {
+    "title": "Étiquettes",
+    "description": "Les étiquettes colorées organisent tickets, contacts et entreprises pour faciliter les recherches, les filtres et les rapports. Supprimer une étiquette la retire de tous les éléments associés.",
+    "newLabel": "Nouvelle étiquette",
+    "newGroup": "Nouveau groupe",
+    "filter": "Filtrer les étiquettes",
+    "count_one": "{{count}} étiquette",
+    "count_other": "{{count}} étiquettes",
+    "ungrouped": "Autres étiquettes",
+    "emptyGroup": "Aucune étiquette dans ce groupe pour le moment",
+    "editAria": "Modifier {{name}}",
+    "actionsAria": "Actions pour {{name}}",
+    "reorderAria": "Réordonner {{name}}. Maintenez Alt et appuyez sur les flèches pour déplacer.",
+    "usageHint": "{{tickets}} tickets, {{contacts}} contacts, {{companies}} entreprises",
+    "createdToast": "Étiquette « {{name}} » créée",
+    "savedToast": "Étiquette enregistrée",
+    "archivedToast": "« {{name}} » archivée",
+    "restoredToast": "« {{name}} » restaurée",
+    "archivedSection_one": "{{count}} étiquette archivée",
+    "archivedSection_other": "{{count}} étiquettes archivées",
+    "summary": {
+      "labels": "Étiquettes",
+      "groups": "Groupes",
+      "onTickets": "Sur les tickets",
+      "archived": "Archivées"
+    },
+    "columns": {
+      "label": "Étiquette",
+      "appliesTo": "S’applique à",
+      "uses": "Utilisations"
+    },
+    "scope": {
+      "tickets": "Tickets",
+      "contacts": "Contacts",
+      "companies": "Entreprises",
+      "not": "Pas pour {{what}}"
+    },
+    "empty": {
+      "title": "Aucune étiquette pour le moment",
+      "description": "Les étiquettes ajoutées aux tickets apparaissent ici. Créez-en quelques-unes pour commencer, comme facturation ou bug.",
+      "tips": {
+        "groups": "Les groupes peuvent autoriser une seule étiquette à la fois",
+        "who": "Les administrateurs choisissent qui peut créer des étiquettes"
+      }
+    },
+    "noMatch": {
+      "title": "Aucune étiquette ne correspond",
+      "description": "Essayez un autre nom."
+    },
+    "menu": {
+      "edit": "Modifier",
+      "colour": "Couleur",
+      "moveTo": "Déplacer vers un groupe",
+      "merge": "Fusionner avec une autre étiquette",
+      "archive": "Archiver",
+      "restore": "Restaurer",
+      "delete": "Supprimer"
+    },
+    "delete": {
+      "title": "Supprimer cette étiquette ?",
+      "body": {
+        "before": "",
+        "after": "sera retirée de tous les tickets, contacts et entreprises associés. Cette action est irréversible."
+      },
+      "confirm": "Supprimer l’étiquette"
+    },
+    "dialog": {
+      "newTitle": "Nouvelle étiquette",
+      "editTitle": "Modifier l’étiquette",
+      "newDescription": "Les agents peuvent l’ajouter aux tickets immédiatement.",
+      "name": "Nom",
+      "newName": "Nom de la nouvelle étiquette",
+      "namePlaceholder": "facturation",
+      "preview": "Aperçu",
+      "colour": "Couleur",
+      "description": "Description",
+      "descriptionHint": "Affichée dans les sélecteurs pour que tous utilisent l’étiquette de la même façon.",
+      "descriptionPlaceholder": "Questions sur les factures, remboursements et moyens de paiement",
+      "group": "Groupe",
+      "noGroup": "Aucun groupe",
+      "exclusiveHint": "Un élément ne peut avoir qu’une étiquette de ce groupe à la fois.",
+      "appliesTo": "S’applique à",
+      "create": "Créer l’étiquette",
+      "save": "Enregistrer l’étiquette",
+      "duplicate": "Une étiquette porte déjà ce nom.",
+      "badChars": "Utilisez des lettres, chiffres, espaces et - _ . / : & + #.",
+      "nameRequired": "Donnez un nom à l’étiquette.",
+      "scopeRequired": "Choisissez où l’étiquette peut être utilisée."
+    },
+    "group": {
+      "newTitle": "Nouveau groupe",
+      "editTitle": "Modifier le groupe",
+      "description": "Les groupes rassemblent les étiquettes liées, par exemple Type ou Offre.",
+      "name": "Nom",
+      "namePlaceholder": "Type",
+      "nameRequired": "Donnez un nom au groupe.",
+      "exclusive": "Une seule étiquette à la fois",
+      "exclusiveHint": "Un élément ne peut avoir qu’une étiquette de ce groupe à la fois.",
+      "exclusiveBadge": "Une à la fois",
+      "create": "Créer le groupe",
+      "save": "Enregistrer le groupe",
+      "actionsAria": "Actions pour le groupe {{name}}",
+      "addLabel": "Ajouter une étiquette",
+      "edit": "Modifier le groupe",
+      "delete": "Supprimer le groupe",
+      "deleteTitle": "Supprimer ce groupe ?",
+      "deleteBody": "Les étiquettes de {{name}} sont conservées et déplacées vers Autres étiquettes.",
+      "deleteConfirm": "Supprimer le groupe"
+    },
+    "merge": {
+      "title": "Fusionner l’étiquette",
+      "description": "Tous les éléments étiquetés {{name}} reçoivent l’étiquette choisie à la place, puis {{name}} est supprimée.",
+      "search": "Rechercher des étiquettes",
+      "choose": "Choisir une étiquette",
+      "confirm": "Fusionner"
+    },
+    "creation": {
+      "title": "Création d’étiquettes",
+      "label": "Qui peut créer des étiquettes",
+      "anyone": "Tout le monde",
+      "admins": "Administrateurs uniquement",
+      "anyoneHint": "Saisir un nouveau nom dans un sélecteur crée l’étiquette.",
+      "adminsHint": "Les agents choisissent parmi les étiquettes existantes. Seuls les administrateurs en créent de nouvelles.",
+      "saved": "Paramètre des étiquettes enregistré"
+    },
+    "count_many": "{{count}} étiquettes",
+    "archivedSection_many": "{{count}} étiquettes archivées"
+  },
+  "members": {
+    "title": "Membres",
+    "description": "Toutes les personnes qui peuvent se connecter à cet espace de travail et leurs permissions.",
+    "count_one": "{{count}} membre",
+    "count_other": "{{count}} membres",
+    "search": "Filtrer les membres",
+    "leave": "Quitter l’espace de travail",
+    "invite": "Inviter des personnes",
+    "you": "Vous",
+    "noMatch": "Aucun membre ne correspond",
+    "noMatchHint": "Essayez un autre nom ou e-mail.",
+    "emptyTitle": "Vous seul pour le moment",
+    "emptyHint": "Invitez vos collègues à partager la boîte de réception.",
+    "columns": {
+      "person": "Personne",
+      "joined": "Date d’arrivée",
+      "role": "Rôle"
+    },
+    "remove": "Retirer de l’espace de travail",
+    "removeTitle": "Retirer ce membre ?",
+    "removeConfirm": "Retirer",
+    "removeBody": "{{name}} perd immédiatement l’accès. Ses tickets sont conservés, sans responsable.",
+    "summary": {
+      "members": "Membres",
+      "admins": "Administrateurs",
+      "agents": "Agents",
+      "viewers": "Observateurs",
+      "invited": "Invités"
+    },
+    "invites": {
+      "title": "Invitations en attente",
+      "description": "Les invitations expirent après 7 jours. Si un e-mail n’arrive pas, copiez le lien et envoyez-le vous-même.",
+      "by": "Invité par {{name}} {{when}}",
+      "at": "Invité {{when}}",
+      "expired": "Expirée",
+      "expires": "Expire le {{date}}",
+      "revoke": "Révoquer",
+      "revokeTitle": "Révoquer l’invitation ?",
+      "revokeBody": "Le lien d’invitation pour {{email}} ne fonctionnera plus.",
+      "copyLink": "Copier le lien",
+      "linkCopied": "Lien d’invitation copié",
+      "linkCopiedHint": "Envoyez-le à {{email}} par le moyen de votre choix. Cette personne rejoindra l’espace en s’inscrivant avec cette adresse.",
+      "resend": "Renvoyer l’e-mail",
+      "resent": "Invitation renvoyée à {{email}}",
+      "actions": "Actions pour l’invitation à {{email}}"
+    },
+    "inviteDialog": {
+      "description": "Un e-mail leur permettra de rejoindre l’espace. Vous pouvez aussi copier le lien depuis les invitations en attente. Les liens expirent après 7 jours.",
+      "send": "Envoyer les invitations",
+      "emails": "Adresses e-mail",
+      "emailsHint": "Séparez les adresses par des virgules ou des espaces."
+    },
+    "emptyTips": {
+      "roles": "Les rôles définissent ce que chaque personne peut faire",
+      "expire": "Les invitations expirent après 7 jours"
+    },
+    "editProfile": "Modifier le profil",
+    "profileTitle": "Profil visible par les clients",
+    "profileHint": "Ce que les clients voient de {{name}} dans les signatures : fonction, téléphone, pronoms et signature personnelle.",
+    "discardTitle": "Abandonner les modifications ?",
+    "discardBody": "Les modifications de ce profil ne sont pas enregistrées.",
+    "discardConfirm": "Abandonner",
+    "save": "Enregistrer le profil",
+    "count_many": "{{count}} membres"
+  },
+  "teams": {
+    "title": "Équipes",
+    "description": "Regroupez les agents pour acheminer les tickets et les boîtes mail vers les bonnes personnes.",
+    "new": "Nouvelle équipe",
+    "count_one": "{{count}} équipe",
+    "count_other": "{{count}} équipes",
+    "members_one": "{{count}} membre",
+    "members_other": "{{count}} membres",
+    "emptyTitle": "Aucune équipe pour le moment",
+    "emptyHint": "Créez les équipes Assistance, Facturation ou Technique et attribuez les tickets à une équipe entière.",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "deleteTitle": "Supprimer l’équipe ?",
+    "deleteBody": "Les tickets et boîtes mail acheminés vers {{name}} conservent leur responsable mais perdent leur équipe.",
+    "saved": "Équipe enregistrée",
+    "created": "Équipe créée",
+    "discardTitle": "Abandonner les modifications ?",
+    "discardBody": "Les modifications de cette équipe seront perdues.",
+    "discard": "Abandonner",
+    "editTitle": "Modifier l’équipe",
+    "nameRequired": "Donnez un nom à l’équipe.",
+    "name": "Nom",
+    "namePlaceholder": "Assistance",
+    "membersLabel": "Membres",
+    "searchMembers": "Rechercher des membres",
+    "addMembers": "Ajouter des membres",
+    "remove": "Retirer",
+    "noMembers": "Aucun membre pour le moment",
+    "save": "Enregistrer l’équipe",
+    "create": "Créer l’équipe",
+    "andMore_one": " et {{count}} de plus",
+    "andMore_other": " et {{count}} de plus",
+    "mailboxes_one": "{{count}} boîte mail",
+    "mailboxes_other": "{{count}} boîtes mail",
+    "emptyTips": {
+      "mailbox": "Les boîtes mail peuvent acheminer les nouveaux tickets vers une équipe",
+      "delete": "Supprimer une équipe conserve les responsables des tickets"
+    },
+    "count_many": "{{count}} équipes",
+    "members_many": "{{count}} membres",
+    "andMore_many": " et {{count}} de plus",
+    "mailboxes_many": "{{count}} boîtes mail"
+  },
+  "profile": {
+    "title": "Profil",
+    "description": "Votre identité auprès des collègues dans les tickets, notes et mentions.",
+    "saved": "Profil enregistré",
+    "verifySent": "E-mail de vérification envoyé",
+    "verifySentHint": "Consultez votre boîte mail pour trouver le lien.",
+    "name": "Nom",
+    "photo": "Photo",
+    "photoHint": "Affichée sur vos réponses, mentions et dans l’application. Sinon, vos initiales sont utilisées.",
+    "email": "E-mail",
+    "emailHint": "Utilisé pour la connexion et les notifications.",
+    "emailUnverified": "Vérifiez votre e-mail pour recevoir des notifications.",
+    "verified": "Vérifié",
+    "resend": "Renvoyer la vérification",
+    "appearance": "Apparence",
+    "appearanceHint": "S’applique à ce navigateur.",
+    "sounds": {
+      "title": "Sons",
+      "hint": "S’applique à ce navigateur. Le chat utilise un son plus vif ; les autres sons sont discrets.",
+      "preview": "Écouter ce son",
+      "chat": "Chat en attente",
+      "chatHint": "Un visiteur attend sans agent dans le chat, avec un rappel plus discret chaque minute jusqu’à sa prise en charge.",
+      "ticket": "Nouvelles conversations",
+      "ticketHint": "Un client vous écrit par e-mail ou via le centre d’aide, sans responsable ou à votre attention.",
+      "reply": "Réponses des clients",
+      "replyHint": "Un client répond à l’un de vos tickets, sauf si vous le consultez.",
+      "assigned": "Attributions et mentions",
+      "assignedHint": "Un élément vous est attribué, quelqu’un vous mentionne ou un SLA est dépassé sur votre ticket."
+    },
+    "theme": {
+      "label": "Thème",
+      "light": "Clair",
+      "dark": "Sombre",
+      "system": "Système"
+    }
+  },
+  "saveBar": {
+    "region": "Modifications non enregistrées",
+    "message": "Vous avez des modifications non enregistrées",
+    "discard": "Abandonner",
+    "save": "Enregistrer les modifications"
+  },
+  "workspace": {
+    "title": "Général",
+    "description": "Paramètres appliqués à tous les membres de cet espace de travail.",
+    "saved": "Espace de travail enregistré",
+    "name": "Nom de l’espace de travail",
+    "url": "URL de l’espace de travail",
+    "urlHint": "Utilisée par le centre d’aide et le widget de chat.",
+    "timezone": "Fuseau horaire",
+    "timezoneHint": "Utilisé pour les rapports, les jours ouvrés des SLA et les dates dans les e-mails.",
+    "searchTimezones": "Rechercher un fuseau horaire",
+    "language": "Langue des clients",
+    "languageHint": "Le centre d’aide, l’enquête de satisfaction et le widget de chat suivent la langue du navigateur de chaque visiteur. Celle-ci est utilisée si leur langue n’est pas prise en charge.",
+    "searchLanguages": "Rechercher une langue",
+    "helpCenter": "Centre d’aide",
+    "helpCenterHint": "Un site public avec les articles publiés de votre base de connaissances.",
+    "publish": "Publier le centre d’aide",
+    "publishOn": "Toute personne disposant du lien peut lire les articles publiés.",
+    "publishOff": "Seule votre équipe peut voir les articles.",
+    "hcTitle": "Titre",
+    "publicAddress": "Adresse publique",
+    "copyLink": "Copier le lien",
+    "conversations": "Conversations",
+    "csat": "Enquête de satisfaction",
+    "csatHint": "Demandez aux clients d’évaluer la conversation après la résolution d’un ticket.",
+    "autoAssign": "Attribution",
+    "brand": "Couleur de la marque",
+    "brandHint": "Utilisée par le widget de chat et les boutons des e-mails sortants.",
+    "brandHex": "Code hexadécimal de la couleur de la marque",
+    "autoAssignLink": "Ouvrir les paramètres d’attribution",
+    "assignModes": {
+      "none": "Désactivée. Les nouveaux tickets restent non attribués jusqu’à leur prise en charge.",
+      "round_robin": "À tour de rôle. Les collègues en ligne reçoivent les tickets chacun leur tour.",
+      "load_balanced": "Selon la charge. Les nouveaux tickets vont à la personne ayant le moins de tickets ouverts."
+    },
+    "logo": "Logo",
+    "logoHint": "Affiché dans le sélecteur d’espace de travail, les e-mails et le centre d’aide.",
+    "hcLogo": "Logo du centre d’aide",
+    "hcLogoHint": "Un logo large pour l’en-tête du centre d’aide. Sinon, le logo et le nom de l’espace sont utilisés.",
+    "hcFavicon": "Favicon",
+    "hcFaviconHint": "La petite icône dans l’onglet du navigateur.",
+    "pictures": "Photos des contacts et entreprises",
+    "picturesHint": "Les photos facilitent la lecture de la boîte de réception. Les images importées sont toujours prioritaires.",
+    "gravatar": "Photos Gravatar",
+    "gravatarHint": "Envoie un hachage des adresses e-mail des contacts à Gravatar pour rechercher leur photo.",
+    "domainLogos": "Logos d’entreprise",
+    "domainLogosHint": "Récupère le logo de chaque entreprise depuis son site web."
+  },
+  "display": {
+    "title": "Statuts et priorités",
+    "description": "Renommez-les ou changez leurs couleurs pour votre équipe. Seul l’affichage change ; les filtres, automatisations et API fonctionnent comme avant.",
+    "statuses": "Statuts",
+    "priorities": "Priorités",
+    "labelFor": "Nom affiché pour {{name}}",
+    "colourFor": "Couleur pour {{name}}",
+    "reset": "Réinitialiser",
+    "resetFor": "Réinitialiser {{name}}"
+  },
+  "danger": {
+    "title": "Zone de danger",
+    "transferred": "Propriété transférée",
+    "transfer": "Transférer la propriété",
+    "transferHint": "Désignez un autre membre comme propriétaire. Vous devenez administrateur.",
+    "chooseMember": "Choisir un membre",
+    "transferButton": "Transférer",
+    "delete": "Supprimer l’espace de travail",
+    "deleteHint": "Supprime tous les tickets, contacts, articles et paramètres. Cette action est irréversible.",
+    "deleteBody": "Toutes les données de {{name}} sont supprimées pour tous. Les membres perdent immédiatement l’accès.",
+    "deleteTitle": "Supprimer l’espace de travail ?",
+    "transferTitle": "Désigner {{name}} comme propriétaire ?",
+    "transferBody": "Cette personne obtient le contrôle total, y compris la suppression de l’espace de travail. Vous restez administrateur."
+  },
+  "fields": {
+    "reorderAria": "Réordonner {{name}}. Maintenez Alt et appuyez sur les flèches pour déplacer.",
+    "title": "Champs personnalisés",
+    "description": "Les informations supplémentaires saisies par votre équipe sur les tickets, contacts et entreprises, comme l’offre, le numéro de commande ou la date de renouvellement.",
+    "new": "Nouveau champ",
+    "listTitle": "Champs : {{entity}}",
+    "ticketHint": "Les champs obligatoires doivent être renseignés avant de résoudre un ticket.",
+    "requiredBadge": "Requis pour résoudre",
+    "archivedBadge": "Archivé",
+    "actionsAria": "Actions pour {{name}}",
+    "archivedTitle_one": "{{count}} champ archivé",
+    "archivedTitle_other": "{{count}} champs archivés",
+    "created": "Champ créé",
+    "saved": "Champ enregistré",
+    "deleteTitle": "Supprimer ce champ ?",
+    "deleteBody": "{{name}} et toutes ses valeurs sont supprimés. Cette action est irréversible.",
+    "deleteConfirm": "Supprimer le champ",
+    "menu": {
+      "edit": "Modifier",
+      "archive": "Archiver",
+      "restore": "Restaurer",
+      "delete": "Supprimer"
+    },
+    "entity": {
+      "ticket": "Ticket",
+      "contact": "Contact",
+      "company": "Entreprise"
+    },
+    "entityPlural": {
+      "ticket": "Tickets",
+      "contact": "Contacts",
+      "company": "Entreprises"
+    },
+    "empty": {
+      "title": "Aucun champ pour {{entity}} pour le moment",
+      "ticket": "Ajoutez des champs comme le numéro de commande ou le produit pour renseigner les détails de chaque ticket.",
+      "contact": "Ajoutez des champs comme l’offre ou le responsable de compte pour centraliser les informations client.",
+      "company": "Ajoutez des champs comme la date de renouvellement ou le nombre de licences pour suivre les comptes.",
+      "tips": {
+        "required": "Les champs de ticket peuvent être obligatoires pour la résolution",
+        "sidebar": "Les agents les renseignent dans la barre latérale de la fiche"
+      }
+    },
+    "type": {
+      "text": "Texte",
+      "long_text": "Texte long",
+      "number": "Nombre",
+      "select": "Choix unique",
+      "multi_select": "Choix multiple",
+      "date": "Date",
+      "checkbox": "Case à cocher",
+      "url": "Lien",
+      "email": "E-mail",
+      "user": "Personne"
+    },
+    "dialog": {
+      "newTitle": "Nouveau champ : {{entity}}",
+      "editTitle": "Modifier le champ",
+      "newDescription": "Les agents le renseignent dans la barre latérale de la fiche.",
+      "editDescription": "La clé et le type restent fixes pour préserver les valeurs enregistrées.",
+      "name": "Nom",
+      "namePlaceholder": "Niveau d’offre",
+      "key": "Clé",
+      "keyHint": "Utilisée par l’API, les filtres et les automatisations.",
+      "keyFixed": "Les clés ne peuvent pas changer.",
+      "keyRule": "Commencez par une lettre ; utilisez des minuscules, chiffres et _.",
+      "keyTaken": "Un autre champ utilise déjà cette clé.",
+      "type": "Type",
+      "typeFixed": "Le type ne peut pas changer après la création du champ.",
+      "options": "Options",
+      "optionLabel": "Option {{n}}",
+      "optionPlaceholder": "Nom de l’option",
+      "optionColour": "Couleur pour {{name}}",
+      "addOption": "Ajouter une option",
+      "moveUp": "Monter",
+      "moveDown": "Descendre",
+      "removeOption": "Supprimer l’option",
+      "removeHint": "Supprimer une option la retire des fiches qui l’utilisent.",
+      "description": "Description",
+      "descriptionHint": "Affichée aux agents à côté du champ.",
+      "required": "Requis pour résoudre",
+      "requiredHint": "Un ticket ne peut pas être résolu ou fermé si ce champ est vide.",
+      "create": "Créer le champ",
+      "save": "Enregistrer le champ",
+      "nameRequired": "Donnez un nom au champ.",
+      "optionsRequired": "Ajoutez au moins une option."
+    },
+    "archivedTitle_many": "{{count}} champs archivés"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "description": "Choisissez les notifications reçues en dehors de l’application et leur fréquence. Elles apparaissent toujours sous la cloche.",
+    "saveFailed": "Impossible d’enregistrer vos paramètres de notification",
+    "email": {
+      "title": "Fréquence des e-mails",
+      "description": "Mode d’envoi des e-mails de notification. S’applique à tous vos espaces de travail.",
+      "digestAt": "Envoyer le récapitulatif à",
+      "digestAtHint": "Dans votre fuseau horaire. Chaque espace de travail envoie son propre récapitulatif.",
+      "timezone": "Fuseau horaire",
+      "limits": "Jamais plus de {{perHour}} e-mails par heure ou {{perDay}} par jour. Aucun e-mail pendant que vous utilisez opendesk dans cet espace, ni pour les éléments déjà lus dans l’application. Plusieurs notifications sont regroupées dans un e-mail.",
+      "sentTo": "Envoyé à",
+      "confirmed": "Confirmée",
+      "notConfirmed": "Non confirmée",
+      "unverifiedHint": "Les e-mails de notification sont envoyés uniquement aux adresses confirmées.",
+      "confirmLink": "Confirmer dans le profil",
+      "unverified": "Confirmez d’abord votre adresse e-mail. Les e-mails de notification sont envoyés uniquement aux adresses confirmées.",
+      "test": "M’envoyer un e-mail de test",
+      "testSent": "E-mail de test envoyé",
+      "testSentHint": "Consultez {{email}} dans une minute ou deux."
+    },
+    "cadence": {
+      "instant": "Immédiatement",
+      "instantPaced_one": "Le premier e-mail arrive environ {{count}} minute après un événement. Si d’autres arrivent, au plus un e-mail par {{gap}}, plus tôt pour les urgences.",
+      "instantPaced_other": "Le premier e-mail arrive environ {{count}} minutes après un événement. Si d’autres arrivent, au plus un e-mail par {{gap}}, plus tôt pour les urgences.",
+      "instantHint_one": "Environ {{count}} minute après l’événement, sauf si vous l’avez déjà lu dans l’application.",
+      "instantHint_other": "Environ {{count}} minutes après l’événement, sauf si vous l’avez déjà lu dans l’application.",
+      "hourly": "Récapitulatif horaire",
+      "hourlyHint": "Un e-mail par heure avec les éléments non lus.",
+      "daily": "Récapitulatif quotidien",
+      "dailyHint": "Un e-mail par jour à l’heure choisie, avec les éléments non lus.",
+      "off": "Désactivés",
+      "offHint": "Aucun e-mail de notification. Vous voyez toujours tout dans l’application.",
+      "instantPaced_many": "Le premier e-mail arrive environ {{count}} minutes après un événement. Si d’autres arrivent, au plus un e-mail par {{gap}}, plus tôt pour les urgences.",
+      "instantHint_many": "Environ {{count}} minutes après l’événement, sauf si vous l’avez déjà lu dans l’application."
+    },
+    "pause": {
+      "title": "Mettre les notifications en pause",
+      "description": "Suspend temporairement les notifications par e-mail, téléphone et ordinateur. Elles restent sous la cloche et ne seront pas envoyées plus tard.",
+      "off": "Aucune pause",
+      "offHint": "Mettez en pause pour une heure, jusqu’à demain matin ou pour une semaine.",
+      "until": "En pause jusqu’à {{when}}",
+      "onHint": "Aucune notification par e-mail, téléphone ou ordinateur d’ici là.",
+      "pause": "Mettre en pause",
+      "change": "Changer",
+      "resume": "Reprendre",
+      "hour": "Pendant 1 heure",
+      "tomorrow": "Jusqu’à demain matin",
+      "week": "Pendant 1 semaine"
+    },
+    "channels": {
+      "app": "Dans l’application",
+      "email": "E-mail",
+      "push": "Téléphone",
+      "desktop": "Application de bureau"
+    },
+    "groups": {
+      "tickets": "Tickets",
+      "team": "Équipe",
+      "ai_billing": "IA et facturation",
+      "workspace": "Espace de travail"
+    },
+    "types": {
+      "title": "Où recevoir chaque notification",
+      "description": "Pour {{workspace}} uniquement. Chaque espace de travail conserve ses propres choix.",
+      "thisWorkspace": "cet espace de travail",
+      "type": "Notification",
+      "alwaysOn": "Toujours actives dans l’application",
+      "emailOffShort": "désactivés",
+      "emailOff": "Les e-mails de notification sont désactivés. Choisissez une fréquence ci-dessus pour les réactiver. Vos choix sont conservés.",
+      "phoneHint": "Téléphone : l’application opendesk pour iPhone. Chaque téléphone peut aussi désactiver certains types dans les paramètres de l’application.",
+      "desktopHint": "Application de bureau : s’applique uniquement dans l’application de bureau opendesk lorsque sa fenêtre est en arrière-plan.",
+      "urgent": "Urgent",
+      "urgentHint": "Peut être envoyé plus tôt par e-mail, au plus une fois par {{gap}}"
+    },
+    "kinds": {
+      "assigned": {
+        "label": "Attribué à vous",
+        "hint": "Un ticket vous est attribué"
+      },
+      "mentioned": {
+        "label": "Mentions",
+        "hint": "Quelqu’un vous mentionne dans une note"
+      },
+      "customer_replied": {
+        "label": "Réponses des clients",
+        "hint": "Sur les tickets qui vous sont attribués"
+      },
+      "sla_breached": {
+        "label": "Dépassements de SLA",
+        "hint": "Un ticket qui vous est attribué dépasse un objectif"
+      },
+      "ai_handoff": {
+        "label": "Transferts à une personne",
+        "hint": "Ollie transfère une conversation à l’équipe"
+      },
+      "team_joined": {
+        "label": "Changements d’équipe",
+        "hint": "Un administrateur rejoint une équipe que vous dirigez"
+      },
+      "ai_cap_reached": {
+        "label": "Plafond de l’agent IA atteint",
+        "hint": "Ollie a atteint le plafond de dépenses du mois"
+      },
+      "ai_key_failed": {
+        "label": "Problèmes de clé IA",
+        "hint": "La clé IA de l’espace de travail ne fonctionne plus"
+      },
+      "ai_balance_low": {
+        "label": "Solde IA bas",
+        "hint": "Le solde IA est bientôt épuisé"
+      },
+      "ai_balance_out": {
+        "label": "Solde IA épuisé",
+        "hint": "Ollie est en pause jusqu’à l’ajout de crédit IA"
+      },
+      "auto_recharge_failed": {
+        "label": "Échec de recharge automatique",
+        "hint": "Un paiement de recharge automatique a échoué"
+      },
+      "import_finished": {
+        "label": "Imports",
+        "hint": "Un import que vous avez lancé est terminé, arrêté ou nécessite de nouveaux identifiants"
+      }
+    },
+    "gap": {
+      "hour": "heure",
+      "hours_one": "{{count}} heure",
+      "hours_other": "{{count}} heures",
+      "minutes_one": "{{count}} minute",
+      "minutes_other": "{{count}} minutes",
+      "hours_many": "{{count}} heures",
+      "minutes_many": "{{count}} minutes"
+    },
+    "holds": {
+      "unsubscribed": "Les e-mails de notification de {{workspace}} sont désactivés",
+      "unsubscribedHint": "Vous avez utilisé le lien de désabonnement d’un de nos e-mails. Réactiver les e-mails rétablit vos choix précédents.",
+      "turnEmailOn": "Réactiver les e-mails",
+      "resubscribed": "Les e-mails de notification sont réactivés",
+      "paused": "Les notifications sont en pause jusqu’à {{when}}",
+      "pausedHint": "Aucune notification par e-mail, téléphone ou ordinateur d’ici là. Elles restent sous la cloche.",
+      "resume": "Reprendre maintenant",
+      "emailOff": "Les e-mails de notification sont désactivés",
+      "emailOffHint": "Vous voyez toujours tout dans l’application. Réactiver les e-mails reprend l’envoi immédiatement, à un rythme limité pour éviter de saturer votre boîte mail."
+    },
+    "desktop": {
+      "blocked": "Les notifications opendesk sont bloquées sur cet ordinateur. Autorisez-les dans les paramètres système : sur Mac, Réglages Système, Notifications, opendesk ; sur Windows, Paramètres, Système, Notifications.",
+      "ask": "opendesk n’a pas encore demandé l’autorisation d’afficher des notifications sur cet ordinateur.",
+      "allow": "Autoriser les notifications"
+    }
+  },
+  "memberProfile": {
+    "title": "Profil visible par les clients",
+    "description": "Ce que les clients voient de vous dans {{workspace}}. Ces informations remplissent les variables de l’expéditeur dans les signatures et réponses.",
+    "jobTitle": "Fonction",
+    "jobTitlePlaceholder": "Spécialiste de l’assistance",
+    "phone": "Téléphone",
+    "phonePlaceholder": "+1 555 010 0199",
+    "pronouns": "Pronoms",
+    "pronounsPlaceholder": "elle",
+    "fills": "Renseigne {{tag}}",
+    "signature": "Signature personnelle",
+    "signatureHint": "Ajoutée à vos réponses par e-mail. Si l’équipe ou l’adresse a sa propre signature, la vôtre apparaît uniquement à l’emplacement de {{tag}}.",
+    "signaturePlaceholder": "Jane Cooper, Assistance",
+    "preview": "Aperçu",
+    "previewOther": "L’aperçu utilise votre nom et vos informations pour l’expéditeur.",
+    "saved": "Profil enregistré"
+  }
+}

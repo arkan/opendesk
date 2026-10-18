@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Ollie's decisions on a ticket (contracts/ai.md "Decisions"): the latest triage
 // run in custom.ai_decisions and the ones below the workspace's confidence
 // threshold in custom.ai_suggestions. Jev is the model behind them; everything is
@@ -74,4 +75,14 @@ export function decisionNote(d: AIDecisions | null, field: DecisionField): { sur
   const f = d?.fields[field];
   if (!d || !f) return null;
   return { sure: d.engine === "jev" ? pct(f.confidence) : null, jev: d.engine === "jev" };
+}
+
+/** Built-in triage categories from contracts/ai.md; custom content stays literal. */
+export function categoryLabel(value: string): string {
+  const labels: Record<string, string> = {
+    question: "Question", problem: "Problem", bug: "Bug", billing: "Billing", account: "Account",
+    feature_request: "Feature request", feedback: "Feedback", sales: "Sales", shipping: "Shipping",
+    refund: "Refund", cancellation: "Cancellation", spam: "Spam", other: "Other",
+  };
+  return Object.hasOwn(labels, value) ? appText(labels[value]) : value.replace(/_/g, " ");
 }

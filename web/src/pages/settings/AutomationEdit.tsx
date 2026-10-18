@@ -1,3 +1,4 @@
+import { intlLocale } from "@/i18n";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { Plus, Trash2, X } from "lucide-react";
@@ -285,7 +286,7 @@ export default function AutomationEdit() {
     <SettingsPage
       back={back}
       title={isNew ? t("edit.newTitle") : draft.name || t("edit.fallbackTitle")}
-      description={isNew ? t("edit.newHint") : existing ? t("edit.ran", { n: existing.run_count.toLocaleString() }) : undefined}
+      description={isNew ? t("edit.newHint") : existing ? t("edit.ran", { n: existing.run_count.toLocaleString(intlLocale()) }) : undefined}
       actions={
         <>
           {!isNew && existing && (

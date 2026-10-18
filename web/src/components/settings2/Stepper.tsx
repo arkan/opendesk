@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 // A compact number stepper: minus, a typed value, plus. No native number
 // spinner; the field is a plain text input that accepts digits (and a decimal
 // point with `decimals`), and Arrow Up/Down (Shift for x10) step it.
@@ -21,8 +23,8 @@ export function Stepper({
   id,
   "aria-label": ariaLabel,
   "aria-describedby": describedBy,
-  decLabel = "Decrease",
-  incLabel = "Increase",
+  decLabel = appText("Decrease"),
+  incLabel = appText("Increase"),
 }: {
   value: number;
   onChange: (n: number) => void;
@@ -42,6 +44,7 @@ export function Stepper({
   decLabel?: string;
   incLabel?: string;
 }) {
+  useTranslation("app");
   const [text, setText] = useState<string | null>(null);
   const clamp = (n: number) => Math.min(max, Math.max(min, n));
   const scale = 10 ** decimals;

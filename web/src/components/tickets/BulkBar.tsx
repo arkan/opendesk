@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { AnimatedNumber } from "@/components/motion";
@@ -63,7 +64,7 @@ export function BulkBar({ ids, onClear, spamView, compact }: { ids: string[]; on
           exit={{ opacity: 0, y: 8, scale: 0.98 }}
           transition={springs.pop}
           role="toolbar"
-          aria-label="Bulk actions"
+          aria-label={appText("Bulk actions")}
           className="absolute bottom-5 left-1/2 z-20 flex max-w-[calc(100%-24px)] -translate-x-1/2 items-center gap-0.5 overflow-x-auto rounded-lg border border-line bg-raised p-1 pl-3 shadow-float"
         >
           <span className="mr-2 whitespace-nowrap text-[12px] text-fg-2">
@@ -139,7 +140,7 @@ export function BulkBar({ ids, onClear, spamView, compact }: { ids: string[]; on
           <Picker
             side="top"
             multi
-            placeholder="Add labels"
+            placeholder={appText("Add labels")}
             values={tagSel}
             onChange={(v) => setTagSel(labelChoices.resolve(tagSel, v))}
             onCreate={(name) => setTagSel((s) => [...s, name])}
@@ -177,7 +178,7 @@ export function BulkBar({ ids, onClear, spamView, compact }: { ids: string[]; on
               variant="ghost"
               size="sm"
               square
-              aria-label="Delete"
+              aria-label={appText("Delete")}
               icon={<Trash2 className="size-3.5" />}
               onClick={() =>
                 confirm.show(
@@ -194,7 +195,7 @@ export function BulkBar({ ids, onClear, spamView, compact }: { ids: string[]; on
           </Tooltip>
           <span className="mx-1 h-5 w-px bg-line" />
           <Tooltip content={t("bulk.clear")} shortcut="esc">
-            <Button variant="ghost" size="sm" square aria-label="Clear selection" icon={<X className="size-3.5" />} onClick={onClear} />
+            <Button variant="ghost" size="sm" square aria-label={appText("Clear selection")} icon={<X className="size-3.5" />} onClick={onClear} />
           </Tooltip>
         </motion.div>
       )}

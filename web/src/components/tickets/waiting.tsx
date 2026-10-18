@@ -1,3 +1,4 @@
+import { intlLocale } from "@/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Hand, MessageCircle, Volume2, VolumeX } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -75,7 +76,7 @@ export function formatWait(ms: number): string {
   if (m < 60) return `${m}m ${String(s % 60).padStart(2, "0")}s`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ${String(m % 60).padStart(2, "0")}m`;
-  return `${Math.floor(h / 24)}d ${h % 24}h`;
+  return `${Math.floor(h / 24)}${intlLocale().startsWith("fr") ? "j" : "d"} ${h % 24}h`;
 }
 
 /** The pulsing dot of a waiting timer. */

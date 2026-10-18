@@ -1,5 +1,5 @@
 import "./styles/app.css";
-import "./i18n";
+import { initAgentLocale } from "./i18n";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "@tanstack/react-router";
@@ -24,6 +24,8 @@ if (import.meta.env.VITE_MOCK === "1") {
 }
 
 void initAnalytics();
+
+await initAgentLocale();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

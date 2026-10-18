@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,20 +16,20 @@ import { qk, upsertInList } from "@/lib/queries";
 
 /** The events catalog (contracts/events.md), grouped by resource. */
 export const eventGroups: { label: string; events: string[] }[] = [
-  { label: "Tickets", events: ["ticket.created", "ticket.updated", "ticket.deleted"] },
-  { label: "Messages", events: ["message.created", "message.updated"] },
-  { label: "Activity", events: ["activity.created"] },
-  { label: "Contacts", events: ["contact.created", "contact.updated", "contact.deleted"] },
-  { label: "Companies", events: ["company.created", "company.updated", "company.deleted"] },
-  { label: "Labels", events: ["tag.created", "tag.updated", "tag.deleted"] },
-  { label: "Mailboxes", events: ["mailbox.created", "mailbox.updated", "mailbox.deleted"] },
-  { label: "Members", events: ["member.added", "member.updated", "member.removed"] },
-  { label: "Knowledge base", events: ["kb_article.created", "kb_article.updated", "kb_article.deleted", "kb_collection.created", "kb_collection.updated", "kb_collection.deleted"] },
-  { label: "Saved replies", events: ["saved_reply.created", "saved_reply.updated", "saved_reply.deleted"] },
-  { label: "Views", events: ["view.created", "view.updated", "view.deleted"] },
-  { label: "Automations", events: ["automation.created", "automation.updated", "automation.deleted"] },
-  { label: "SLA policies", events: ["sla_policy.created", "sla_policy.updated", "sla_policy.deleted"] },
-  { label: "Teams", events: ["team.created", "team.updated", "team.deleted"] },
+  { get label() { return appText("Tickets"); }, events: ["ticket.created", "ticket.updated", "ticket.deleted"] },
+  { get label() { return appText("Messages"); }, events: ["message.created", "message.updated"] },
+  { get label() { return appText("Activity"); }, events: ["activity.created"] },
+  { get label() { return appText("Contacts"); }, events: ["contact.created", "contact.updated", "contact.deleted"] },
+  { get label() { return appText("Companies"); }, events: ["company.created", "company.updated", "company.deleted"] },
+  { get label() { return appText("Labels"); }, events: ["tag.created", "tag.updated", "tag.deleted"] },
+  { get label() { return appText("Mailboxes"); }, events: ["mailbox.created", "mailbox.updated", "mailbox.deleted"] },
+  { get label() { return appText("Members"); }, events: ["member.added", "member.updated", "member.removed"] },
+  { get label() { return appText("Knowledge base"); }, events: ["kb_article.created", "kb_article.updated", "kb_article.deleted", "kb_collection.created", "kb_collection.updated", "kb_collection.deleted"] },
+  { get label() { return appText("Saved replies"); }, events: ["saved_reply.created", "saved_reply.updated", "saved_reply.deleted"] },
+  { get label() { return appText("Views"); }, events: ["view.created", "view.updated", "view.deleted"] },
+  { get label() { return appText("Automations"); }, events: ["automation.created", "automation.updated", "automation.deleted"] },
+  { get label() { return appText("SLA policies"); }, events: ["sla_policy.created", "sla_policy.updated", "sla_policy.deleted"] },
+  { get label() { return appText("Teams"); }, events: ["team.created", "team.updated", "team.deleted"] },
 ];
 export const allEvents = eventGroups.flatMap((g) => g.events);
 
@@ -42,7 +43,7 @@ function expandEvents(events: string[]) {
 }
 
 export function eventSummary(events: string[]) {
-  if (isAllEvents(events)) return "All events";
+  if (isAllEvents(events)) return appText("All events");
   return events.length === 1 ? events[0] : `${events.length} events`;
 }
 
@@ -150,7 +151,7 @@ export function WebhookDialog({ hook, onClose, onCreated }: { hook: Webhook | nu
               {t("webhookForm.events")} <span className="mono ml-1 text-[11px] font-normal tabular-nums text-fg-4">{all ? allEvents.length : events.length}/{allEvents.length}</span>
             </span>
             <label className="flex items-center gap-2 text-[12px] text-fg-2">
-              <Checkbox checked={all ? true : events.length ? "indeterminate" : false} onCheckedChange={(on) => setEvents(on ? allEvents : [])} aria-label="All events" />
+              <Checkbox checked={all ? true : events.length ? "indeterminate" : false} onCheckedChange={(on) => setEvents(on ? allEvents : [])} aria-label={appText("All events")} />
               {t("webhooks.allEvents")}
             </label>
           </div>
@@ -163,7 +164,7 @@ export function WebhookDialog({ hook, onClose, onCreated }: { hook: Webhook | nu
                     <Checkbox
                       checked={on === g.events.length ? true : on ? "indeterminate" : false}
                       onCheckedChange={(v) => toggleGroup(g.events, v)}
-                      aria-label={`All ${g.label.toLowerCase()} events`}
+                      aria-label={appText("All {{group}} events", { group: g.label.toLowerCase() })}
                     />
                     {g.label}
                   </label>
@@ -185,7 +186,7 @@ export function WebhookDialog({ hook, onClose, onCreated }: { hook: Webhook | nu
             <div className="text-[13px] font-medium">{t("webhookForm.active")}</div>
             <div className="text-[12px] text-fg-3">{t("webhookForm.activeHint")}</div>
           </div>
-          <Switch checked={enabled} onCheckedChange={setEnabled} aria-label="Webhook active" />
+          <Switch checked={enabled} onCheckedChange={setEnabled} aria-label={appText("Webhook active")} />
         </div>
         <PrivateTeamsField value={privateTeams} onChange={setPrivateTeams} grants={hook?.private_teams} />
         <button type="submit" className="hidden" />
@@ -219,7 +220,8 @@ const ok = timingSafeEqual(expected, v1) && Math.abs(Date.now() / 1000 - Number(
           <CopyField multiline value={`OD-Signature: t=<unix>,v1=<hex hmac_sha256(secret, "<t>.<body>")>`} />
           <CopyField multiline value={verify} />
           <p className="text-[12px] text-fg-3">
-            Deliveries also include <span className="mono text-fg-2">OD-Event-Id</span> and <span className="mono text-fg-2">OD-Event-Type</span>. Use the event id to ignore retries you've already handled.
+
+            {appText("Deliveries also include")} <span className="mono text-fg-2">OD-Event-Id</span>  {appText("and")} <span className="mono text-fg-2">OD-Event-Type</span>{appText(". Use the event id to ignore retries you've already handled.")}
           </p>
         </div>
       </div>

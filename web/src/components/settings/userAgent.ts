@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 /** "Chrome on macOS" from a user agent string. Good enough for a sessions list. */
 export function describeUserAgent(ua: string): { label: string; mobile: boolean } {
   const s = ua || "";
@@ -12,8 +13,8 @@ export function describeUserAgent(ua: string): { label: string; mobile: boolean 
           : /Safari\//.test(s)
             ? "Safari"
             : /curl|okhttp|python|Go-http/i.test(s)
-              ? "API client"
-              : "Browser";
+              ? appText("API client")
+              : appText("Browser");
   const os = /iPhone|iPad|iPod/.test(s)
     ? "iOS"
     : /Android/.test(s)

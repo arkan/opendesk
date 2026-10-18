@@ -1,3 +1,4 @@
+import { intlLocale } from "@/i18n";
 // Settings > Labels (the API's tags): coloured labels in groups, with where
 // they apply, how often they're used, archive and merge.
 
@@ -99,7 +100,7 @@ export default function Tags() {
   const summary: { label: string; value: number | string }[] = [
     { label: t("labels.summary.labels"), value: active.length },
     caps.groups ? { label: t("labels.summary.groups"), value: groups.length } : null,
-    caps.usage ? { label: t("labels.summary.onTickets"), value: active.reduce((n, l) => n + (l.usage?.tickets ?? 0), 0).toLocaleString() } : null,
+    caps.usage ? { label: t("labels.summary.onTickets"), value: active.reduce((n, l) => n + (l.usage?.tickets ?? 0), 0).toLocaleString(intlLocale()) } : null,
     caps.archive ? { label: t("labels.summary.archived"), value: archived.length } : null,
   ].flatMap((x) => (x ? [x] : []));
 
@@ -325,7 +326,7 @@ function LabelRow({ label: l, caps, canEdit, groups, onEdit, onDelete, onArchive
       )}
       {caps.usage && (
         <Tooltip content={l.usage ? t("labels.usageHint", { tickets: l.usage.tickets, contacts: l.usage.contacts, companies: l.usage.companies }) : ""}>
-          <span className="mono w-14 text-right text-[11.5px] tabular-nums text-fg-3">{totalUsage(l).toLocaleString()}</span>
+          <span className="mono w-14 text-right text-[11.5px] tabular-nums text-fg-3">{totalUsage(l).toLocaleString(intlLocale())}</span>
         </Tooltip>
       )}
       <div className="w-7">

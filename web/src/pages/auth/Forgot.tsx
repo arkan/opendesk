@@ -1,3 +1,5 @@
+import { uiText } from "@/i18n/ui";
+import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { MailCheck } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +20,7 @@ const schema = z.object({ email: z.string().trim().min(1, "Enter your email.").e
 type Values = z.infer<typeof schema>;
 
 export default function Forgot() {
+  useTranslation("interface");
   const [token, setToken] = useState<string | null>(null);
   const {
     register,
@@ -48,22 +51,22 @@ export default function Forgot() {
         <span className={cn("mb-5 flex size-10 animate-indicator-in items-center justify-center rounded-lg", tone.blue.chip)}>
           <MailCheck className="size-[18px]" />
         </span>
-        <AuthHeading title="Check your email" subtitle={<>If an account exists for <span className="font-medium text-fg">{getValues("email").trim()}</span>, we sent a link to reset its password. It expires in an hour.</>} />
+        <AuthHeading title={uiText("Check your email")} subtitle={<>{uiText("If an account exists for")} <span className="font-medium text-fg">{getValues("email").trim()}</span>{uiText(", we sent a link to reset its password. It expires in an hour.")}</>} />
         <Button variant="secondary" size="lg" className="w-full" asChild>
-          <Link to="/login">Back to log in</Link>
+          <Link to="/login">{uiText("Back to log in")}</Link>
         </Button>
         <button type="button" onClick={() => setSent(false)} className="mt-4 w-full text-center text-[12.5px] text-fg-3 hover:text-fg">
-          Use a different email
+          {uiText("Use a different email")}
         </button>
       </div>
     );
 
   return (
     <div>
-      <AuthHeading title="Reset your password" subtitle="Enter the email you use for opendesk and we'll send you a reset link." />
+      <AuthHeading title={uiText("Reset your password")} subtitle={uiText("Enter the email you use for opendesk and we'll send you a reset link.")} />
       {error && <Notice className="mb-4">{error}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-        <AuthField label="Email">
+        <AuthField label={uiText("Email")}>
           {(id) => (
             <div className="flex flex-col gap-1.5">
               <TextInput id={id} inputSize="lg" type="email" autoComplete="email" autoFocus placeholder="you@company.com" invalid={!!errors.email} {...register("email")} />
@@ -73,13 +76,13 @@ export default function Forgot() {
         </AuthField>
         <Turnstile ref={turnstile} onToken={setToken} action="password_reset" />
         <Button type="submit" variant="primary" size="lg" className="w-full" loading={isSubmitting}>
-          Send reset link
+          {uiText("Send reset link")}
         </Button>
       </form>
       <p className="mt-7 text-center text-[12.5px] text-fg-3">
-        Remembered it?{" "}
+         {uiText("Remembered it?")}{" "}
         <Link to="/login" className="font-medium text-fg hover:underline">
-          Log in
+          {uiText("Log in")}
         </Link>
       </p>
     </div>

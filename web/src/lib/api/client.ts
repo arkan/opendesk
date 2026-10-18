@@ -3,6 +3,7 @@
 // the browser sends to /v1/auth/refresh (contracts/tokens.md). A 401 triggers
 // one shared refresh of that account, then the request is retried once.
 
+import { uiText } from "@/i18n/ui";
 import type { TokenResponse } from "./types";
 
 export type Problem = {
@@ -81,13 +82,13 @@ export function isApiError(e: unknown, code?: string): e is ApiError {
 /** A human message for any thrown value, for toasts and inline errors. */
 export function errorMessage(e: unknown, fallback = "Something went wrong"): string {
   if (e instanceof ApiError) {
-    if (e.code === "network_error") return "Can't reach the server. Check your connection.";
-    if (e.code === "rate_limited") return "Too many attempts. Wait a moment and try again.";
+    if (e.code === "network_error") return uiText("Can't reach the server. Check your connection.");
+    if (e.code === "rate_limited") return uiText("Too many attempts. Wait a moment and try again.");
     const field = e.errors?.find((x) => x.message)?.message;
-    return e.detail || field || e.title || fallback;
+    return uiText(e.detail || field || e.title || fallback);
   }
-  if (e instanceof Error && e.message) return e.message;
-  return fallback;
+  if (e instanceof Error && e.message) return uiText(e.message);
+  return uiText(fallback);
 }
 
 // Transport: fetch by default; mock mode swaps it for an in-memory handler.

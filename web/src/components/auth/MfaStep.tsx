@@ -1,3 +1,5 @@
+import { uiText } from "@/i18n/ui";
+import { useTranslation } from "react-i18next";
 import { OTPInput, REGEXP_ONLY_DIGITS } from "input-otp";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api/endpoints";
@@ -11,6 +13,7 @@ import { Notice } from "./parts";
 
 /** Six boxes over one real input (input-otp): paste, autofill and screen readers just work. */
 export function OtpInput({ value, onChange, onComplete, disabled, invalid }: { value: string; onChange: (v: string) => void; onComplete?: (v: string) => void; disabled?: boolean; invalid?: boolean }) {
+  useTranslation("interface");
   return (
     <OTPInput
       autoFocus
@@ -22,7 +25,7 @@ export function OtpInput({ value, onChange, onComplete, disabled, invalid }: { v
       pattern={REGEXP_ONLY_DIGITS}
       inputMode="numeric"
       autoComplete="one-time-code"
-      aria-label="6-digit code"
+      aria-label={uiText("6-digit code")}
       aria-invalid={invalid || undefined}
       containerClassName={cn("flex items-center", invalid && "animate-[shake_260ms_ease-in-out] motion-reduce:animate-none")}
       render={({ slots }) => (
@@ -47,6 +50,7 @@ export function OtpInput({ value, onChange, onComplete, disabled, invalid }: { v
 }
 
 export function MfaStep({ mfaToken, onDone, onBack }: { mfaToken: string; onDone: (t: TokenResponse) => void | Promise<void>; onBack: () => void }) {
+  useTranslation("interface");
   const [mode, setMode] = useState<"totp" | "recovery">("totp");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -78,8 +82,8 @@ export function MfaStep({ mfaToken, onDone, onBack }: { mfaToken: string; onDone
   return (
     <div>
       <AuthHeading
-        title="Two-factor authentication"
-        subtitle={mode === "totp" ? "Enter the 6-digit code from your authenticator app." : "Enter one of the recovery codes you saved when you set up 2FA."}
+        title={uiText("Two-factor authentication")}
+        subtitle={mode === "totp" ? uiText("Enter the 6-digit code from your authenticator app.") : uiText("Enter one of the recovery codes you saved when you set up 2FA.")}
       />
       <form
         className="flex flex-col gap-4"
@@ -98,19 +102,19 @@ export function MfaStep({ mfaToken, onDone, onBack }: { mfaToken: string; onDone
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="xxxx-xxxx-xxxx-xxxx"
-            aria-label="Recovery code"
+            aria-label={uiText("Recovery code")}
             autoComplete="off"
             spellCheck={false}
           />
         )}
         {error && <Notice>{error}</Notice>}
         <Button type="submit" variant="primary" size="lg" className="w-full" loading={busy} disabled={mode === "totp" && code.length !== 6}>
-          Verify
+          {uiText("Verify")}
         </Button>
       </form>
       <div className="mt-5 flex items-center justify-between text-[12.5px]">
         <button type="button" onClick={onBack} className="text-fg-3 hover:text-fg">
-          Back
+          {uiText("Back")}
         </button>
         <button
           type="button"
@@ -121,7 +125,7 @@ export function MfaStep({ mfaToken, onDone, onBack }: { mfaToken: string; onDone
           }}
           className="text-fg-3 underline decoration-line-strong underline-offset-2 hover:text-fg"
         >
-          {mode === "totp" ? "Use a recovery code" : "Use your authenticator app"}
+          {mode === "totp" ? uiText("Use a recovery code") : uiText("Use your authenticator app")}
         </button>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Pure billing helpers: money, limits, the AI balance and usage series. No React.
 
 import type { AIBalance, AIFeature, AutoRecharge, Billing, BillingUsage, PaymentMethod, Price } from "@/lib/api/types";
@@ -169,8 +170,8 @@ export function validTopUp(usd: number | null): usd is number {
 
 const BRANDS: Record<string, string> = {
   visa: "Visa", mastercard: "Mastercard", amex: "American Express", discover: "Discover", diners: "Diners Club", jcb: "JCB",
-  unionpay: "UnionPay", cartes_bancaires: "Cartes Bancaires", eftpos_au: "eftpos", link: "Link", sepa_debit: "SEPA Direct Debit",
-  us_bank_account: "Bank account", bacs_debit: "Bacs Direct Debit",
+  unionpay: "UnionPay", cartes_bancaires: "Cartes Bancaires", eftpos_au: "eftpos", get link() { return appText("Link"); }, get sepa_debit() { return appText("SEPA Direct Debit"); },
+  get us_bank_account() { return appText("Bank account"); }, bacs_debit: "Bacs Direct Debit",
 };
 
 /** "Visa •••• 4242", "Link". */

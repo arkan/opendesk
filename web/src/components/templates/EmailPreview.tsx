@@ -1,3 +1,6 @@
+import { templateText } from "./text";
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 // The email as the customer gets it (contracts/templates.md "POST /v1/templates/preview"):
 // rendered by the server with the brand's layout, on sample data or a real ticket,
 // on a desktop or phone width, with a test send to yourself.
@@ -31,7 +34,7 @@ export function EmailPreview({
   onProblems,
   height = 520,
   className,
-  title = "Preview",
+  title,
   collapsible,
   defaultOpen = true,
 }: {
@@ -45,6 +48,7 @@ export function EmailPreview({
   className?: string;
   title?: string;
 }) {
+  useTranslation(["app", "templatesUi"]);
   const user = useUser();
   const [device, setDevice] = useState<"desktop" | "phone">("desktop");
   const [open, setOpen] = useState(defaultOpen || !collapsible);
@@ -72,7 +76,7 @@ export function EmailPreview({
   });
   const ticketItems = (tickets.data?.data ?? []).map((t) => ({
     value: t.id,
-    label: `#${t.number} ${t.subject || "No subject"}`,
+    label: `#${t.number} ${t.subject || templateText("No subject")}`,
     keywords: [String(t.number), t.contact?.name ?? "", t.contact?.email ?? ""],
     hint: t.contact?.name,
   }));
@@ -80,7 +84,7 @@ export function EmailPreview({
 
   const test = useMutation({
     mutationFn: () => api.templates.test(request),
-    onSuccess: () => toast.success("Test email sent", { description: `Check ${user.email} in a moment.` }),
+    onSuccess: () => toast.success(templateText("Test email sent"), { description: templateText("Check {{email}} in a moment.", { email: user.email }) }),
     onError: (e) => toast.error(e),
   });
 
@@ -95,10 +99,10 @@ export function EmailPreview({
             className="-ml-1 flex h-7 items-center gap-1.5 rounded-md px-1 text-[12.5px] font-medium outline-none hover:text-fg focus-visible:shadow-[0_0_0_2px_var(--focus)]"
           >
             <ChevronDown className={cn("size-3.5 text-fg-3 transition-transform duration-150 motion-reduce:transition-none", !open && "-rotate-90")} />
-            {title}
+            {title ?? templateText("Preview")}
           </button>
         ) : (
-          <span className="text-[12.5px] font-medium">{title}</span>
+          <span className="text-[12.5px] font-medium">{title ?? templateText("Preview")}</span>
         )}
         {preview.isFetching && <Spinner className="size-3 text-fg-4" />}
         {open && <div className="ml-auto flex items-center gap-1.5">
@@ -106,9 +110,9 @@ export function EmailPreview({
             width={320}
             align="end"
             value={ticketId}
-            placeholder="Search recent tickets"
-            emptyText="No tickets yet"
-            items={[{ value: "", label: "Sample data", hint: "Jane Cooper" }, ...ticketItems]}
+            placeholder={appText("Search recent tickets")}
+            emptyText={templateText("No tickets yet")}
+            items={[{ value: "", label: templateText("Sample data"), hint: "Jane Cooper" }, ...ticketItems]}
             onSelect={(v) => setTicketId(v || null)}
             trigger={
               <button
@@ -116,7 +120,7 @@ export function EmailPreview({
                 className="flex h-7 max-w-[200px] items-center gap-1.5 rounded-md px-2 text-[12px] text-fg-2 transition-colors hover:bg-hover hover:text-fg data-[state=open]:bg-hover"
               >
                 <Ticket className="size-3.5 shrink-0 text-fg-3" />
-                <span className="truncate">{chosen ? `#${chosen.number}` : "Sample data"}</span>
+                <span className="truncate">{chosen ? `#${chosen.number}` : templateText("Sample data")}</span>
                 <ChevronDown className="size-3 shrink-0 text-fg-4" />
               </button>
             }
@@ -126,13 +130,14 @@ export function EmailPreview({
             value={device}
             onChange={setDevice}
             options={[
-              { value: "desktop", label: <span className="sr-only">Desktop</span>, icon: <Monitor /> },
-              { value: "phone", label: <span className="sr-only">Phone</span>, icon: <Smartphone /> },
+              { value: "desktop", label: <span className="sr-only">{appText("Desktop")}</span>, icon: <Monitor /> },
+              { value: "phone", label: <span className="sr-only">{appText("Phone")}</span>, icon: <Smartphone /> },
             ]}
           />
-          <Tooltip content={`Send this email to ${user.email}`}>
+          <Tooltip content={templateText("Send this email to {{email}}", { email: user.email })}>
             <Button size="xs" icon={<Send />} loading={test.isPending} onClick={() => test.mutate()}>
-              Send test
+
+              {appText("Send test")}
             </Button>
           </Tooltip>
         </div>}
@@ -144,7 +149,7 @@ export function EmailPreview({
       </div>
       {open && preview.data && (
         <div className="flex items-baseline gap-2 border-b border-line-soft bg-surface px-3 py-1.5 text-[12px]">
-          <span className="shrink-0 text-fg-4">Subject</span>
+          <span className="shrink-0 text-fg-4">{appText("Subject")}</span>
           <span className="min-w-0 truncate text-fg-2" data-ph-mask>
             {preview.data.subject}
           </span>
@@ -152,10 +157,10 @@ export function EmailPreview({
       )}
       {open && <div className="flex min-h-0 justify-center overflow-hidden p-3" style={{ height }}>
         {preview.isError && !preview.data ? (
-          <div className="flex items-center text-center text-[12.5px] text-fg-3">{errorMessage(preview.error, "The preview could not be shown.")}</div>
+          <div className="flex items-center text-center text-[12.5px] text-fg-3">{errorMessage(preview.error, templateText("The preview could not be shown."))}</div>
         ) : preview.data ? (
           <iframe
-            title="Email preview"
+            title={appText("Email preview")}
             // No scripts and no access to the app; links open in a new tab.
             sandbox="allow-popups allow-popups-to-escape-sandbox"
             srcDoc={preview.data.html}

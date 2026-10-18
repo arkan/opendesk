@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, CircleCheck, CircleDot, Signal, Copy, GitMerge, MoreHorizontal, PanelRight, RotateCcw, ShieldAlert, ShieldCheck, Trash2, UserRound, Users, X, MessageSquare, StickyNote } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -293,14 +294,14 @@ export default function TicketDetail({
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line px-3">
         <Tooltip content={tr("detail.close")} shortcut="esc">
-          <Button variant="ghost" size="sm" square aria-label="Close ticket" icon={<X className="size-4" />} onClick={onClose} />
+          <Button variant="ghost" size="sm" square aria-label={appText("Close ticket")} icon={<X className="size-4" />} onClick={onClose} />
         </Tooltip>
         <div className="hidden items-center sm:flex">
           <Tooltip content={tr("detail.previous")} shortcut="k">
-            <Button variant="ghost" size="sm" square aria-label="Previous ticket" disabled={!onPrev} onClick={onPrev} icon={<ChevronUp className="size-4" />} />
+            <Button variant="ghost" size="sm" square aria-label={appText("Previous ticket")} disabled={!onPrev} onClick={onPrev} icon={<ChevronUp className="size-4" />} />
           </Tooltip>
           <Tooltip content={tr("detail.next")} shortcut="j">
-            <Button variant="ghost" size="sm" square aria-label="Next ticket" disabled={!onNext} onClick={onNext} icon={<ChevronDown className="size-4" />} />
+            <Button variant="ghost" size="sm" square aria-label={appText("Next ticket")} disabled={!onNext} onClick={onNext} icon={<ChevronDown className="size-4" />} />
           </Tooltip>
           {position && (
             <span className="mono ml-1 hidden text-[11px] text-fg-4 tabular-nums sm:inline">
@@ -335,7 +336,7 @@ export default function TicketDetail({
           )}
         </div>
         {viewers.length > 0 && (
-          <Tooltip content={viewers.map((v) => `${v.name} ${v.state === "replying" ? "is replying" : "is here"}`).join(", ")}>
+          <Tooltip content={viewers.map((v) => appText(v.state === "replying" ? "{{name}} is replying" : "{{name}} is here", { name: v.name })).join(", ")}>
             <span className="flex items-center">
               <AvatarStack people={viewers.map((v) => ({ id: v.user_id, name: v.name, avatar: v.avatar, state: v.state }))} />
             </span>
@@ -375,7 +376,7 @@ export default function TicketDetail({
             <Menu>
               <Tooltip content={tr("detail.more")}>
                 <MenuTrigger asChild>
-                  <Button variant="ghost" size="sm" square aria-label="More actions" icon={<MoreHorizontal className="size-4" />} />
+                  <Button variant="ghost" size="sm" square aria-label={appText("More actions")} icon={<MoreHorizontal className="size-4" />} />
                 </MenuTrigger>
               </Tooltip>
               <MenuContent align="end" className="w-[210px]">
@@ -405,7 +406,7 @@ export default function TicketDetail({
           </div>
         )}
         <Tooltip content={panel ? tr("detail.hideDetails") : tr("detail.showDetails")} shortcut="]">
-          <Button variant="ghost" size="sm" square aria-label="Toggle details" aria-pressed={panel} onClick={togglePanel} icon={<PanelRight className="size-4" />} className={cn("hidden lg:inline-flex", panel && "text-fg")} />
+          <Button variant="ghost" size="sm" square aria-label={appText("Toggle details")} aria-pressed={panel} onClick={togglePanel} icon={<PanelRight className="size-4" />} className={cn("hidden lg:inline-flex", panel && "text-fg")} />
         </Tooltip>
       </header>
 
@@ -426,7 +427,7 @@ export default function TicketDetail({
           {panel && (
             <motion.aside
               key="panel"
-              aria-label="Ticket details"
+              aria-label={appText("Ticket details")}
               initial={reduced ? { opacity: 0 } : { width: 0, opacity: 0 }}
               animate={reduced ? { opacity: 1 } : { width: 300, opacity: 1 }}
               exit={reduced ? { opacity: 0 } : { width: 0, opacity: 0 }}

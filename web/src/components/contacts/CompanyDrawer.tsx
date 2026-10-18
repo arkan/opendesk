@@ -1,3 +1,4 @@
+import { intlLocale } from "@/i18n";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -124,7 +125,7 @@ export function CompanyDrawer({ companyId, onClose }: { companyId: string | null
             )}
           </div>
           <div className="grid grid-cols-3 divide-x divide-line-soft border-y border-line-soft">
-            <MiniStat label={t("col.people")} value={c.contact_count.toLocaleString()} />
+            <MiniStat label={t("col.people")} value={c.contact_count.toLocaleString(intlLocale())} />
             <MiniStat label={t("col.created")} value={<span title={fullDate(c.created_at)}>{shortDate(c.created_at)}</span>} />
             <MiniStat label={t("col.updated")} value={<span title={fullDate(c.updated_at)}>{relShort(c.updated_at)}</span>} />
           </div>

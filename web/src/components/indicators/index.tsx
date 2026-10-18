@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 // One family of indicators for status, priority, SLA, sentiment and channel.
 // All glyphs are drawn on the same 16px grid with a 1.5 stroke, sized 14px by
 // default, coloured from the tone palette (lib/tones.ts) with light and dark
@@ -11,26 +13,26 @@ import { channelTone, isTone, priorityTone, sentimentTone, severityTone, statusT
 import { Tooltip } from "@/components/ui/tooltip";
 
 export const statusLabel: Record<TicketStatus, string> = {
-  open: "Open",
-  pending: "Pending",
-  on_hold: "On hold",
-  solved: "Solved",
-  closed: "Closed",
+  get open() { return appText("Open"); },
+  get pending() { return appText("Pending"); },
+  get on_hold() { return appText("On hold"); },
+  get solved() { return appText("Solved"); },
+  get closed() { return appText("Closed"); },
 };
 export const statusOrder: TicketStatus[] = ["open", "pending", "on_hold", "solved", "closed"];
-export const priorityLabel: Record<Priority, string> = { urgent: "Urgent", high: "High", normal: "Normal", low: "Low" };
+export const priorityLabel: Record<Priority, string> = { get urgent() { return appText("Urgent"); }, get high() { return appText("High"); }, get normal() { return appText("Normal"); }, get low() { return appText("Low"); } };
 export const priorityOrder: Priority[] = ["urgent", "high", "normal", "low"];
-export const severityLabel: Record<Severity, string> = { sev1: "Sev 1", sev2: "Sev 2", sev3: "Sev 3", sev4: "Sev 4" };
+export const severityLabel: Record<Severity, string> = { get sev1() { return appText("Sev 1"); }, get sev2() { return appText("Sev 2"); }, get sev3() { return appText("Sev 3"); }, get sev4() { return appText("Sev 4"); } };
 /** What each level means, for pickers and tooltips. */
 export const severityHint: Record<Severity, string> = {
-  sev1: "Critical outage",
-  sev2: "Major impact",
-  sev3: "Minor impact",
-  sev4: "Low impact",
+  get sev1() { return appText("Critical outage"); },
+  get sev2() { return appText("Major impact"); },
+  get sev3() { return appText("Minor impact"); },
+  get sev4() { return appText("Low impact"); },
 };
 export const severityOrder: Severity[] = ["sev1", "sev2", "sev3", "sev4"];
-export const channelLabel: Record<Channel, string> = { email: "Email", chat: "Chat", api: "API", portal: "Portal" };
-export const sentimentLabel: Record<Sentiment, string> = { positive: "Positive", neutral: "Neutral", negative: "Negative", frustrated: "Frustrated" };
+export const channelLabel: Record<Channel, string> = { get email() { return appText("Email"); }, get chat() { return appText("Chat"); }, api: "API", get portal() { return appText("Portal"); } };
+export const sentimentLabel: Record<Sentiment, string> = { get positive() { return appText("Positive"); }, get neutral() { return appText("Neutral"); }, get negative() { return appText("Negative"); }, get frustrated() { return appText("Frustrated"); } };
 
 const SW = 1.5;
 
@@ -86,9 +88,10 @@ export function StatusIcon({ status, className }: { status: TicketStatus; classN
 
 /** Spam is a folder rather than a status; it gets a matching glyph. */
 export function SpamIcon({ className }: { className?: string }) {
+  useTranslation("app");
   const c = toneVar("red");
   return (
-    <Glyph k="spam" label="Spam" className={className}>
+    <Glyph k="spam" label={appText("Spam")} className={className}>
       <circle cx="8" cy="8" r="5.75" stroke={c} strokeWidth={SW} />
       <path d="M4 12l8-8" stroke={c} strokeWidth={SW} strokeLinecap="round" />
     </Glyph>
@@ -109,10 +112,11 @@ export function StatusPill({ status, className, label, hue }: { status: TicketSt
 // filled square with an exclamation, the one mark that shouts.
 
 export function PriorityIcon({ priority, className, muted }: { priority: Priority | null | undefined; className?: string; muted?: boolean }) {
+  useTranslation("app");
   // No priority yet: a faint dashed outline holds the slot so columns align.
   if (!priority)
     return (
-      <Glyph k="none" label="No priority" className={className}>
+      <Glyph k="none" label={appText("No priority")} className={className}>
         <rect x="2" y="2" width="12" height="12" rx="3" stroke="var(--line-strong)" strokeWidth={SW} strokeDasharray="2.2 2" />
       </Glyph>
     );
@@ -195,7 +199,7 @@ export function slaState(t: SlaInput, now = Date.now()): SlaState | null {
   const due = firstPending ? t.sla.first_response_due_at : t.sla.resolution_due_at;
   if (!due) return null;
   const left = Math.round((Date.parse(due) - now) / 60000);
-  const kind = firstPending ? "First response" : "Resolution";
+  const kind = firstPending ? appText("First response") : appText("Resolution");
   const state = t.sla.breached || left < 0 ? "breached" : left < 60 ? "due_soon" : "on_track";
   return { due, left, kind, state, tone: state === "breached" ? "danger" : state === "due_soon" ? "warn" : "muted" };
 }
@@ -207,12 +211,13 @@ const slaLook = {
 } as const;
 
 export function SlaPill({ ticket, className }: { ticket: SlaInput; className?: string }) {
+  const { t } = useTranslation("inbox");
   const s = slaState(ticket);
   if (!s) return null;
   const look = slaLook[s.state];
-  const label = s.left < 0 ? `${minutes(-s.left)} over` : minutes(s.left);
+  const label = s.left < 0 ? t("sla.over", { time: minutes(-s.left) }) : minutes(s.left);
   return (
-    <Tooltip content={`${s.kind} ${look.word}`}>
+    <Tooltip content={`${s.kind} ${appText(look.word)}`}>
       <span
         key={s.state}
         className={cn(

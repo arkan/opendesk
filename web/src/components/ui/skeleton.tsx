@@ -1,3 +1,5 @@
+import { uiText } from "@/i18n/ui";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 
 export function Skeleton({ className, style }: { className?: string; style?: React.CSSProperties }) {
@@ -5,8 +7,9 @@ export function Skeleton({ className, style }: { className?: string; style?: Rea
 }
 
 export function SkeletonRows({ rows = 8, className }: { rows?: number; className?: string }) {
+  useTranslation("interface");
   return (
-    <div className={cn("divide-y divide-line-soft", className)} aria-busy="true" aria-label="Loading">
+    <div className={cn("divide-y divide-line-soft", className)} aria-busy="true" aria-label={uiText("Loading")}>
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="flex items-center gap-3 px-4 py-3" style={{ opacity: 1 - i * (0.8 / rows) }}>
           <Skeleton className="size-5 rounded-sm" />

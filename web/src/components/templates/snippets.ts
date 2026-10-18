@@ -1,3 +1,4 @@
+import { templateText } from "./text";
 // Ready-made logic for template editors (contracts/templates.md "The language"):
 // what "{%" offers and the Insert menu's Logic tab. Each inserts working code with
 // the part to change selected, so nobody has to remember the syntax.
@@ -113,6 +114,7 @@ export const SNIPPETS: Snippet[] = [
 
 export function matchSnippets(query: string): Snippet[] {
   const q = query.toLowerCase().trim();
-  if (!q) return SNIPPETS;
-  return SNIPPETS.filter((s) => s.label.toLowerCase().includes(q) || s.id.includes(q) || s.keywords.includes(q) || s.code.toLowerCase().includes(q));
+  const snippets = SNIPPETS.map((s) => ({ ...s, label: templateText(s.label), description: templateText(s.description) }));
+  if (!q) return snippets;
+  return snippets.filter((s) => s.label.toLowerCase().includes(q) || s.id.includes(q) || s.keywords.includes(q) || s.code.toLowerCase().includes(q));
 }

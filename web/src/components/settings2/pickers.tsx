@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 // Value pickers shared by the view filter builder and the automation builder.
 
 import { useQuery } from "@tanstack/react-query";
@@ -102,12 +104,13 @@ export function useMemberItems(): PickerItem[] {
 }
 
 export function useTeamItems(): PickerItem[] {
+  useTranslation("app");
   const { data } = useQuery(q.teams());
   return (data ?? []).map((t) => ({
     value: t.id,
     label: t.name,
     icon: <span aria-hidden className={cn("size-2 shrink-0 rounded-[3px]", tone[isTone(t.color) ? t.color : toneFor(t.name)].solid)} />,
-    hint: t.private ? <Lock className="size-3 text-fg-4" aria-label="Private" /> : undefined,
+    hint: t.private ? <Lock className="size-3 text-fg-4" aria-label={appText("Private")} /> : undefined,
   }));
 }
 

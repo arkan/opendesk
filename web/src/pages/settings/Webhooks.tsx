@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { MoreHorizontal, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Webhook as WebhookIcon } from "lucide-react";
@@ -195,12 +196,12 @@ export default function Webhooks() {
                         <StatePill state={hp.state}>{t(`webhooks.state.${hp.state}`)}</StatePill>
                       </span>
                       <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                        <Switch checked={h.enabled} onCheckedChange={(enabled) => toggle.mutate({ id: h.id, enabled })} aria-label={`Webhook ${h.url} active`} />
+                        <Switch checked={h.enabled} onCheckedChange={(enabled) => toggle.mutate({ id: h.id, enabled })} aria-label={appText("Webhook {{url}} active", { url: h.url })} />
                         <Menu>
                           <MenuTrigger asChild>
                             <button
                               type="button"
-                              aria-label="Webhook actions"
+                              aria-label={appText("Webhook actions")}
                               className="flex size-7 items-center justify-center rounded-md text-fg-3 transition-colors hover:bg-hover hover:text-fg"
                             >
                               <MoreHorizontal className="size-4" />

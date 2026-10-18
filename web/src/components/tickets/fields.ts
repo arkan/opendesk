@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Labels (with groups) and custom fields (contracts/api.md "Labels and custom
 // fields"): small hooks over the shared queries, the workspace display
 // overrides, and helpers for values and the 422 errors these writes answer.
@@ -60,7 +61,7 @@ export function fieldText(f: CustomField | undefined, v: unknown, memberName?: (
   const opt = (id: string) => f.options.find((o) => o.id === id)?.label ?? id;
   if (f.type === "select") return opt(String(v));
   if (f.type === "multi_select") return (Array.isArray(v) ? v : String(v).split(",")).map((x) => opt(String(x))).join(", ");
-  if (f.type === "checkbox") return v === true || v === "true" ? "Yes" : "No";
+  if (f.type === "checkbox") return v === true || v === "true" ? appText("Yes") : appText("No");
   if (f.type === "user") return memberName?.(String(v)) ?? String(v);
   return String(v);
 }

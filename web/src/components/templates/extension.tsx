@@ -1,3 +1,6 @@
+import { templateText } from "./text";
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 // Template tags in the rich editor: every {{ variable }} and {% tag %} shows as a
 // soft pill (red when unknown), and typing "{{" offers the variables. The
 // document keeps tags as plain text, so what is saved is what was typed.
@@ -226,6 +229,7 @@ export function matchVars<T extends { key: string; label: string; group: string 
 
 /** The floating list; mount once next to the editor. */
 export function VarSuggestPopup() {
+  useTranslation(["app", "templatesUi"]);
   const { open, items, index, getRect, anchorEl, pick, valueLabel, title } = useVarSuggest();
   const ref = useRef<HTMLDivElement>(null);
   const rect = useCaretAnchor({ open, getRect, anchorEl, popupRef: ref, onDismiss: dismiss });
@@ -243,18 +247,18 @@ export function VarSuggestPopup() {
     <div
       ref={ref}
       role="listbox"
-      aria-label={title}
+      aria-label={templateText(title)}
       data-floating
       style={placeBelowOrAbove(rect, 340, 320)}
       className="pointer-events-auto z-[80] flex max-h-[320px] w-[340px] flex-col overflow-hidden rounded-lg border border-line bg-raised shadow-pop animate-pop-in motion-reduce:animate-none"
     >
       <div className="label-caps flex shrink-0 items-center justify-between px-3 pb-1 pt-2">
-        <span>{title}</span>
-        {valueLabel && <span className="normal-case tracking-normal text-fg-4">{valueLabel}</span>}
+        <span>{templateText(title)}</span>
+        {valueLabel && <span className="normal-case tracking-normal text-fg-4">{templateText(valueLabel)}</span>}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-1">
         {items.length === 0 ? (
-          <div className="px-2 py-3 text-xs text-fg-3">Nothing matches</div>
+          <div className="px-2 py-3 text-xs text-fg-3">{appText("Nothing matches")}</div>
         ) : (
           items.map((it, i) => (
             <button
@@ -296,7 +300,7 @@ export function VarSuggestPopup() {
               </span>
               {it.value !== undefined && (
                 <span className={cn("max-w-[110px] shrink-0 truncate pt-0.5 text-[11.5px]", it.value ? "text-fg-2" : "italic text-fg-4")} data-ph-mask>
-                  {it.value || "empty"}
+                  {it.value || templateText("empty")}
                 </span>
               )}
             </button>
@@ -304,7 +308,7 @@ export function VarSuggestPopup() {
         )}
       </div>
       <div className="flex shrink-0 items-center gap-2 border-t border-line px-3 py-1.5 text-[11px] text-fg-4">
-        <span className="min-w-0 flex-1 truncate">{tip}</span>
+        <span className="min-w-0 flex-1 truncate">{templateText(tip)}</span>
         <a
           href="https://docs.opendesk.sh/guides/email-templates/variables/"
           target="_blank"
@@ -312,7 +316,8 @@ export function VarSuggestPopup() {
           onMouseDown={(e) => e.preventDefault()}
           className="shrink-0 text-fg-3 underline-offset-2 hover:text-fg hover:underline"
         >
-          Guide
+
+          {appText("Guide")}
         </a>
       </div>
     </div>,

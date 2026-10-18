@@ -1,3 +1,5 @@
+import { dateLocale } from "@/lib/dateLocale";
+import { appText } from "@/i18n/text";
 import { addDays, addHours, nextMonday, setHours, setMinutes, startOfHour, format } from "date-fns";
 import { AlarmClock } from "lucide-react";
 import { useState } from "react";
@@ -13,10 +15,10 @@ function at9(d: Date) {
 
 export function snoozeOptions(now = new Date()) {
   return [
-    { key: "hour", label: "In 1 hour", at: startOfHour(addHours(now, 2)) },
-    { key: "hours", label: "In 4 hours", at: startOfHour(addHours(now, 5)) },
-    { key: "tomorrow", label: "Tomorrow", at: at9(addDays(now, 1)) },
-    { key: "week", label: "Next week", at: at9(nextMonday(now)) },
+    { key: "hour", label: appText("In 1 hour"), at: startOfHour(addHours(now, 2)) },
+    { key: "hours", label: appText("In 4 hours"), at: startOfHour(addHours(now, 5)) },
+    { key: "tomorrow", label: appText("Tomorrow"), at: at9(addDays(now, 1)) },
+    { key: "week", label: appText("Next week"), at: at9(nextMonday(now)) },
   ] as const;
 }
 
@@ -45,7 +47,7 @@ export function SnoozeMenu({ onSnooze, disabled, open: openProp, onOpenChange }:
       className="w-[264px] p-1"
       trigger={
         <Tooltip content={t("snooze.title")} shortcut="h">
-          <Button variant="ghost" size="sm" square aria-label="Snooze" disabled={disabled} icon={<AlarmClock className="size-3.5" />} />
+          <Button variant="ghost" size="sm" square aria-label={appText("Snooze")} disabled={disabled} icon={<AlarmClock className="size-3.5" />} />
         </Tooltip>
       }
     >
@@ -61,7 +63,7 @@ export function SnoozeMenu({ onSnooze, disabled, open: openProp, onOpenChange }:
           className="flex h-8 w-full items-center justify-between rounded-md px-2 text-[12.5px] outline-none transition-colors hover:bg-hover focus-visible:bg-hover"
         >
           {t(`snooze.${o.key}`)}
-          <span className="mono text-[11px] text-fg-4">{format(o.at, "EEE HH:mm")}</span>
+          <span className="mono text-[11px] text-fg-4">{format(o.at, "EEE HH:mm", { locale: dateLocale() })}</span>
         </button>
       ))}
       <div className="mt-1 border-t border-line p-1.5 pt-2">

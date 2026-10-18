@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { Plus, Users, X } from "lucide-react";
@@ -218,8 +219,9 @@ export default function ContactsPage() {
 
 /** Rows shaped like the table, so nothing shifts when data lands. */
 function TableSkeleton({ rows = 12 }: { rows?: number }) {
+  useTranslation("app");
   return (
-    <div aria-busy="true" aria-label="Loading">
+    <div aria-busy="true" aria-label={appText("Loading")}>
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className={`${colsPlain} h-11 border-b border-line-soft px-4 md:px-5`} style={{ opacity: 1 - i * (0.75 / rows) }}>
           <span className="flex items-center gap-2.5">

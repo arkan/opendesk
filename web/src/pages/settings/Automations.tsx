@@ -1,3 +1,4 @@
+import { intlLocale } from "@/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ListOrdered, MoreHorizontal, Pencil, Plus, Trash2, Zap } from "lucide-react";
@@ -139,7 +140,7 @@ export default function Automations() {
                   </div>
                   <Tooltip
                     content={t("automations.ranTimes", {
-                      n: a.run_count.toLocaleString(),
+                      n: a.run_count.toLocaleString(intlLocale()),
                     })}
                   >
                     <span className="mono hidden min-w-14 shrink-0 whitespace-nowrap text-right text-[11px] tabular-nums text-fg-4 sm:block">

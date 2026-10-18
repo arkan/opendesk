@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { Activity, Pencil, RefreshCw, Send, Trash2 } from "lucide-react";
@@ -115,16 +116,16 @@ export default function WebhookDetail() {
         <>
           <label className="mr-1 flex items-center gap-2 text-[12.5px] text-fg-2">
             <StatePill state={state}>{t(`webhooks.state.${state}`)}</StatePill>
-            <Switch checked={hook.enabled} onCheckedChange={(v) => toggle.mutate(v)} aria-label="Webhook active" />
+            <Switch checked={hook.enabled} onCheckedChange={(v) => toggle.mutate(v)} aria-label={appText("Webhook active")} />
           </label>
           <Button icon={<Send className="size-3.5" />} loading={test.isPending} onClick={() => test.mutate()} disabled={!hook.enabled}>
             {t("webhook.sendTest")}
           </Button>
-          <Button square aria-label="Edit webhook" icon={<Pencil className="size-3.5" />} onClick={() => setEditing(true)} />
+          <Button square aria-label={appText("Edit webhook")} icon={<Pencil className="size-3.5" />} onClick={() => setEditing(true)} />
           <Button
             square
             variant="danger"
-            aria-label="Delete webhook"
+            aria-label={appText("Delete webhook")}
             icon={<Trash2 className="size-3.5" />}
             onClick={() =>
               confirm.show(
@@ -177,7 +178,7 @@ export default function WebhookDetail() {
             <Tooltip content={t("webhook.refresh")}>
               <button
                 type="button"
-                aria-label="Refresh deliveries"
+                aria-label={appText("Refresh deliveries")}
                 onClick={() => void deliveries.refetch()}
                 className="flex size-7 items-center justify-center rounded-md text-fg-3 transition-colors hover:bg-hover hover:text-fg"
               >

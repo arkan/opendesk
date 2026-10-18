@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { GitMerge } from "lucide-react";
@@ -71,7 +72,7 @@ export function MergeDialog({ ticket, open, onOpenChange }: { ticket: Ticket; op
         </>
       }
     >
-      <SearchInput value={term} onChange={setTerm} placeholder="Search by subject, customer or #number" inputSize="md" autoFocus />
+      <SearchInput value={term} onChange={setTerm} placeholder={appText("Search by subject, customer or #number")} inputSize="md" autoFocus />
       <div className="mt-3 flex min-h-[220px] flex-col gap-0.5">
         {!deferred && <p className="label-caps px-1 pb-1">{ticket.contact ? tr("merge.fromContact", { name: ticket.contact.name || ticket.contact.email }) : tr("merge.recent")}</p>}
         {results.isPending ? (

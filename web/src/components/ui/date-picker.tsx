@@ -1,3 +1,6 @@
+import { intlLocale } from "@/i18n";
+import { uiText } from "@/i18n/ui";
+import { useTranslation } from "react-i18next";
 import {
   addDays,
   addMonths,
@@ -45,6 +48,7 @@ export function Calendar({
   max?: Date | null;
   className?: string;
 }) {
+  useTranslation("interface");
   const [focus, setFocus] = useState(() => startOfDay(value ?? new Date()));
   const [month, setMonth] = useState(() => startOfMonth(focus));
   const grid = useRef<HTMLDivElement>(null);
@@ -89,16 +93,20 @@ export function Calendar({
   };
 
   const today = new Date();
+  const locale = intlLocale();
+  const monthFormat = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" });
+  const weekdayFormat = new Intl.DateTimeFormat(locale, { weekday: "short" });
+  const fullDateFormat = new Intl.DateTimeFormat(locale, { dateStyle: "full" });
   return (
     <div className={cn("w-[224px] select-none", className)}>
       <div className="mb-1.5 flex items-center justify-between">
-        <span className="pl-1 text-[12.5px] font-medium">{format(month, "MMMM yyyy")}</span>
+        <span className="pl-1 text-[12.5px] font-medium">{monthFormat.format(month)}</span>
         <div className="flex">
           {[-1, 1].map((n) => (
             <button
               key={n}
               type="button"
-              aria-label={n < 0 ? "Previous month" : "Next month"}
+              aria-label={n < 0 ? uiText("Previous month") : uiText("Next month")}
               onClick={() => setMonth((m) => addMonths(m, n))}
               className="grid size-7 place-items-center rounded-md text-fg-3 outline-none transition-colors hover:bg-hover hover:text-fg focus-visible:bg-hover"
             >
@@ -110,7 +118,7 @@ export function Calendar({
       <div className="grid grid-cols-7 text-center">
         {days.slice(0, 7).map((d) => (
           <span key={d.toISOString()} className="pb-1 text-[10.5px] font-medium uppercase text-fg-4">
-            {format(d, "EEEEEE")}
+            {weekdayFormat.format(d)}
           </span>
         ))}
       </div>
@@ -124,7 +132,7 @@ export function Calendar({
               type="button"
               role="gridcell"
               aria-selected={selected}
-              aria-label={format(d, "PPPP")}
+              aria-label={fullDateFormat.format(d)}
               disabled={disabled}
               tabIndex={isSameDay(d, focus) ? 0 : -1}
               onClick={() => {
@@ -154,7 +162,7 @@ export function DateField({
   onChange,
   min,
   max,
-  placeholder = "Pick a date",
+  placeholder = uiText("Pick a date"),
   invalid,
   clearable,
   size = "md",
@@ -174,6 +182,7 @@ export function DateField({
   autoFocus?: boolean;
   "aria-label"?: string;
 }) {
+  useTranslation("interface");
   const [open, setOpen] = useState(false);
   const day = parseDay(value);
   return (
@@ -196,7 +205,7 @@ export function DateField({
             )}
           >
             <CalendarDays className="size-3.5 shrink-0 text-fg-3" />
-            <span className={cn("mono truncate", !day && "font-sans text-fg-4")}>{day ? format(day, "d MMM yyyy") : placeholder}</span>
+            <span className={cn("mono truncate", !day && "font-sans text-fg-4")}>{day ? new Intl.DateTimeFormat(intlLocale(), { day: "numeric", month: "short", year: "numeric" }).format(day) : placeholder}</span>
           </button>
         }
       >
@@ -213,7 +222,7 @@ export function DateField({
       {clearable && day && (
         <button
           type="button"
-          aria-label="Clear date"
+          aria-label={uiText("Clear date")}
           onClick={() => onChange("")}
           className="absolute right-1 top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded text-fg-4 hover:bg-hover hover:text-fg"
         >

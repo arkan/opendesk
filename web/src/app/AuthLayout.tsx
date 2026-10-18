@@ -1,3 +1,5 @@
+import { appText } from "@/i18n/text";
+import { AgentLanguageSelect } from "@/components/AgentLanguageSelect";
 import { Link, Outlet } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
@@ -15,12 +17,13 @@ import { desktop } from "@/lib/desktop";
  * of a shared inbox filling in live.
  */
 export function AuthLayout() {
+  useTranslation("app");
   if (desktop) return <DesktopAuthLayout />;
   return (
     <div className="relative flex min-h-dvh flex-col bg-frame">
       {/* In the desktop app this strip is the title bar: it drags the window and clears its controls. */}
       <header className="window-drag relative flex h-14 items-center px-6 desktop-glass:h-12 desktop-mac:pl-(--window-inset-left) desktop-win:pr-[max(1.5rem,var(--window-inset-right))]">
-        <Link to="/" aria-label="opendesk home" className="text-fg">
+        <Link to="/" aria-label={appText("opendesk home")} className="text-fg">
           <Lockup className="h-[18px]" />
         </Link>
       </header>
@@ -34,10 +37,11 @@ export function AuthLayout() {
           <InboxPreview />
         </div>
       </main>
-      <footer className="relative flex h-12 items-center justify-center gap-4 text-xs text-fg-4">
+      <footer className="relative flex min-h-12 flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 py-2 text-xs text-fg-4">
         <a href="https://opendesk.sh" className="hover:text-fg-2">opendesk.sh</a>
-        <a href="https://docs.opendesk.sh" className="hover:text-fg-2">Docs</a>
-        <a href="https://opendesk.sh/privacy" className="hover:text-fg-2">Privacy</a>
+        <a href="https://docs.opendesk.sh" className="hover:text-fg-2">{appText("Docs")}</a>
+        <a href="https://opendesk.sh/privacy" className="hover:text-fg-2">{appText("Privacy")}</a>
+        <AgentLanguageSelect />
       </footer>
     </div>
   );
@@ -62,6 +66,7 @@ function DesktopAuthLayout() {
         </div>
       </main>
       <footer className="flex h-12 shrink-0 items-center justify-center gap-1.5 text-[12px] text-fg-4">
+        <AgentLanguageSelect />
         <span className="mono">{location.host}</span>
         <span aria-hidden>·</span>
         <button type="button" onClick={() => desktop?.switchServer()} className="font-medium text-fg-3 transition-colors hover:text-fg">
@@ -96,6 +101,7 @@ const ROWS: Row[] = [
 
 /** Decorative: a few tickets arriving and getting solved. Hidden from assistive tech. */
 function InboxPreview() {
+  useTranslation("app");
   const reduce = useReducedMotion();
   const [n, setN] = useState(4);
   useEffect(() => {
@@ -111,8 +117,8 @@ function InboxPreview() {
     <div aria-hidden className="relative hidden flex-col border-l border-line bg-sunken lg:flex">
       <div className="flex items-center justify-between px-7 pb-4 pt-9">
         <div>
-          <p className="label-caps">Shared inbox</p>
-          <p className="mt-1 text-[15px] font-semibold tracking-[-0.02em] text-fg">Every conversation, one calm queue</p>
+          <p className="label-caps">{appText("Shared inbox")}</p>
+          <p className="mt-1 text-[15px] font-semibold tracking-[-0.02em] text-fg">{appText("Every conversation, one calm queue")}</p>
         </div>
       </div>
       <div className="mx-7 overflow-hidden rounded-lg border border-line bg-surface shadow-xs">
@@ -149,9 +155,9 @@ function InboxPreview() {
       </div>
       <div className="mt-auto grid grid-cols-3 gap-px border-t border-line bg-line">
         {[
-          ["Live", "Updates land for everyone at once"],
-          ["Email and chat", "One queue for every channel"],
-          ["Open source", "Hosted or on your own servers"],
+          [appText("Live"), appText("Updates land for everyone at once")],
+          [appText("Email and chat"), appText("One queue for every channel")],
+          [appText("Open source"), appText("Hosted or on your own servers")],
         ].map(([k, v]) => (
           <div key={k} className="bg-sunken px-5 py-4">
             <p className="text-[12px] font-medium text-fg">{k}</p>

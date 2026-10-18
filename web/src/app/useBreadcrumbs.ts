@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 import { useEffect } from "react";
 import { useMatches } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -18,6 +20,7 @@ export function usePageCrumb(label: string | null | undefined) {
 
 /** Header breadcrumbs for the current route: section, then page, then the page's own crumb. */
 export function useBreadcrumbs(): Crumb[] {
+  useTranslation("app");
   const matches = useMatches();
   const extra = useCrumbStore((s) => s.label);
   const { data: views } = useQuery(q.views());
@@ -29,31 +32,31 @@ export function useBreadcrumbs(): Crumb[] {
   const crumbs: Crumb[] = [];
 
   if (path.startsWith("/inbox/")) {
-    crumbs.push({ label: "Inbox", to: "/inbox/$folder/{-$ticketId}", params: { folder: "unassigned", ticketId: undefined } });
+    crumbs.push({ label: appText("Inbox"), to: "/inbox/$folder/{-$ticketId}", params: { folder: "unassigned", ticketId: undefined } });
     const f = folderById(params.folder ?? "");
     if (f) crumbs.push({ label: f.label, to: "/inbox/$folder/{-$ticketId}", params: { folder: f.id, ticketId: undefined } });
   } else if (path.startsWith("/views/")) {
-    crumbs.push({ label: "Views" });
+    crumbs.push({ label: appText("Views") });
     const v = views?.find((x) => x.id === params.viewId);
-    crumbs.push({ label: v?.name ?? "View", to: "/views/$viewId/{-$ticketId}", params: { viewId: params.viewId, ticketId: undefined } });
+    crumbs.push({ label: v?.name ?? appText("View"), to: "/views/$viewId/{-$ticketId}", params: { viewId: params.viewId, ticketId: undefined } });
   } else if (path.startsWith("/teams/")) {
-    crumbs.push({ label: "Teams" });
-    const name = params.teamId === "mine" ? "My teams" : (teams?.find((x) => x.id === params.teamId)?.name ?? "Team");
+    crumbs.push({ label: appText("Teams") });
+    const name = params.teamId === "mine" ? appText("My teams") : (teams?.find((x) => x.id === params.teamId)?.name ?? appText("Team"));
     crumbs.push({ label: name, to: "/teams/$teamId/{-$ticketId}", params: { teamId: params.teamId, ticketId: undefined } });
   } else if (path.startsWith("/contacts")) {
-    crumbs.push({ label: "Contacts", to: "/contacts/{-$contactId}", params: { contactId: undefined } });
+    crumbs.push({ label: appText("Contacts"), to: "/contacts/{-$contactId}", params: { contactId: undefined } });
   } else if (path.startsWith("/companies")) {
-    crumbs.push({ label: "Companies", to: "/companies/{-$companyId}", params: { companyId: undefined } });
+    crumbs.push({ label: appText("Companies"), to: "/companies/{-$companyId}", params: { companyId: undefined } });
   } else if (path.startsWith("/kb")) {
-    crumbs.push({ label: "Knowledge base", to: "/kb" });
-    if (path.startsWith("/kb/articles/")) crumbs.push({ label: params.articleId === "new" ? "New article" : "Article" });
+    crumbs.push({ label: appText("Knowledge base"), to: "/kb" });
+    if (path.startsWith("/kb/articles/")) crumbs.push({ label: params.articleId === "new" ? appText("New article") : appText("Article") });
   } else if (path.startsWith("/reports")) {
-    crumbs.push({ label: "Reports", to: "/reports" });
+    crumbs.push({ label: appText("Reports"), to: "/reports" });
   } else if (path.startsWith("/settings")) {
-    crumbs.push({ label: "Settings", to: "/settings" });
-    if (title && title !== "Settings") crumbs.push({ label: title });
+    crumbs.push({ label: appText("Settings"), to: "/settings" });
+    if (title && title !== "Settings") crumbs.push({ label: appText(title) });
   } else if (title) {
-    crumbs.push({ label: title });
+    crumbs.push({ label: appText(title) });
   }
 
   if (extra) {

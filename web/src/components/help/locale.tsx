@@ -1,6 +1,6 @@
 // Language for the customer-facing pages (help center, CSAT): `?lang=` first,
 // then the visitor's browser, then the workspace default, then English.
-// The agent app stays English, so the choice is undone on unmount.
+// The manual agent preference is restored on unmount.
 
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { Check, Globe } from "lucide-react";
@@ -51,15 +51,20 @@ export function usePublicLocale(workspaceDefault: string | null | undefined, rea
   useEffect(() => {
     if (!lng) return;
     let live = true;
-    void setLocale(lng, ["public", "common"]).then(() => live && setApplied(lng));
+    void setLocale(lng, ["public", "common"]).then(
+      () => live && setApplied(lng),
+      () => {
+        if (live) void setLocale("en", ["public", "common"]).then(() => { if (live) setApplied("en"); });
+      },
+    );
     return () => {
       live = false;
     };
   }, [lng]);
 
-  useEffect(() => () => resetLocale(), []);
+  useEffect(() => () => { void resetLocale(); }, []);
 
-  return { locale: applied ?? lng ?? "en", loaded: !!lng && applied === lng };
+  return { locale: applied ?? lng ?? "en", loaded: !!lng && (applied === lng || applied === "en") };
 }
 
 /** A quiet footer control that rewrites `?lang=`. */

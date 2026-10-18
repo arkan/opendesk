@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 // Mail hosts: display names, logos, how a password signs in, and the one-line
 // connection label the mailbox list shows ("Gmail · App password"). The API is the
 // source of truth for detection (GET /v1/mailboxes/detect); this mirrors its tables
@@ -26,7 +27,7 @@ export const MAIL_HOST_LABELS: Record<MailHost, string> = {
   yandex: "Yandex Mail",
   gmx: "GMX",
   proton: "Proton Mail",
-  other: "Other provider",
+  get other() { return appText("Other provider"); },
 };
 
 const HOST_LOGOS: Partial<Record<MailHost, string>> = {

@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Clock, IdCard, Link2, LogOut, MoreHorizontal, Send, ShieldCheck, UserMinus, UserPlus, X } from "lucide-react";
@@ -32,11 +33,11 @@ import { PlanLimitHint, showLimit } from "@/components/billing/PlanLimit";
 import { useLimit } from "@/components/billing/hooks";
 import { useVarSuggest } from "@/components/templates/extension";
 
-const roleLabel: Record<Role, string> = { owner: "Owner", admin: "Admin", agent: "Agent", viewer: "Viewer" };
+const roleLabel: Record<Role, string> = { get owner() { return appText("Owner"); }, get admin() { return appText("Admin"); }, get agent() { return appText("Agent"); }, get viewer() { return appText("Viewer"); } };
 const roleHint: Record<Exclude<Role, "owner">, string> = {
-  admin: "Manages settings, mailboxes and members",
-  agent: "Works tickets, contacts and articles",
-  viewer: "Reads everything, changes nothing",
+  get admin() { return appText("Manages settings, mailboxes and members"); },
+  get agent() { return appText("Works tickets, contacts and articles"); },
+  get viewer() { return appText("Reads everything, changes nothing"); },
 };
 
 /** Which roles `me` may hand out, and whether they may manage `target` at all. */
@@ -119,7 +120,7 @@ function MembersList({ onInvite }: { onInvite?: () => void }) {
     try {
       await api.members.remove(m.user.id);
       void qc.invalidateQueries({ queryKey: qk.billing, exact: true });
-      toast.success(`${m.user.name} removed`);
+      toast.success(appText("{{name}} removed", { name: m.user.name }));
     } catch (e) {
       if (prev) qc.setQueryData(qk.members, prev);
       throw e;
@@ -128,19 +129,19 @@ function MembersList({ onInvite }: { onInvite?: () => void }) {
 
   const leave = () =>
     confirm.show(
-      "You lose access to every ticket and setting in this workspace. An admin can invite you back.",
+      appText("You lose access to every ticket and setting in this workspace. An admin can invite you back."),
       async () => {
         try {
           await api.members.remove(meId);
         } catch (e) {
-          if (isApiError(e, "owner_cannot_leave")) throw new Error("Transfer ownership before you leave.", { cause: e });
+          if (isApiError(e, "owner_cannot_leave")) throw new Error(appText("Transfer ownership before you leave."), { cause: e });
           throw e;
         }
         qc.clear();
         const s = await reloadSession();
         void navigate(s.workspaceId ? { to: "/" } : { to: "/onboarding" });
       },
-      { title: "Leave this workspace?", confirmLabel: "Leave", danger: true },
+      { title: appText("Leave this workspace?"), confirmLabel: appText("Leave"), danger: true },
     );
 
   const term = query.trim().toLowerCase();
@@ -218,7 +219,7 @@ function MembersList({ onInvite }: { onInvite?: () => void }) {
                       {manageable ? (
                         <Select
                           size="sm"
-                          aria-label={`Role for ${m.user.name}`}
+                          aria-label={appText("Role for {{name}}", { name: m.user.name })}
                           value={m.role}
                           onChange={(v) => changeRole.mutate({ uid: m.user.id, role: v })}
                           options={grantable(role)
@@ -235,7 +236,7 @@ function MembersList({ onInvite }: { onInvite?: () => void }) {
                       {admin && (
                         <Menu>
                           <MenuTrigger asChild>
-                            <Button size="sm" variant="ghost" square aria-label={`Actions for ${m.user.name}`}>
+                            <Button size="sm" variant="ghost" square aria-label={appText("Actions for {{name}}", { name: m.user.name })}>
                               <MoreHorizontal className="size-4" />
                             </Button>
                           </MenuTrigger>
@@ -501,12 +502,12 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
     const good = parts.filter((p) => emailRe.test(p));
     setEmails((cur) => Array.from(new Set([...cur, ...good])));
     setText(bad.join(" "));
-    setError(bad.length ? `${bad[0]} doesn't look like an email address.` : null);
+    setError(bad.length ? appText("{{email}} doesn't look like an email address.", { email: bad[0] }) : null);
   };
 
   const send = async () => {
     const pending = text.trim() ? [...emails, ...text.split(/[\s,;]+/).filter((p) => emailRe.test(p.trim()))] : emails;
-    if (!pending.length) return setError("Add at least one email address.");
+    if (!pending.length) return setError(appText("Add at least one email address."));
     setBusy(true);
     setError(null);
     const failed: string[] = [];
@@ -523,7 +524,7 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
     void qc.invalidateQueries({ queryKey: qk.invitations });
     void qc.invalidateQueries({ queryKey: qk.billing, exact: true });
     const sent = pending.length - failed.length;
-    if (sent) toast.success(sent === 1 ? "Invitation sent" : `${sent} invitations sent`);
+    if (sent) toast.success(sent === 1 ? appText("Invitation sent") : appText("Invitations sent: {{count}}", { count: sent }));
     if (failed.length) {
       setEmails(failed);
       setText("");
@@ -564,7 +565,7 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
                   {e}
                   <button
                     type="button"
-                    aria-label={`Remove ${e}`}
+                    aria-label={appText("Remove {{name}}", { name: e })}
                     onClick={() => setEmails((cur) => cur.filter((x) => x !== e))}
                     className="flex size-5 items-center justify-center rounded text-fg-3 hover:bg-active hover:text-fg"
                   >

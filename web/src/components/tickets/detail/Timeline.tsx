@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useQuery } from "@tanstack/react-query";
 import { AlarmClock, Hand, ShieldAlert, Sparkles, ArrowRightLeft, CircleDot, GitMerge, Link2, PencilLine, Star, Tag as TagIcon, TimerOff, Users, UserRound } from "lucide-react";
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
@@ -13,7 +14,7 @@ import { cn } from "@/lib/cn";
 import { AI_TONE, tone } from "@/lib/tones";
 import { Tooltip } from "@/components/ui/tooltip";
 import { PriorityIcon, priorityLabel, SeverityChip, severityLabel, StatusIcon, statusLabel } from "../bits";
-import { isSeverity, pct } from "@/lib/decisions";
+import { categoryLabel, isSeverity, pct } from "@/lib/decisions";
 import { MessageItem } from "./MessageItem";
 import { LiveAgentReply } from "./AgentReply";
 import { BotFace } from "@/components/bots/BotFace";
@@ -217,7 +218,7 @@ function describe(a: Activity, t: TFunction<"inbox">, { teams, members, tags, fi
       return {
         icon: <Sparkles />,
         hue: "ai",
-        text: typeof d.category === "string" ? line("activity.triagedAs", { category: d.category.replace(/_/g, " ") }) : line("activity.triaged"),
+        text: typeof d.category === "string" ? line("activity.triagedAs", { category: categoryLabel(d.category) }) : line("activity.triaged"),
       };
     case "ai_answered":
       return { icon: <Sparkles />, hue: "ai", text: line(d.channel === "email" ? "activity.aiAnsweredEmail" : "activity.aiAnswered") };
@@ -333,6 +334,7 @@ export function Timeline({
   /** The address the customer first wrote to, for inbound messages that don't say. */
   receivedAt?: string | null;
 }) {
+  useTranslation("app");
   const items = useMemo<Item[]>(() => {
     const out: Item[] = [
       ...(messages ?? []).map((m) => ({ kind: "message" as const, at: m.created_at, m })),
@@ -378,7 +380,7 @@ export function Timeline({
 
   let lastDay = "";
   return (
-    <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto" aria-label="Conversation" role="log">
+    <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto" aria-label={appText("Conversation")} role="log">
       <div className="mx-auto flex w-full max-w-[820px] flex-col gap-2 px-5 py-5">
         {loading ? (
           <div className="flex flex-col gap-3">

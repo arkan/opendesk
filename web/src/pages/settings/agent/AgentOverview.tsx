@@ -1,3 +1,4 @@
+import { intlLocale } from "@/i18n";
 // Settings > AI agent > Overview: how the widget agent did over a range
 // (GET /v1/ai/agent/report): conversations, resolutions, handoffs, ratings
 // and what it spent, a by-day chart, the tools it called, and the questions it
@@ -208,7 +209,7 @@ function Trend({ d }: { d: AgentReport }) {
 }
 
 function dayText(ymd: string) {
-  return new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${ymd}T00:00:00Z`));
+  return new Intl.DateTimeFormat(intlLocale(), { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${ymd}T00:00:00Z`));
 }
 
 /** `shop__lookup_order` reads as "shop · lookup_order". */

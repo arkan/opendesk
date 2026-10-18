@@ -1,3 +1,4 @@
+import { relShort } from "@/lib/format";
 // Past conversations: open one, rename it in place or delete it.
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -10,15 +11,7 @@ import { cn } from "@/lib/cn";
 import { assistantApi, type AssistantSession } from "./api";
 import { ollie, sessionsKey, useOllie } from "./store";
 
-function when(iso: string) {
-  const d = new Date(iso);
-  const diff = Date.now() - d.getTime();
-  if (diff < 60_000) return "now";
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h`;
-  if (diff < 7 * 86_400_000) return `${Math.floor(diff / 86_400_000)}d`;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
+const when = relShort;
 
 function Row({ s, active }: { s: AssistantSession; active: boolean }) {
   const { t } = useTranslation("assistant");

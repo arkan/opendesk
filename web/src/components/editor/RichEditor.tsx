@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 import { EditorContent, useEditor, type Editor, type Extensions } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -58,6 +60,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(function
   },
   ref,
 ) {
+  useTranslation("app");
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -75,7 +78,7 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(function
     editorProps: {
       attributes: {
         class: cn("tiptap prose-od min-h-[64px] px-3 py-2.5", contentClassName),
-        "aria-label": ariaLabel ?? placeholder ?? "Editor",
+        "aria-label": ariaLabel ?? placeholder ?? appText("Editor"),
         "data-ph-mask": "true",
       },
       handleKeyDown: (_view, e) => {
@@ -147,47 +150,48 @@ function TB({ label, active, onClick, children, shortcut }: { label: string; act
 }
 
 export function Toolbar({ editor, full, onImage, end }: { editor: Editor; full?: boolean; onImage?: () => void; end?: ReactNode }) {
+  useTranslation("app");
   return (
     <div className="flex items-center gap-0.5 px-1.5 pb-1.5">
       {full && (
         <>
-          <TB label="Heading" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+          <TB label={appText("Heading")} active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
             <Heading2 />
           </TB>
-          <TB label="Subheading" active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
+          <TB label={appText("Subheading")} active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
             <Heading3 />
           </TB>
           <span className="mx-1 h-4 w-px bg-line" />
         </>
       )}
-      <TB label="Bold" shortcut="mod b" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
+      <TB label={appText("Bold")} shortcut="mod b" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
         <Bold />
       </TB>
-      <TB label="Italic" shortcut="mod i" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
+      <TB label={appText("Italic")} shortcut="mod i" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
         <Italic />
       </TB>
       {full && (
-        <TB label="Strikethrough" active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}>
+        <TB label={appText("Strikethrough")} active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}>
           <Strikethrough />
         </TB>
       )}
       <LinkButton editor={editor} />
-      <TB label="Bulleted list" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
+      <TB label={appText("Bulleted list")} active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
         <List />
       </TB>
-      <TB label="Numbered list" active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+      <TB label={appText("Numbered list")} active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
         <ListOrdered />
       </TB>
       {full && (
         <>
-          <TB label="Quote" active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
+          <TB label={appText("Quote")} active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
             <Quote />
           </TB>
-          <TB label="Code block" active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
+          <TB label={appText("Code block")} active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
             <Code />
           </TB>
           {onImage && (
-            <TB label="Image" onClick={onImage}>
+            <TB label={appText("Image")} onClick={onImage}>
               <ImageIcon />
             </TB>
           )}
@@ -199,6 +203,7 @@ export function Toolbar({ editor, full, onImage, end }: { editor: Editor; full?:
 }
 
 function LinkButton({ editor }: { editor: Editor }) {
+  useTranslation("app");
   const [open, setOpen] = useState(false);
   const [href, setHref] = useState("");
   const active = editor.isActive("link");
@@ -222,10 +227,10 @@ function LinkButton({ editor }: { editor: Editor }) {
       side="top"
       className="w-[300px] p-2"
       trigger={
-        <Tooltip content={active ? "Edit link" : "Link"} shortcut="mod k">
+        <Tooltip content={active ? appText("Edit link") : appText("Link")} shortcut="mod k">
           <button
             type="button"
-            aria-label="Link"
+            aria-label={appText("Link")}
             aria-pressed={active}
             onMouseDown={(e) => e.preventDefault()}
             className={cn(
@@ -247,9 +252,9 @@ function LinkButton({ editor }: { editor: Editor }) {
           apply();
         }}
       >
-        <TextInput autoFocus inputSize="sm" value={href} onChange={(e) => setHref(e.target.value)} placeholder="https://" aria-label="Link address" />
+        <TextInput autoFocus inputSize="sm" value={href} onChange={(e) => setHref(e.target.value)} placeholder="https://" aria-label={appText("Link address")} />
         <Button type="submit" size="sm" variant="primary">
-          {href.trim() ? "Apply" : "Remove"}
+          {href.trim() ? appText("Apply") : appText("Remove")}
         </Button>
       </form>
     </Popover>

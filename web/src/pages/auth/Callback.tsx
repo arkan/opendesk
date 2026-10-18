@@ -1,3 +1,5 @@
+import { uiText } from "@/i18n/ui";
+import { useTranslation } from "react-i18next";
 import { getRouteApi, Link, useRouter } from "@tanstack/react-router";
 import { Link2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -31,10 +33,11 @@ function linkFromError(e: unknown): LinkRequired | null {
 }
 
 export default function Callback() {
+  useTranslation("interface");
   const search = route.useSearch();
   const router = useRouter();
   const [state, setState] = useState<State>(() =>
-    search.error ? { kind: "error", message: oauthErrorMessage(search.error)! } : search.code ? { kind: "working" } : { kind: "error", message: "This sign-in link is incomplete. Start again." },
+    search.error ? { kind: "error", message: oauthErrorMessage(search.error)! } : search.code ? { kind: "working" } : { kind: "error", message: uiText("This sign-in link is incomplete. Start again.") },
   );
   const provider = search.code?.startsWith("mock-") ? search.code.slice(5) : undefined;
   const ran = useRef(false);
@@ -59,7 +62,7 @@ export default function Callback() {
       .catch((e) => {
         const link = linkFromError(e);
         if (link) setState({ kind: "link", link });
-        else setState({ kind: "error", message: errorMessage(e, "This sign-in link expired. Start again.") });
+        else setState({ kind: "error", message: errorMessage(e, uiText("This sign-in link expired. Start again.")) });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search.code]);
@@ -68,7 +71,7 @@ export default function Callback() {
     return (
       <div className="flex flex-col items-center gap-3 py-12 text-[13px] text-fg-3" aria-live="polite">
         <Spinner />
-        Signing you in
+        {uiText("Signing you in")}
       </div>
     );
 
@@ -78,20 +81,21 @@ export default function Callback() {
 
   return (
     <div>
-      <AuthHeading title="Couldn't sign you in" />
+      <AuthHeading title={uiText("Couldn't sign you in")} />
       <Notice className="mb-5">{state.message}</Notice>
       <Button variant="secondary" size="lg" className="w-full" asChild>
-        <Link to="/login">Back to log in</Link>
+        <Link to="/login">{uiText("Back to log in")}</Link>
       </Button>
     </div>
   );
 }
 
 function LinkAccount({ link, provider, onResult }: { link: LinkRequired; provider?: string; onResult: (r: ExchangeResponse) => Promise<void> }) {
+  useTranslation("interface");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const name = { google: "Google", microsoft: "Microsoft", github: "GitHub", oidc: "SSO" }[provider ?? ""] ?? "this sign-in method";
+  const name = { google: "Google", microsoft: "Microsoft", github: "GitHub", oidc: "SSO" }[provider ?? ""] ?? uiText("this sign-in method");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,32 +119,31 @@ function LinkAccount({ link, provider, onResult }: { link: LinkRequired; provide
         <Link2 className="size-[18px]" />
       </span>
       <AuthHeading
-        title="Link your account"
+        title={uiText("Link your account")}
         subtitle={
           <>
-            An opendesk account already uses {link.email ? <span className="font-medium text-fg">{link.email}</span> : "this email"}. Enter its password to link {name}. Next time you can sign in with either.
-          </>
+             {uiText("An opendesk account already uses")} {link.email ? <span className="font-medium text-fg">{link.email}</span> : uiText("this email")}{uiText(". Enter its password to link")} {name}{uiText(". Next time you can sign in with either.")} </>
         }
       />
       {error && <Notice className="mb-4">{error}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
         <AuthField
-          label="Password"
+          label={uiText("Password")}
           aside={
             <Link to="/forgot" className="text-xs text-fg-3 hover:text-fg">
-              Forgot password?
+              {uiText("Forgot password?")}
             </Link>
           }
         >
           {(id) => <PasswordInput id={id} autoFocus autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />}
         </AuthField>
         <Button type="submit" variant="primary" size="lg" className="w-full" loading={busy}>
-          Link and continue
+          {uiText("Link and continue")}
         </Button>
       </form>
       <p className="mt-6 text-center text-[12.5px] text-fg-3">
         <Link to="/login" className="hover:text-fg">
-          Cancel
+          {uiText("Cancel")}
         </Link>
       </p>
     </div>

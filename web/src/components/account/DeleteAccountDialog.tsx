@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -10,6 +12,7 @@ import { leaveActiveAccount, useSession } from "@/lib/session";
 
 /** Deletes the signed-in account after the password (and 2FA code when on). Used in Security and onboarding. */
 export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
+  useTranslation("app");
   // Null for a moment after deletion clears the session, before the page leaves.
   const totp = useSession((s) => s.user?.totp_enabled ?? false);
   const navigate = useNavigate();
@@ -29,9 +32,9 @@ export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
   });
   const message = del.error
     ? isApiError(del.error, "sole_owner") || isApiError(del.error, "conflict")
-      ? "Transfer ownership or delete the workspaces you own with other members first."
+      ? appText("Transfer ownership or delete the workspaces you own with other members first.")
       : isApiError(del.error, "invalid_credentials") || isApiError(del.error, "invalid_code")
-        ? "That password or code is not right."
+        ? appText("That password or code is not right.")
         : errorMessage(del.error)
     : null;
   return (
@@ -39,12 +42,13 @@ export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
       open
       onOpenChange={(o) => !o && onClose()}
       size="sm"
-      title="Delete your account?"
-      description="Your account, your sessions and every workspace you solely own are removed for good."
+      title={appText("Delete your account?")}
+      description={appText("Your account, your sessions and every workspace you solely own are removed for good.")}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+
+            {appText("Cancel")}
           </Button>
           <Button
             variant="danger-solid"
@@ -52,23 +56,24 @@ export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
             disabled={typed !== "delete" || (totp && code.trim().length < 6)}
             onClick={() => del.mutate()}
           >
-            Delete account
+
+            {appText("Delete account")}
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-3 pb-1">
-        <Field label="Password" hint="Leave empty if you only sign in with Google, Microsoft, GitHub or SSO.">
+        <Field label={appText("Password")} hint={appText("Leave empty if you only sign in with Google, Microsoft, GitHub or SSO.")}>
           {({ id, ...a }) => (
             <TextInput id={id} {...a} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
           )}
         </Field>
         {totp && (
-          <Field label="Two-factor code">
+          <Field label={appText("Two-factor code")}>
             {({ id }) => <TextInput id={id} className="mono" autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="123456" />}
           </Field>
         )}
-        <Field label={<>Type <span className="mono">delete</span> to confirm</>}>
+        <Field label={<>{appText("Type")} <span className="mono">delete</span>  {appText("to confirm")}</>}>
           {({ id }) => <TextInput id={id} value={typed} onChange={(e) => setTyped(e.target.value)} />}
         </Field>
         {message && <p className="text-xs text-danger-fg">{message}</p>}

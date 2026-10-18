@@ -1,10 +1,11 @@
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 import { useQueryClient } from "@tanstack/react-query";
 import { useWaitingAlerts } from "@/components/tickets/useWaitingAlerts";
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect } from "react";
 import { Dialog as D } from "radix-ui";
 import { identify } from "@/lib/analytics";
-import { formatUsd } from "@/lib/format";
 import { useHotkeys } from "@/lib/hotkeys";
 import { useHeartbeat } from "@/lib/pictures";
 import { playAlertOnce, type AlertSound } from "@/lib/alertSound";
@@ -34,41 +35,14 @@ const NewTicketDialog = lazy(() => import("@/components/tickets/NewTicketDialog"
 const UpgradeDialog = lazy(() => import("@/components/billing/UpgradeDialog"));
 
 function notificationText(n: Notification) {
-  const subject = n.ticket ? `#${n.ticket.number}` : "";
-  switch (n.type) {
-    case "assigned":
-      return `Assigned to you ${subject}`;
-    case "mentioned":
-      return `You were mentioned ${subject}`;
-    case "customer_replied":
-      return `New reply ${subject}`;
-    case "sla_breached":
-      return `SLA breached ${subject}`;
-    case "ai_handoff":
-      return `A customer asked for a person ${subject}`;
-    case "ai_cap_reached":
-      return typeof n.data.cap_usd === "number" ? `Ollie reached this month's ${formatUsd(n.data.cap_usd)} agent cap` : "Ollie reached this month's agent cap";
-    case "ai_balance_low":
-      return typeof n.data.remaining_usd === "number" ? `The AI balance is running low: ${formatUsd(n.data.remaining_usd)} left` : "The AI balance is running low";
-    case "ai_balance_out":
-      return "The AI balance is used up";
-    case "auto_recharge_failed":
-      return "Auto-recharge failed and is now off";
-    case "ai_key_failed":
-      return n.data.reason === "no_funds" ? "Your AI provider account is out of funds" : "Your AI provider rejected the workspace's key";
-    case "team_joined":
-    case "import_finished":
-      return describe(n, i18n.getFixedT(null, "shell"));
-    default:
-      return `Notification ${subject}`;
-  }
+  return describe(n, i18n.getFixedT(null, "shell"));
 }
 
 const billingNoticeBody: Partial<Record<Notification["type"], string>> = {
-  ai_balance_low: "Add AI usage or turn on auto-recharge to keep Ollie working.",
-  ai_balance_out: "Ollie is paused and drafts are unavailable until you add a top-up.",
-  auto_recharge_failed: "The payment didn't go through. Update the payment method, then turn it back on.",
-  ai_key_failed: "AI features are paused until the key works again. Fix it in AI settings.",
+  get ai_balance_low() { return appText("Add AI usage or turn on auto-recharge to keep Ollie working."); },
+  get ai_balance_out() { return appText("Ollie is paused and drafts are unavailable until you add a top-up."); },
+  get auto_recharge_failed() { return appText("The payment didn't go through. Update the payment method, then turn it back on."); },
+  get ai_key_failed() { return appText("AI features are paused until the key works again. Fix it in AI settings."); },
 };
 
 // Everyday sounds (lib/alertSound.ts); live chat has its own alarm in useWaitingAlerts.
@@ -104,6 +78,7 @@ function soundForTicket(t: Ticket, me: string) {
 }
 
 function useRealtimeConnection() {
+  useTranslation("app");
   const qc = useQueryClient();
   const navigate = useNavigate();
   const wid = useSession((s) => s.workspaceId);
@@ -123,16 +98,16 @@ function useRealtimeConnection() {
         if (n.type === "ai_key_failed") void qc.invalidateQueries({ queryKey: qk.aiProvider });
         toast.info(notificationText(n), {
           description:
-            n.type === "ai_cap_reached" ? "Chats go to your team until the cap resets or you raise it." : (billingNoticeBody[n.type] ?? importProblem(n) ?? n.ticket?.subject),
+            n.type === "ai_cap_reached" ? appText("Chats go to your team until the cap resets or you raise it.") : (billingNoticeBody[n.type] ?? importProblem(n) ?? n.ticket?.subject),
           action: n.ticket
             ? {
-                label: "Open",
+                label: appText("Open"),
                 onClick: () =>
                   void navigate({ to: "/inbox/$folder/{-$ticketId}", params: { folder: "mine", ticketId: n.ticket!.id } }),
               }
             : n.type === "team_joined"
               ? {
-                  label: "View team",
+                  label: appText("View team"),
                   onClick: () => {
                     const id = joinedTeam(n).id;
                     if (id) void navigate({ to: "/settings/teams/$teamId", params: { teamId: id } });
@@ -140,11 +115,11 @@ function useRealtimeConnection() {
                   },
                 }
               : n.type === "import_finished"
-                ? { label: "View import", onClick: () => void navigate({ to: "/settings/import" }) }
+                ? { label: appText("View import"), onClick: () => void navigate({ to: "/settings/import" }) }
               : n.type === "ai_cap_reached" || n.type === "ai_key_failed"
-              ? { label: "Settings", onClick: () => void navigate({ to: n.type === "ai_key_failed" ? "/settings/ai" : "/settings/ai/behaviour" }) }
+              ? { label: appText("Settings"), onClick: () => void navigate({ to: n.type === "ai_key_failed" ? "/settings/ai" : "/settings/ai/behaviour" }) }
               : billingNoticeBody[n.type]
-                ? { label: "Billing", onClick: () => void navigate({ to: "/settings/billing" }) }
+                ? { label: appText("Billing"), onClick: () => void navigate({ to: "/settings/billing" }) }
                 : undefined,
         });
       },
@@ -160,6 +135,7 @@ function useRealtimeConnection() {
 }
 
 export function AppLayout() {
+  useTranslation("app");
   // The top-level area (inbox, views, contacts, settings/...) keys the route transition.
   const section = useRouterState({ select: (s) => { const p = s.location.pathname.split("/").filter(Boolean); return p[0] ?? ""; } });
   useRealtimeConnection();
@@ -213,7 +189,7 @@ export function AppLayout() {
               className="fixed inset-y-0 left-0 z-40 flex w-[272px] flex-col bg-chrome pt-2 shadow-float outline-none data-[state=open]:animate-fade-in md:hidden"
               onClick={(e) => (e.target as HTMLElement).closest("a") && shell.sidebar(false)}
             >
-              <D.Title className="sr-only">Navigation</D.Title>
+              <D.Title className="sr-only">{appText("Navigation")}</D.Title>
               <Sidebar drawer />
             </D.Content>
           </D.Portal>

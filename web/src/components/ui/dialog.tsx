@@ -1,3 +1,5 @@
+import { uiText } from "@/i18n/ui";
+import { useTranslation } from "react-i18next";
 import { Dialog as D } from "radix-ui";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
@@ -26,6 +28,7 @@ export function Dialog({
   onEscapeKeyDown?: (e: KeyboardEvent) => void;
   onInteractOutside?: (e: Event) => void;
 }) {
+  useTranslation("interface");
   const w = { sm: "max-w-[400px]", md: "max-w-[520px]", lg: "max-w-[680px]", xl: "max-w-[880px]" }[size];
   return (
     <D.Root open={open} onOpenChange={onOpenChange}>
@@ -46,11 +49,11 @@ export function Dialog({
               {description ? (
                 <D.Description className="mt-1 text-[12.5px] leading-[18px] text-fg-3">{description}</D.Description>
               ) : (
-                <D.Description className="sr-only">{typeof title === "string" ? title : "Dialog"}</D.Description>
+                <D.Description className="sr-only">{typeof title === "string" ? title : uiText("Dialog")}</D.Description>
               )}
             </div>
             <D.Close
-              aria-label="Close"
+              aria-label={uiText("Close")}
               className="-mr-2 -mt-1 flex size-7 shrink-0 items-center justify-center rounded-md text-fg-4 transition-colors hover:bg-hover hover:text-fg"
             >
               <X className="size-4" />
@@ -84,6 +87,7 @@ export function Drawer({
   onEscapeKeyDown?: (e: KeyboardEvent) => void;
   onInteractOutside?: (e: Event) => void;
 }) {
+  useTranslation("interface");
   return (
     <D.Root open={open} onOpenChange={onOpenChange}>
       <D.Portal>
@@ -106,7 +110,7 @@ export function Drawer({
           <div className="flex h-12 shrink-0 items-center gap-2 border-b border-line px-4">
             <div className="min-w-0 flex-1">{header ?? <span className="text-sm font-medium">{title}</span>}</div>
             <D.Close
-              aria-label="Close"
+              aria-label={uiText("Close")}
               className="flex size-7 items-center justify-center rounded-md text-fg-3 hover:bg-hover hover:text-fg"
             >
               <X className="size-4" />

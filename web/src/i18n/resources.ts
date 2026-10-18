@@ -1,3 +1,6 @@
+import templatesUi from "./locales/en/templatesUi.json";
+import interfaceCatalog from "./locales/en/interface.json";
+import app from "./locales/en/app.json";
 // The English catalogs, bundled. Add a namespace here, in NAMESPACES, and as
 // locales/en/<ns>.json; i18next.d.ts derives the typed keys from this object.
 
@@ -25,6 +28,6 @@ import settingsTeams from "./locales/en/settingsTeams.json";
 import setup from "./locales/en/setup.json";
 import shell from "./locales/en/shell.json";
 
-export const en = { common, billing, ai, agent, agentQuality, bots, aiSetup, aiTicket, assistant, public: pub, shell, settings, settingsInbox, settingsDev, settingsChannels, settingsTeams, emailDesign, contacts, kb, reports, inbox, imports, setup } as const;
-export const NAMESPACES = ["common", "billing", "ai", "agent", "agentQuality", "bots", "aiSetup", "aiTicket", "assistant", "public", "shell", "settings", "settingsInbox", "settingsDev", "settingsChannels", "settingsTeams", "emailDesign", "contacts", "kb", "reports", "inbox", "imports", "setup"] as const;
+export const en = { templatesUi, interface: interfaceCatalog, app, common, billing, ai, agent, agentQuality, bots, aiSetup, aiTicket, assistant, public: pub, shell, settings, settingsInbox, settingsDev, settingsChannels, settingsTeams, emailDesign, contacts, kb, reports, inbox, imports, setup } as const;
+export const NAMESPACES = ["templatesUi", "interface", "app", "common", "billing", "ai", "agent", "agentQuality", "bots", "aiSetup", "aiTicket", "assistant", "public", "shell", "settings", "settingsInbox", "settingsDev", "settingsChannels", "settingsTeams", "emailDesign", "contacts", "kb", "reports", "inbox", "imports", "setup"] as const;
 export type Namespace = (typeof NAMESPACES)[number];

@@ -1,3 +1,4 @@
+import { intlLocale } from "@/i18n";
 // Reports by team and brand (contracts/teams.md, contracts/api.md "reports"): the
 // filters next to the date range and the breakdown tables. Team UI shows once the
 // workspace has a team, brand UI once it has a second brand. Private teams the
@@ -153,12 +154,12 @@ function GroupTable({ rows, caption, head }: { rows: GroupRow[]; caption: string
             </td>
             <td className="py-2.5 pr-6">
               <span className="flex items-center gap-3">
-                <span className="mono w-8 shrink-0 text-right text-xs tabular-nums">{r.created.toLocaleString()}</span>
+                <span className="mono w-8 shrink-0 text-right text-xs tabular-nums">{r.created.toLocaleString(intlLocale())}</span>
                 <Bar pct={(r.created / max) * 100} tone={SERIES[0]} />
               </span>
             </td>
-            <td className="mono py-2.5 text-right text-xs tabular-nums text-fg-2">{r.solved.toLocaleString()}</td>
-            <td className="mono py-2.5 text-right text-xs tabular-nums text-fg-2">{r.open_now.toLocaleString()}</td>
+            <td className="mono py-2.5 text-right text-xs tabular-nums text-fg-2">{r.solved.toLocaleString(intlLocale())}</td>
+            <td className="mono py-2.5 text-right text-xs tabular-nums text-fg-2">{r.open_now.toLocaleString(intlLocale())}</td>
             <td className="mono py-2.5 pr-4 text-right text-xs tabular-nums text-fg-2">{minutes(r.first_response_p50_minutes)}</td>
           </tr>
         ))}

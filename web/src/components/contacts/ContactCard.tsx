@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Mail, Pencil, Phone } from "lucide-react";
@@ -66,7 +67,7 @@ export function ContactCard({ contactId, compact, excludeTicketId }: { contactId
             to="/contacts/{-$contactId}"
             params={{ contactId: c.id }}
             search={{ q: undefined, company: undefined }}
-            aria-label="Edit contact"
+            aria-label={appText("Edit contact")}
             className="flex size-6 shrink-0 items-center justify-center rounded-md text-fg-3 outline-none transition-colors hover:bg-hover hover:text-fg focus-visible:shadow-[0_0_0_2px_var(--focus)]"
           >
             <Pencil className="size-3.5" />

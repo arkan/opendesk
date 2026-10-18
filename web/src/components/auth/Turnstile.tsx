@@ -1,3 +1,5 @@
+import { uiText } from "@/i18n/ui";
+import { useTranslation } from "react-i18next";
 // Cloudflare Turnstile, loaded on demand. Renders nothing when no site key is
 // configured, in which case no token is sent.
 
@@ -29,10 +31,10 @@ function loadTurnstile(): Promise<TurnstileApi> {
     const s = document.createElement("script");
     s.src = SRC;
     s.async = true;
-    s.onload = () => (window.turnstile ? resolve(window.turnstile) : reject(new Error("Turnstile failed to load")));
+    s.onload = () => (window.turnstile ? resolve(window.turnstile) : reject(new Error(uiText("Turnstile failed to load"))));
     s.onerror = () => {
       loading = null;
-      reject(new Error("Turnstile failed to load"));
+      reject(new Error(uiText("Turnstile failed to load")));
     };
     document.head.appendChild(s);
   });
@@ -51,6 +53,8 @@ export const Turnstile = forwardRef<TurnstileHandle, { onToken: (t: string | nul
   { onToken, action },
   ref,
 ) {
+  const { i18n } = useTranslation("interface");
+  const language = i18n.resolvedLanguage ?? "en";
   const siteKey = useTurnstileSiteKey();
   const { dark } = useTheme();
   const el = useRef<HTMLDivElement>(null);
@@ -73,6 +77,7 @@ export const Turnstile = forwardRef<TurnstileHandle, { onToken: (t: string | nul
         if (cancelled || !el.current) return;
         widget.current = t.render(el.current, {
           sitekey: siteKey,
+          language,
           theme: dark ? "dark" : "light",
           size: "flexible",
           action,
@@ -87,7 +92,7 @@ export const Turnstile = forwardRef<TurnstileHandle, { onToken: (t: string | nul
       if (widget.current) window.turnstile?.remove(widget.current);
       widget.current = null;
     };
-  }, [siteKey, dark, action]);
+  }, [siteKey, dark, action, language]);
 
   if (!siteKey) return null;
   return <div ref={el} className="min-h-[65px] w-full overflow-hidden rounded-md" />;

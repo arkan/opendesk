@@ -1,0 +1,80 @@
+{
+  "title": "Présentation des e-mails",
+  "description": "L’apparence de tous les e-mails aux clients : réponses, réponses automatiques et enquêtes de satisfaction. Chaque marque a sa propre présentation.",
+  "brand": "Marque",
+  "docs": "Guide des modèles",
+  "tabs": {
+    "layout": "Mise en page",
+    "csat": "E-mail de satisfaction",
+    "variables": "Variables"
+  },
+  "readOnly": "Seuls les administrateurs peuvent modifier la présentation des e-mails.",
+  "default": "Par défaut",
+  "customized": "Personnalisé",
+  "reset": "Rétablir les valeurs par défaut",
+  "resetLayoutConfirm": "La mise en page redevient simple, sans logo ni pied de page, avec citation du message précédent.",
+  "resetCsatConfirm": "L’e-mail de satisfaction reprend le texte intégré.",
+  "resetTitle": "Rétablir les valeurs par défaut ?",
+  "resetDone": "Valeurs par défaut rétablies",
+  "saved": "Présentation des e-mails enregistrée",
+  "layout": {
+    "mode": "Mise en page",
+    "modeHint": "Le mode simple convient à la plupart des équipes. Le HTML personnalisé vous donne la main sur tout le corps de l’e-mail.",
+    "simple": "Simple",
+    "custom": "HTML personnalisé",
+    "style": "Style",
+    "plain": "Simple",
+    "plainHint": "Ressemble à un e-mail personnel. Idéal pour les réponses.",
+    "branded": "Aux couleurs de la marque",
+    "brandedHint": "Une carte avec votre logo et une ligne de couleur.",
+    "logo": "Afficher le logo",
+    "logoHint": "Le logo de la marque en haut de chaque e-mail.",
+    "noLogo": "Cette marque n’a pas encore de logo.",
+    "addLogo": "En ajouter un",
+    "accent": "Couleur d’accentuation",
+    "accentHint": "Les liens, la ligne aux couleurs de la marque et les boutons d’enquête.",
+    "useBrand": "Couleur de la marque",
+    "accentInvalid": "Utilisez une couleur comme #2563EB.",
+    "font": "Police",
+    "fonts": {
+      "system": "Système",
+      "sans": "Helvetica",
+      "serif": "Georgia"
+    },
+    "footer": "Pied de page",
+    "footerHint": "Texte en bas de chaque e-mail, par exemple votre adresse ou un lien vers le centre d’aide. Accepte les variables.",
+    "footerPlaceholder": "Acme Inc, 1 Market Street, San Francisco",
+    "customHtml": "HTML de la mise en page",
+    "customHint": "Tout le corps de l’e-mail. opendesk place le message à l’emplacement de {{content}}, la signature à {{signature}} et les messages précédents à {{history}}.",
+    "history": "Messages précédents",
+    "historyHint": "Cités sous chaque réponse pour garder le contexte. Les notes ne sont jamais incluses.",
+    "historyNone": "Ne pas citer",
+    "historyLast": "Le message précédent",
+    "historyAll": "Toute la conversation",
+    "historyHeader": "En-tête de citation",
+    "historyHeaderHint": "Au-dessus de chaque message cité. Utilisez {{author}} et {{date}}."
+  },
+  "csat": {
+    "off": "Les enquêtes de satisfaction sont désactivées : cet e-mail n’est pas encore envoyé.",
+    "turnOn": "Les activer",
+    "subject": "Objet",
+    "subjectHint": "Le numéro du ticket est ajouté s’il manque pour regrouper les réponses.",
+    "body": "E-mail",
+    "bodyHint": "Doit contenir {{survey}}, à l’emplacement des cinq boutons de notation."
+  },
+  "variables": {
+    "title": "Variables",
+    "description": "Cliquez sur une variable pour copier sa balise. Tous les modèles acceptent toutes les variables ; une valeur sans objet reste vide.",
+    "logic": "Logique",
+    "logicHint": "Affichez les parties pertinentes, choisissez selon une valeur ou répétez chaque élément d’une liste. Cliquez sur un exemple pour le copier.",
+    "helpers": "Fonctions",
+    "helpersHint": "Les filtres modifient une valeur : ajoutez-les après un |, les uns à la suite des autres.",
+    "copy": "Copier",
+    "groups": {
+      "text": "Texte",
+      "lists": "Listes",
+      "numbers": "Nombres",
+      "dates": "Dates"
+    }
+  }
+}

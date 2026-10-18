@@ -1,3 +1,4 @@
+import { appText } from "@/i18n/text";
 import { Check, Forward, Server, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -40,8 +41,8 @@ export function MicrosoftGlyph({ className }: { className?: string }) {
 export const kindLabel: Record<Mailbox["inbound_kind"], string> = {
   google: "Google",
   microsoft: "Microsoft 365",
-  imap: "IMAP and SMTP",
-  forwarding: "Forwarding",
+  get imap() { return appText("IMAP and SMTP"); },
+  get forwarding() { return appText("Forwarding"); },
 };
 
 /** Each way in gets its own quiet hue, so a list of mailboxes scans by kind. */

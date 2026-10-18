@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { appText } from "@/i18n/text";
 // Labels (the API's tags) for the settings screens: label rows and groups
 // from the query cache, plus optimistic writes for labels, groups, merge and
 // reorder. Realtime keeps qk.tags and qk.tagGroups fresh.
@@ -62,6 +64,7 @@ export function useLabels() {
 }
 
 export function useLabelWrites(_caps: LabelCaps = CAPS) {
+  useTranslation("app");
   const qc = useQueryClient();
   const key = qk.tags;
   const patchList = (fn: (rows: ApiTag[]) => ApiTag[]) => {
@@ -90,7 +93,7 @@ export function useLabelWrites(_caps: LabelCaps = CAPS) {
     },
     onError: (e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(key, ctx.prev);
-      toast.error(e, "Couldn't save the label");
+      toast.error(e, appText("Couldn't save the label"));
     },
     onSettled: settle,
   });
@@ -103,7 +106,7 @@ export function useLabelWrites(_caps: LabelCaps = CAPS) {
     },
     onError: (e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(key, ctx.prev);
-      toast.error(e, "Couldn't delete the label");
+      toast.error(e, appText("Couldn't delete the label"));
     },
     onSettled: settle,
   });
@@ -113,6 +116,7 @@ export function useLabelWrites(_caps: LabelCaps = CAPS) {
 
 /** Group, merge and reorder writes, optimistic where the result is known. */
 export function useLabelStructureWrites() {
+  useTranslation("app");
   const qc = useQueryClient();
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: qk.tags });
@@ -133,7 +137,7 @@ export function useLabelStructureWrites() {
         }
       } catch (e) {
         if (prev) qc.setQueryData(qk.tags, prev);
-        toast.error(e, "Couldn't reorder the labels");
+        toast.error(e, appText("Couldn't reorder the labels"));
       } finally {
         refresh();
       }

@@ -1,3 +1,5 @@
+import { uiText } from "@/i18n/ui";
+import { useTranslation } from "react-i18next";
 // Settings > Security > Passkeys: list, add, rename and remove.
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -30,10 +32,11 @@ function guessName() {
   const ua = navigator.userAgent;
   const os = /iPhone|iPad/.test(ua) ? "iPhone" : /Mac/.test(ua) ? "Mac" : /Android/.test(ua) ? "Android" : /Windows/.test(ua) ? "Windows" : /Linux/.test(ua) ? "Linux" : "";
   const browser = /Edg\//.test(ua) ? "Edge" : /Firefox\//.test(ua) ? "Firefox" : /Chrome\//.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : "";
-  return [browser, os].filter(Boolean).join(" on ") || "Passkey";
+  return [browser, os].filter(Boolean).join(uiText(" on ")) || uiText("Passkey");
 }
 
 export function PasskeysSection() {
+  useTranslation("interface");
   const qc = useQueryClient();
   const confirm = useConfirm();
   const reduce = useReducedMotion();
@@ -54,7 +57,7 @@ export function PasskeysSection() {
       if (ctx?.prev) qc.setQueryData(key, ctx.prev);
       toast.error(e);
     },
-    onSuccess: () => toast.success("Passkey removed"),
+    onSuccess: () => toast.success(uiText("Passkey removed")),
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });
 
@@ -62,13 +65,13 @@ export function PasskeysSection() {
 
   return (
     <Section
-      title="Passkeys"
-      description="Sign in with your fingerprint, face or device PIN instead of a password. A passkey counts as two-factor."
+      title={uiText("Passkeys")}
+      description={uiText("Sign in with your fingerprint, face or device PIN instead of a password. A passkey counts as two-factor.")}
       flush
       actions={
         supported ? (
           <Button size="sm" icon={<Plus />} onClick={() => setAdding(true)}>
-            Add a passkey
+            {uiText("Add a passkey")}
           </Button>
         ) : undefined
       }
@@ -76,7 +79,7 @@ export function PasskeysSection() {
       {isLoading ? (
         <SkeletonRows rows={2} />
       ) : isError ? (
-        <EmptyState compact lit={3} title="Passkeys couldn't load" action={<Button onClick={() => void refetch()}>Retry</Button>} />
+        <EmptyState compact lit={3} title={uiText("Passkeys couldn't load")} action={<Button onClick={() => void refetch()}>{uiText("Retry")}</Button>} />
       ) : !list.length ? (
         <EmptyState
           compact
@@ -86,12 +89,12 @@ export function PasskeysSection() {
               <KeyRound className="size-[18px]" />
             </span>
           }
-          title="No passkeys yet"
-          description={supported ? "Add one to sign in faster and safer on this device." : mock ? "Passkeys aren't available in the demo." : "This browser doesn't support passkeys."}
+          title={uiText("No passkeys yet")}
+          description={supported ? uiText("Add one to sign in faster and safer on this device.") : mock ? uiText("Passkeys aren't available in the demo.") : uiText("This browser doesn't support passkeys.")}
           action={
             supported ? (
               <Button variant="primary" icon={<Plus />} onClick={() => setAdding(true)}>
-                Add a passkey
+                {uiText("Add a passkey")}
               </Button>
             ) : undefined
           }
@@ -115,33 +118,33 @@ export function PasskeysSection() {
                   <div className="flex items-center gap-2 text-[13px] font-medium">
                     <span className="truncate">{p.name}</span>
                     {p.backed_up && (
-                      <Tooltip content="Synced with your password manager or cloud keychain">
+                      <Tooltip content={uiText("Synced with your password manager or cloud keychain")}>
                         <span>
                           <Badge tone="blue">
                             <Cloud className="size-3" />
-                            Synced
+                            {uiText("Synced")}
                           </Badge>
                         </span>
                       </Tooltip>
                     )}
                   </div>
                   <div className="mt-0.5 flex items-center gap-2 text-xs text-fg-3">
-                    <span>Added {shortDate(p.created_at)}</span>
+                    <span>{uiText("Added")} {shortDate(p.created_at)}</span>
                     <span aria-hidden>·</span>
-                    <span>{p.last_used_at ? `Last used ${relLong(p.last_used_at)}` : "Never used"}</span>
+                    <span>{p.last_used_at ? uiText("Last used {{date}}", { date: relLong(p.last_used_at) }) : uiText("Never used")}</span>
                   </div>
                 </div>
-                <Button size="sm" variant="ghost" square aria-label={`Rename ${p.name}`} icon={<Pencil />} onClick={() => setRenaming(p)} />
+                <Button size="sm" variant="ghost" square aria-label={uiText("Rename {{name}}", { name: p.name })} icon={<Pencil />} onClick={() => setRenaming(p)} />
                 <Button
                   size="sm"
                   variant="ghost"
                   square
-                  aria-label={`Remove ${p.name}`}
+                  aria-label={uiText("Remove {{name}}", { name: p.name })}
                   icon={<Trash2 />}
                   onClick={() =>
-                    confirm.show(`You won't be able to sign in with "${p.name}" anymore.`, () => remove.mutateAsync(p.id), {
-                      title: "Remove this passkey?",
-                      confirmLabel: "Remove",
+                    confirm.show(uiText('You will no longer be able to sign in with "{{name}}".', { name: p.name }), () => remove.mutateAsync(p.id), {
+                      title: uiText("Remove this passkey?"),
+                      confirmLabel: uiText("Remove"),
                       danger: true,
                     })
                   }
@@ -158,13 +161,14 @@ export function PasskeysSection() {
 }
 
 function AddDialog({ onClose }: { onClose: () => void }) {
+  useTranslation("interface");
   const qc = useQueryClient();
   const [name, setName] = useState(guessName);
   const add = useMutation({
     mutationFn: () => addPasskey(name.trim()),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: key });
-      toast.success("Passkey added", { description: "Use it next time you sign in." });
+      toast.success(uiText("Passkey added"), { description: uiText("Use it next time you sign in.") });
       onClose();
     },
   });
@@ -172,25 +176,25 @@ function AddDialog({ onClose }: { onClose: () => void }) {
   const message = !err || isPasskeyCancel(err) || isReauthError(err)
     ? null
     : isApiError(err, "passkey_exists")
-      ? "This device already has a passkey for your account."
+      ? uiText("This device already has a passkey for your account.")
       : isApiError(err, "passkey_limit")
-        ? "You have the most passkeys an account can hold. Remove one first."
+        ? uiText("You have the most passkeys an account can hold. Remove one first.")
         : isApiError(err, "invalid_passkey")
-          ? "That passkey couldn't be verified. Try again."
+          ? uiText("That passkey couldn't be verified. Try again.")
           : errorMessage(err);
   return (
     <Dialog
       open
       onOpenChange={(o) => !o && onClose()}
-      title="Add a passkey"
-      description="Your browser will ask you to confirm with your fingerprint, face, device PIN or security key."
+      title={uiText("Add a passkey")}
+      description={uiText("Your browser will ask you to confirm with your fingerprint, face, device PIN or security key.")}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {uiText("Cancel")}
           </Button>
           <Button variant="primary" loading={add.isPending} onClick={() => add.mutate()} disabled={name.trim().length > 64}>
-            Continue
+            {uiText("Continue")}
           </Button>
         </>
       }
@@ -202,8 +206,8 @@ function AddDialog({ onClose }: { onClose: () => void }) {
           add.mutate();
         }}
       >
-        <Field label="Name" hint="So you can tell your passkeys apart.">
-          {({ id }) => <TextInput id={id} autoFocus value={name} maxLength={64} onChange={(e) => setName(e.target.value)} placeholder="Chrome on Mac" />}
+        <Field label={uiText("Name")} hint={uiText("So you can tell your passkeys apart.")}>
+          {({ id }) => <TextInput id={id} autoFocus value={name} maxLength={64} onChange={(e) => setName(e.target.value)} placeholder={uiText("Chrome on Mac")} />}
         </Field>
         {isReauthError(err) && <ReauthNotice error={err} />}
         {message && (
@@ -217,13 +221,14 @@ function AddDialog({ onClose }: { onClose: () => void }) {
 }
 
 function RenameDialog({ passkey, onClose }: { passkey: Passkey; onClose: () => void }) {
+  useTranslation("interface");
   const qc = useQueryClient();
   const [name, setName] = useState(passkey.name);
   const save = useMutation({
     mutationFn: () => passkeyApi.rename(passkey.id, name.trim()),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: key });
-      toast.success("Passkey renamed");
+      toast.success(uiText("Passkey renamed"));
       onClose();
     },
   });
@@ -232,14 +237,14 @@ function RenameDialog({ passkey, onClose }: { passkey: Passkey; onClose: () => v
     <Dialog
       open
       onOpenChange={(o) => !o && onClose()}
-      title="Rename passkey"
+      title={uiText("Rename passkey")}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {uiText("Cancel")}
           </Button>
           <Button variant="primary" loading={save.isPending} disabled={invalid} onClick={() => save.mutate()}>
-            Save
+            {uiText("Save")}
           </Button>
         </>
       }
@@ -250,12 +255,12 @@ function RenameDialog({ passkey, onClose }: { passkey: Passkey; onClose: () => v
           if (!invalid) save.mutate();
         }}
       >
-        <Field label="Name">
+        <Field label={uiText("Name")}>
           {({ id }) => <TextInput id={id} autoFocus value={name} maxLength={64} onChange={(e) => setName(e.target.value)} />}
         </Field>
         {save.isError && (
           <p role="alert" className="mt-2 text-xs text-danger-fg">
-            {isApiError(save.error, "invalid_name") ? "Use 1 to 64 characters." : errorMessage(save.error)}
+            {isApiError(save.error, "invalid_name") ? uiText("Use 1 to 64 characters.") : errorMessage(save.error)}
           </p>
         )}
       </form>
