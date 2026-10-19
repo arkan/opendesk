@@ -1,0 +1,627 @@
+{
+  "status": "Approved target design including file-origin amendment on 2026-10-19; independent technical review PASS; not implemented",
+  "definitions": {
+    "Draft": {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "ticket_id": "00000000-0000-4000-8000-000000000001",
+      "state": "draft",
+      "revision": 1,
+      "body_html": "<p>Please find our order attached.</p>",
+      "mailbox_id": null,
+      "cc": [],
+      "bcc": [],
+      "attachments": [
+        {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "filename": "order.pdf",
+          "content_type": "application/pdf",
+          "size_bytes": 12345,
+          "inline": false,
+          "url": "/v1/attachments/00000000-0000-4000-8000-000000000004"
+        }
+      ],
+      "created_by": {
+        "type": "user",
+        "id": "00000000-0000-4000-8000-000000000005"
+      },
+      "updated_by": {
+        "type": "user",
+        "id": "00000000-0000-4000-8000-000000000005"
+      },
+      "created_at": "2026-10-19T08:00:00Z",
+      "updated_at": "2026-10-19T08:00:00Z",
+      "ended_at": null,
+      "message_id": null
+    },
+    "DraftPreview": {
+      "draft_id": "00000000-0000-4000-8000-000000000002",
+      "revision": 1,
+      "subject": "Order PO-2026-42",
+      "from": {
+        "email": "orders@example.test",
+        "name": "Orders"
+      },
+      "to": [
+        "publisher@example.test"
+      ],
+      "cc": [],
+      "bcc": [],
+      "body_html": "<p>Please find our order attached.</p>",
+      "signature_html": "<p>Sylvia</p>",
+      "attachments": [
+        {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "filename": "order.pdf",
+          "content_type": "application/pdf",
+          "size_bytes": 12345,
+          "inline": false,
+          "url": "/v1/attachments/00000000-0000-4000-8000-000000000004"
+        }
+      ],
+      "review_token": "synthetic-review-token"
+    },
+    "Attachment": {
+      "id": "00000000-0000-4000-8000-000000000004",
+      "filename": "order.pdf",
+      "content_type": "application/pdf",
+      "size_bytes": 12345,
+      "inline": false,
+      "url": "/v1/attachments/00000000-0000-4000-8000-000000000004"
+    }
+  },
+  "field_rules": {
+    "request_id": [
+      "string",
+      "yes",
+      "no",
+      "1..255 characters",
+      "none",
+      "Caller identity \u2192 ticket_drafts.creation_key"
+    ],
+    "draft_id": [
+      "UUID string",
+      "yes",
+      "no",
+      "Visible ticket draft identity",
+      "none",
+      "Caller \u2192 ticket_drafts.id"
+    ],
+    "expected_revision": [
+      "integer",
+      "yes",
+      "no",
+      "1..9007199254740991",
+      "none",
+      "Caller \u2192 compare ticket_drafts.revision"
+    ],
+    "body_html": [
+      "string",
+      "optional",
+      "no",
+      "At most 500000 characters; sanitized",
+      "create: empty; PATCH: unchanged",
+      "Caller HTML \u2192 ticket_drafts.body_html"
+    ],
+    "mailbox_id": [
+      "UUID string or null",
+      "optional",
+      "yes",
+      "Mailbox in the same workspace/brand, sender permission checked",
+      "create: null/inherit; PATCH: unchanged",
+      "Caller \u2192 ticket_drafts.mailbox_id; null selects tickets.mailbox_id"
+    ],
+    "cc": [
+      "array of email strings",
+      "optional",
+      "no",
+      "At most 20 valid addresses",
+      "create: []; PATCH: unchanged",
+      "Caller \u2192 ticket_drafts.cc_emails"
+    ],
+    "bcc": [
+      "array of email strings",
+      "optional",
+      "no",
+      "At most 20 valid addresses",
+      "create: []; PATCH: unchanged",
+      "Caller \u2192 ticket_drafts.bcc_emails"
+    ],
+    "attachment_ids": [
+      "array of UUID strings",
+      "optional",
+      "no",
+      "At most 20 distinct owned uploads or files already reserved by this draft",
+      "create: []; PATCH: unchanged",
+      "Caller \u2192 ticket_draft_attachments.attachment_id; preserve caller order in position"
+    ],
+    "review_token": [
+      "opaque string",
+      "yes",
+      "no",
+      "Bound to principal, draft revision and effective preview context",
+      "none",
+      "Calculated review HMAC, never stored as draft content"
+    ],
+    "status": [
+      "TicketStatus string",
+      "optional",
+      "no",
+      "open,pending,on_hold,solved,closed; normal solve validation",
+      "unchanged",
+      "Caller \u2192 existing ticket status transition"
+    ]
+  },
+  "operations": [
+    {
+      "id": "draft-read",
+      "method": "GET",
+      "path": "/v1/tickets/{id}/draft",
+      "scope": "tickets:read; viewer+",
+      "request": null,
+      "response": {
+        "draft": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "ticket_id": "00000000-0000-4000-8000-000000000001",
+          "state": "draft",
+          "revision": 1,
+          "body_html": "<p>Please find our order attached.</p>",
+          "mailbox_id": null,
+          "cc": [],
+          "bcc": [],
+          "attachments": [
+            {
+              "id": "00000000-0000-4000-8000-000000000004",
+              "filename": "order.pdf",
+              "content_type": "application/pdf",
+              "size_bytes": 12345,
+              "inline": false,
+              "url": "/v1/attachments/00000000-0000-4000-8000-000000000004"
+            }
+          ],
+          "created_by": {
+            "type": "user",
+            "id": "00000000-0000-4000-8000-000000000005"
+          },
+          "updated_by": {
+            "type": "user",
+            "id": "00000000-0000-4000-8000-000000000005"
+          },
+          "created_at": "2026-10-19T08:00:00Z",
+          "updated_at": "2026-10-19T08:00:00Z",
+          "ended_at": null,
+          "message_id": null
+        }
+      },
+      "status_code": 200,
+      "summary": "Read the active shared draft, or draft:null. No sending."
+    },
+    {
+      "id": "draft-create",
+      "method": "POST",
+      "path": "/v1/tickets/{id}/draft",
+      "scope": "tickets:write; agent+",
+      "request": {
+        "request_id": "prepare-email-42",
+        "body_html": "<p>Please find our order attached.</p>",
+        "mailbox_id": null,
+        "cc": [],
+        "bcc": [],
+        "attachment_ids": [
+          "00000000-0000-4000-8000-000000000004"
+        ]
+      },
+      "response": {
+        "draft": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "ticket_id": "00000000-0000-4000-8000-000000000001",
+          "state": "draft",
+          "revision": 1,
+          "body_html": "<p>Please find our order attached.</p>",
+          "mailbox_id": null,
+          "cc": [],
+          "bcc": [],
+          "attachments": [
+            {
+              "id": "00000000-0000-4000-8000-000000000004",
+              "filename": "order.pdf",
+              "content_type": "application/pdf",
+              "size_bytes": 12345,
+              "inline": false,
+              "url": "/v1/attachments/00000000-0000-4000-8000-000000000004"
+            }
+          ],
+          "created_by": {
+            "type": "user",
+            "id": "00000000-0000-4000-8000-000000000005"
+          },
+          "updated_by": {
+            "type": "user",
+            "id": "00000000-0000-4000-8000-000000000005"
+          },
+          "created_at": "2026-10-19T08:00:00Z",
+          "updated_at": "2026-10-19T08:00:00Z",
+          "ended_at": null,
+          "message_id": null
+        }
+      },
+      "status_code": 201,
+      "summary": "Create a missing draft with a durable request_id; replay returns the same identity without replacing work."
+    },
+    {
+      "id": "draft-update",
+      "method": "PATCH",
+      "path": "/v1/tickets/{id}/draft",
+      "scope": "tickets:write; agent+",
+      "request": {
+        "draft_id": "00000000-0000-4000-8000-000000000002",
+        "expected_revision": 1,
+        "body_html": "<p>Please find our corrected order attached.</p>",
+        "mailbox_id": null,
+        "cc": [],
+        "bcc": [],
+        "attachment_ids": [
+          "00000000-0000-4000-8000-000000000004"
+        ]
+      },
+      "response": {
+        "draft": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "ticket_id": "00000000-0000-4000-8000-000000000001",
+          "state": "draft",
+          "revision": 2,
+          "body_html": "<p>Please find our corrected order attached.</p>",
+          "mailbox_id": null,
+          "cc": [],
+          "bcc": [],
+          "attachments": [
+            {
+              "id": "00000000-0000-4000-8000-000000000004",
+              "filename": "order.pdf",
+              "content_type": "application/pdf",
+              "size_bytes": 12345,
+              "inline": false,
+              "url": "/v1/attachments/00000000-0000-4000-8000-000000000004"
+            }
+          ],
+          "created_by": {
+            "type": "user",
+            "id": "00000000-0000-4000-8000-000000000005"
+          },
+          "updated_by": {
+            "type": "user",
+            "id": "00000000-0000-4000-8000-000000000005"
+          },
+          "created_at": "2026-10-19T08:00:00Z",
+          "updated_at": "2026-10-19T08:00:00Z",
+          "ended_at": null,
+          "message_id": null
+        }
+      },
+      "status_code": 200,
+      "summary": "Update explicitly against the expected revision; omitted properties are unchanged."
+    },
+    {
+      "id": "draft-discard",
+      "method": "DELETE",
+      "path": "/v1/tickets/{id}/draft",
+      "scope": "tickets:write; agent+",
+      "request": {
+        "draft_id": "00000000-0000-4000-8000-000000000002",
+        "expected_revision": 1
+      },
+      "response": null,
+      "status_code": 204,
+      "summary": "Discard the particular reviewed revision; clear content and release file reservations, retaining a terminal identity."
+    },
+    {
+      "id": "draft-preview",
+      "method": "POST",
+      "path": "/v1/tickets/{id}/draft/preview",
+      "scope": "tickets:read; agent+",
+      "request": {
+        "draft_id": "00000000-0000-4000-8000-000000000002",
+        "expected_revision": 1
+      },
+      "response": {
+        "draft_id": "00000000-0000-4000-8000-000000000002",
+        "revision": 1,
+        "subject": "Order PO-2026-42",
+        "from": {
+          "email": "orders@example.test",
+          "name": "Orders"
+        },
+        "to": [
+          "publisher@example.test"
+        ],
+        "cc": [],
+        "bcc": [],
+        "body_html": "<p>Please find our order attached.</p>",
+        "signature_html": "<p>Sylvia</p>",
+        "attachments": [
+          {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "filename": "order.pdf",
+            "content_type": "application/pdf",
+            "size_bytes": 12345,
+            "inline": false,
+            "url": "/v1/attachments/00000000-0000-4000-8000-000000000004"
+          }
+        ],
+        "review_token": "synthetic-review-token"
+      },
+      "status_code": 200,
+      "summary": "Resolve the current actor-specific addressing and template preview and return a review token; send nothing."
+    },
+    {
+      "id": "draft-send",
+      "method": "POST",
+      "path": "/v1/tickets/{id}/draft/send",
+      "scope": "tickets:write; agent+",
+      "request": {
+        "draft_id": "00000000-0000-4000-8000-000000000002",
+        "expected_revision": 1,
+        "review_token": "synthetic-review-token",
+        "status": "solved"
+      },
+      "response": {
+        "message_id": "00000000-0000-4000-8000-000000000006",
+        "ticket_id": "00000000-0000-4000-8000-000000000001",
+        "status": "solved",
+        "delivery_status": "pending"
+      },
+      "status_code": 201,
+      "summary": "Consume the reviewed revision once, lock recipients at queue acceptance, and use normal message creation/delivery."
+    }
+  ],
+  "mcp_tools": [
+    {
+      "name": "get_ticket_draft",
+      "scope": "tickets:read; viewer+",
+      "api": "GET /v1/tickets/{id}/draft",
+      "arguments": {
+        "ticket": "#42"
+      },
+      "result": {
+        "draft": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "ticket_id": "00000000-0000-4000-8000-000000000001",
+          "state": "draft",
+          "revision": 1,
+          "body_html": "<p>Please find our order attached.</p>",
+          "mailbox_id": null,
+          "cc": [],
+          "bcc": [],
+          "attachments": [
+            {
+              "id": "00000000-0000-4000-8000-000000000004",
+              "filename": "order.pdf",
+              "content_type": "application/pdf",
+              "size_bytes": 12345,
+              "inline": false,
+              "url": "/v1/attachments/00000000-0000-4000-8000-000000000004"
+            }
+          ],
+          "created_by": {
+            "type": "user",
+            "id": "00000000-0000-4000-8000-000000000005"
+          },
+          "updated_by": {
+            "type": "user",
+            "id": "00000000-0000-4000-8000-000000000005"
+          },
+          "created_at": "2026-10-19T08:00:00Z",
+          "updated_at": "2026-10-19T08:00:00Z",
+          "ended_at": null,
+          "message_id": null
+        }
+      },
+      "body_limit": null
+    },
+    {
+      "name": "create_ticket_draft",
+      "scope": "tickets:write; agent+",
+      "api": "POST /v1/tickets/{id}/draft",
+      "arguments": {
+        "ticket": "#42",
+        "request_id": "prepare-email-42",
+        "mailbox_id": null,
+        "cc": [],
+        "bcc": [],
+        "attachment_ids": [
+          "00000000-0000-4000-8000-000000000004"
+        ],
+        "body": "Please find our order attached."
+      },
+      "result": {
+        "draft": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "ticket_id": "00000000-0000-4000-8000-000000000001",
+          "state": "draft",
+          "revision": 1,
+          "body_html": "<p>Please find our order attached.</p>",
+          "mailbox_id": null,
+          "cc": [],
+          "bcc": [],
+          "attachments": [
+            {
+              "id": "00000000-0000-4000-8000-000000000004",
+              "filename": "order.pdf",
+              "content_type": "application/pdf",
+              "size_bytes": 12345,
+              "inline": false,
+              "url": "/v1/attachments/00000000-0000-4000-8000-000000000004"
+            }
+          ],
+          "created_by": {
+            "type": "user",
+            "id": "00000000-0000-4000-8000-000000000005"
+          },
+          "updated_by": {
+            "type": "user",
+            "id": "00000000-0000-4000-8000-000000000005"
+          },
+          "created_at": "2026-10-19T08:00:00Z",
+          "updated_at": "2026-10-19T08:00:00Z",
+          "ended_at": null,
+          "message_id": null
+        }
+      },
+      "body_limit": "20000 markdown characters, as existing MCP bodies"
+    },
+    {
+      "name": "update_ticket_draft",
+      "scope": "tickets:write; agent+",
+      "api": "PATCH /v1/tickets/{id}/draft",
+      "arguments": {
+        "ticket": "#42",
+        "draft_id": "00000000-0000-4000-8000-000000000002",
+        "expected_revision": 1,
+        "mailbox_id": null,
+        "cc": [],
+        "bcc": [],
+        "attachment_ids": [
+          "00000000-0000-4000-8000-000000000004"
+        ],
+        "body": "Please find our order attached."
+      },
+      "result": {
+        "draft": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "ticket_id": "00000000-0000-4000-8000-000000000001",
+          "state": "draft",
+          "revision": 2,
+          "body_html": "<p>Please find our corrected order attached.</p>",
+          "mailbox_id": null,
+          "cc": [],
+          "bcc": [],
+          "attachments": [
+            {
+              "id": "00000000-0000-4000-8000-000000000004",
+              "filename": "order.pdf",
+              "content_type": "application/pdf",
+              "size_bytes": 12345,
+              "inline": false,
+              "url": "/v1/attachments/00000000-0000-4000-8000-000000000004"
+            }
+          ],
+          "created_by": {
+            "type": "user",
+            "id": "00000000-0000-4000-8000-000000000005"
+          },
+          "updated_by": {
+            "type": "user",
+            "id": "00000000-0000-4000-8000-000000000005"
+          },
+          "created_at": "2026-10-19T08:00:00Z",
+          "updated_at": "2026-10-19T08:00:00Z",
+          "ended_at": null,
+          "message_id": null
+        }
+      },
+      "body_limit": "20000 markdown characters, as existing MCP bodies"
+    },
+    {
+      "name": "discard_ticket_draft",
+      "scope": "tickets:write; agent+",
+      "api": "DELETE /v1/tickets/{id}/draft",
+      "arguments": {
+        "ticket": "#42",
+        "draft_id": "00000000-0000-4000-8000-000000000002",
+        "expected_revision": 1
+      },
+      "result": {
+        "discarded": true
+      },
+      "body_limit": null
+    },
+    {
+      "name": "preview_ticket_draft",
+      "scope": "tickets:read; agent+",
+      "api": "POST /v1/tickets/{id}/draft/preview",
+      "arguments": {
+        "ticket": "#42",
+        "draft_id": "00000000-0000-4000-8000-000000000002",
+        "expected_revision": 1
+      },
+      "result": {
+        "draft_id": "00000000-0000-4000-8000-000000000002",
+        "revision": 1,
+        "subject": "Order PO-2026-42",
+        "from": {
+          "email": "orders@example.test",
+          "name": "Orders"
+        },
+        "to": [
+          "publisher@example.test"
+        ],
+        "cc": [],
+        "bcc": [],
+        "body_html": "<p>Please find our order attached.</p>",
+        "signature_html": "<p>Sylvia</p>",
+        "attachments": [
+          {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "filename": "order.pdf",
+            "content_type": "application/pdf",
+            "size_bytes": 12345,
+            "inline": false,
+            "url": "/v1/attachments/00000000-0000-4000-8000-000000000004"
+          }
+        ],
+        "review_token": "synthetic-review-token"
+      },
+      "body_limit": null
+    },
+    {
+      "name": "upload_attachment",
+      "scope": "tickets:write; agent+",
+      "api": "POST /v1/attachments (bounded multipart)",
+      "arguments": {
+        "filename": "order.pdf",
+        "content_base64": "JVBERi0xLjQKJSBTeW50aGV0aWMgUERGIGV4YW1wbGUK"
+      },
+      "result": {
+        "id": "00000000-0000-4000-8000-000000000004",
+        "filename": "order.pdf",
+        "content_type": "application/pdf",
+        "size_bytes": 33,
+        "inline": false,
+        "url": "/v1/attachments/00000000-0000-4000-8000-000000000004"
+      },
+      "decoded_limit_bytes": 26214400,
+      "encoded_limit_characters": 34952536,
+      "http_limit_bytes": 37748736,
+      "input_rules": "Required filename and strict standard base64; no path, remote URL or data-URL prefix. Existing MIME/file validation applies."
+    }
+  ],
+  "existing_create_ticket_extension": {
+    "preparation": {
+      "namespace": "1..100 case-sensitive characters",
+      "reference": "1..255 case-sensitive characters"
+    },
+    "mcp": "create_ticket gains the same optional object; defaults change only when it is present"
+  },
+  "transport_replay": {
+    "draft_post_routes": "Bypass raw response cache; execute current handler authorization and durable feature identity lookup.",
+    "prepared_ticket_creation": "Bypass cache when bounded top-level preparation object is present; legacy create calls unchanged.",
+    "mcp": "Bypass outer envelope cache before hashing; new feature inner calls follow the same exclusions.",
+    "mcp_upload": "Verify current agent role and tickets:write before calling the existing upload API, even on inner replay."
+  },
+  "terminal_draft_values": {
+    "all_declared_members_present": true,
+    "body_html": "",
+    "mailbox_id": null,
+    "cc": [],
+    "bcc": [],
+    "attachments": [],
+    "ended_at": "non-null terminal timestamp",
+    "send_replay": "stable message identity with current authorized ticket/status/delivery values"
+  },
+  "draft_file_access": {
+    "origin_column": "attachments.draft_ticket_id",
+    "url": "protected unsigned API path",
+    "authorization": "current member/key and visible non-deleted origin before any legacy signature handling",
+    "response": "authenticated private,no-store stream, no newly signed storage redirect",
+    "prior_storage_url_max_seconds": 300
+  }
+}

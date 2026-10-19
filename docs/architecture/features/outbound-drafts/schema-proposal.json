@@ -1,0 +1,370 @@
+{
+  "status": "Approved target design including file-origin amendment on 2026-10-19; independent technical review PASS; not implemented",
+  "tables": [
+    {
+      "name": "ticket_drafts",
+      "grain": "One draft identity, retained after sending or discarding; at most one active draft per ticket.",
+      "owner": "helpdesk/tickets",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "rules": "PK; required; application-generated UUIDv7; no SQL default",
+          "meaning_source": "Identity generated at creation; never reused.",
+          "writer": "create",
+          "reader": "all draft operations and retry lookup"
+        },
+        {
+          "name": "workspace_id",
+          "type": "uuid",
+          "rules": "required; FK workspaces ON DELETE CASCADE",
+          "meaning_source": "Principal workspace; never supplied by client.",
+          "writer": "create",
+          "reader": "all tenant-scoped operations"
+        },
+        {
+          "name": "ticket_id",
+          "type": "uuid",
+          "rules": "required; composite FK (workspace_id,ticket_id) to tickets(workspace_id,id) ON DELETE CASCADE",
+          "meaning_source": "Visible email ticket supplied by caller.",
+          "writer": "create",
+          "reader": "composer, API/MCP and access checks"
+        },
+        {
+          "name": "creation_key",
+          "type": "text",
+          "rules": "required; length 1..255; unique with workspace_id,ticket_id",
+          "meaning_source": "Caller request_id; browser generates a stable UUID for initial save.",
+          "writer": "create only",
+          "reader": "durable create replay"
+        },
+        {
+          "name": "creation_hash",
+          "type": "bytea",
+          "rules": "required; octet_length=32",
+          "meaning_source": "Domain-separated HMAC of canonical original create input, including ordered attachment IDs.",
+          "writer": "create only",
+          "reader": "same-key/different-input detection; not derived from mutable draft"
+        },
+        {
+          "name": "hash_version",
+          "type": "smallint",
+          "rules": "required; default 1; CHECK=1",
+          "meaning_source": "Canonicalization/HMAC format version.",
+          "writer": "create only",
+          "reader": "replay comparison across future versions"
+        },
+        {
+          "name": "state",
+          "type": "text",
+          "rules": "required; default 'draft'; CHECK IN ('draft','sent','discarded')",
+          "meaning_source": "Active draft, consumed outgoing message, or explicitly discarded draft.",
+          "writer": "create/send/discard",
+          "reader": "active lookup and terminal retry protection"
+        },
+        {
+          "name": "revision",
+          "type": "bigint",
+          "rules": "required; default 1; CHECK >=1",
+          "meaning_source": "Server version incremented on each edit or terminal transition.",
+          "writer": "update/send/discard",
+          "reader": "optimistic concurrency"
+        },
+        {
+          "name": "body_html",
+          "type": "text",
+          "rules": "required; default ''; <=500000 characters by validator",
+          "meaning_source": "Sanitized caller HTML; MCP markdown converts before validation. Templates stay unfilled until explicit send.",
+          "writer": "create/update",
+          "reader": "editor, preview and normal reply rendering"
+        },
+        {
+          "name": "mailbox_id",
+          "type": "uuid",
+          "rules": "nullable; FK mailboxes ON DELETE SET NULL; default NULL",
+          "meaning_source": "Selected sending mailbox; NULL inherits the current ticket mailbox. Workspace/brand/send checks apply.",
+          "writer": "create/update",
+          "reader": "preview and send"
+        },
+        {
+          "name": "cc_emails",
+          "type": "text[]",
+          "rules": "required; default '{}'; <=20 entries",
+          "meaning_source": "Validated, normalized caller Cc list; order preserved.",
+          "writer": "create/update",
+          "reader": "preview and message creation"
+        },
+        {
+          "name": "bcc_emails",
+          "type": "text[]",
+          "rules": "required; default '{}'; <=20 entries",
+          "meaning_source": "Validated, normalized caller Bcc list; order preserved.",
+          "writer": "create/update",
+          "reader": "preview and message creation"
+        },
+        {
+          "name": "created_by_type",
+          "type": "text",
+          "rules": "required; CHECK IN ('user','api')",
+          "meaning_source": "Principal kind at creation, preserved if its referenced principal is deleted.",
+          "writer": "create",
+          "reader": "attribution"
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "uuid",
+          "rules": "nullable; FK users ON DELETE SET NULL",
+          "meaning_source": "Authenticated user for browser/OAuth creation, otherwise NULL.",
+          "writer": "create",
+          "reader": "attribution"
+        },
+        {
+          "name": "created_by_api_key_id",
+          "type": "uuid",
+          "rules": "nullable; FK api_keys ON DELETE SET NULL",
+          "meaning_source": "API key for key-authenticated creation, otherwise NULL.",
+          "writer": "create",
+          "reader": "upload provenance and attribution"
+        },
+        {
+          "name": "updated_by_type",
+          "type": "text",
+          "rules": "required; CHECK IN ('user','api')",
+          "meaning_source": "Principal kind of the latest edit or terminal action.",
+          "writer": "create/update/send/discard",
+          "reader": "shared change attribution"
+        },
+        {
+          "name": "updated_by_user_id",
+          "type": "uuid",
+          "rules": "nullable; FK users ON DELETE SET NULL",
+          "meaning_source": "Latest authenticated user actor, otherwise NULL.",
+          "writer": "create/update/send/discard",
+          "reader": "attribution"
+        },
+        {
+          "name": "updated_by_api_key_id",
+          "type": "uuid",
+          "rules": "nullable; FK api_keys ON DELETE SET NULL",
+          "meaning_source": "Latest API key actor, otherwise NULL.",
+          "writer": "create/update/send/discard",
+          "reader": "attribution"
+        },
+        {
+          "name": "message_id",
+          "type": "uuid",
+          "rules": "nullable; FK messages ON DELETE SET NULL; default NULL",
+          "meaning_source": "Committed outgoing message for state=sent; NULL before send or if the message was physically purged.",
+          "writer": "send only",
+          "reader": "repeat-send result without re-enqueueing"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "rules": "required; default now()",
+          "meaning_source": "Server creation time in UTC.",
+          "writer": "create",
+          "reader": "metadata"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "rules": "required; default now()",
+          "meaning_source": "Server time of latest successful mutation.",
+          "writer": "create/update/send/discard",
+          "reader": "metadata"
+        },
+        {
+          "name": "ended_at",
+          "type": "timestamptz",
+          "rules": "nullable; default NULL; NULL iff state=draft",
+          "meaning_source": "Server time of send acceptance or discard, not provider delivery time.",
+          "writer": "send/discard",
+          "reader": "terminal lifecycle"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(workspace_id,id) for tenant-safe membership references.",
+        "UNIQUE(workspace_id,ticket_id,creation_key) retains durable creation identity.",
+        "Partial UNIQUE(workspace_id,ticket_id) WHERE state='draft' permits only one active shared draft.",
+        "Actor kind rejects a non-NULL reference of the other kind; deletion can leave both principal references NULL.",
+        "Only state=sent may have a non-NULL message_id. A sent row with a deleted message remains terminal."
+      ],
+      "lifecycle": "No automatic expiration. Terminal identities remain with the ticket; physical ticket/workspace deletion cascades. Send/discard clears body, Cc/Bcc and mailbox selection and removes active attachment reservations; keep identity, original hash, attribution and committed message result."
+    },
+    {
+      "name": "ticket_draft_attachments",
+      "grain": "One currently reserved file in one active draft.",
+      "owner": "helpdesk/tickets",
+      "fields": [
+        {
+          "name": "workspace_id",
+          "type": "uuid",
+          "rules": "required",
+          "meaning_source": "Principal workspace, copied from the locked draft.",
+          "writer": "create/update",
+          "reader": "tenant scoping"
+        },
+        {
+          "name": "draft_id",
+          "type": "uuid",
+          "rules": "required; composite FK (workspace_id,draft_id) to ticket_drafts(workspace_id,id) ON DELETE CASCADE",
+          "meaning_source": "The active draft reserving the file.",
+          "writer": "create/update",
+          "reader": "draft reads, access and cleanup exclusion"
+        },
+        {
+          "name": "attachment_id",
+          "type": "uuid",
+          "rules": "required; composite FK (workspace_id,attachment_id) to attachments(workspace_id,id) ON DELETE CASCADE",
+          "meaning_source": "Validated fresh upload or existing reservation on this draft.",
+          "writer": "create/update",
+          "reader": "normal stored bytes and final message attachment"
+        },
+        {
+          "name": "position",
+          "type": "smallint",
+          "rules": "required; CHECK BETWEEN 0 AND 19",
+          "meaning_source": "Zero-based position in caller attachment_ids, without duplicates.",
+          "writer": "create/update",
+          "reader": "stable preview/send attachment order"
+        }
+      ],
+      "constraints": [
+        "PRIMARY KEY(draft_id,attachment_id).",
+        "UNIQUE(attachment_id) reserves a file for at most one active draft.",
+        "UNIQUE(draft_id,position).",
+        "Membership changes lock the draft and attachment rows. Ordinary message linking excludes reserved uploads."
+      ],
+      "lifecycle": "Remove reservation on removal, discard or committed send. Existing cleanup handles genuinely unattached/unreserved files after its existing threshold."
+    },
+    {
+      "name": "ticket_preparations",
+      "grain": "One durable creation reference in a workspace and caller-chosen namespace.",
+      "owner": "helpdesk/tickets",
+      "fields": [
+        {
+          "name": "workspace_id",
+          "type": "uuid",
+          "rules": "required; FK workspaces ON DELETE CASCADE",
+          "meaning_source": "Workspace from principal.",
+          "writer": "create",
+          "reader": "all reference lookups"
+        },
+        {
+          "name": "namespace",
+          "type": "text",
+          "rules": "required; length 1..100",
+          "meaning_source": "Stable integration namespace from preparation.namespace, for example weekly-orders.",
+          "writer": "create only",
+          "reader": "reference uniqueness across key rotations and API/MCP callers"
+        },
+        {
+          "name": "reference",
+          "type": "text",
+          "rules": "required; length 1..255",
+          "meaning_source": "Stable caller order/creation identifier from preparation.reference; case-sensitive.",
+          "writer": "create only",
+          "reader": "durable duplicate detection"
+        },
+        {
+          "name": "request_hash",
+          "type": "bytea",
+          "rules": "required; octet_length=32",
+          "meaning_source": "Domain-separated HMAC of canonical original ticket-creation input; excludes the preparation identity itself.",
+          "writer": "create only",
+          "reader": "detect changed original input without comparing agent-edited content"
+        },
+        {
+          "name": "hash_version",
+          "type": "smallint",
+          "rules": "required; default 1; CHECK=1",
+          "meaning_source": "Version of normalization and hashing.",
+          "writer": "create only",
+          "reader": "stable retry comparison"
+        },
+        {
+          "name": "ticket_id",
+          "type": "uuid",
+          "rules": "nullable; FK tickets ON DELETE SET NULL",
+          "meaning_source": "Created ticket, set before creation transaction commits; NULL means physically deleted result. Writes verify the same workspace.",
+          "writer": "create; merge redirects to surviving ticket",
+          "reader": "repeat creation result and preparation guard"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "rules": "required; default now()",
+          "meaning_source": "Server time of first creation.",
+          "writer": "create",
+          "reader": "provenance"
+        },
+        {
+          "name": "released_at",
+          "type": "timestamptz",
+          "rules": "nullable; default NULL",
+          "meaning_source": "First explicit outgoing send releases preparation protection; discard or status change does not release it.",
+          "writer": "explicit send only",
+          "reader": "outbound automation guard"
+        }
+      ],
+      "constraints": [
+        "PRIMARY KEY(workspace_id,namespace,reference).",
+        "Partial INDEX(workspace_id,ticket_id) WHERE released_at IS NULL AND ticket_id IS NOT NULL.",
+        "Reference ownership is the workspace, not a particular API key. Every result lookup rechecks current ticket visibility."
+      ],
+      "lifecycle": "Retain until workspace deletion, including after 24-hour HTTP replay expiry. A NULL ticket result is a tombstone and returns 410; never recreate it automatically."
+    }
+  ],
+  "existing_changes": [
+    {
+      "table": "tickets",
+      "change": "Add UNIQUE(workspace_id,id) as a target for the draft composite FK; no new columns or response fields.",
+      "used": "id uuid PK default gen_random_uuid(); workspace_id uuid NOT NULL FK workspaces CASCADE; number bigint NOT NULL; subject text NOT NULL default ''; channel text NOT NULL CHECK email/chat/api/portal; status text NOT NULL default open CHECK open/pending/on_hold/solved/closed; contact_id/mailbox_id/assignee_id/team_id nullable UUID FKs SET NULL; brand_id uuid NOT NULL FK brands RESTRICT; received_at text NOT NULL default ''; deleted_at timestamptz nullable; merged_into_id uuid nullable FK tickets SET NULL. number and received_at supply subject/thread/alias context.",
+      "source": "migrations/000001_init.up.sql; internal/helpdesk/tickets/tickets.go; internal/domain/types.go; migrations/000621_teams_brands.up.sql",
+      "impact": "Existing JSON shape/defaults stay unchanged; preparation protection is derived from ticket_preparations."
+    },
+    {
+      "table": "attachments",
+      "change": "Add draft_ticket_id uuid NULL for durable unsent-file provenance, UNIQUE(workspace_id,id) for reservations, and an index on (workspace_id,draft_ticket_id) WHERE draft_ticket_id IS NOT NULL.",
+      "used": "id uuid PK default gen_random_uuid(); workspace_id uuid NOT NULL FK workspaces CASCADE; message_id uuid nullable FK messages CASCADE; filename text NOT NULL (no default); content_type text NOT NULL default application/octet-stream; storage_key text NOT NULL (no default); size_bytes bigint NOT NULL (no default); inline boolean NOT NULL default false; uploaded_by/uploaded_by_api_key_id/uploaded_by_contact_id nullable UUID FKs SET NULL; created_at timestamptz NOT NULL default now(). Added draft_ticket_id uuid nullable default NULL, composite FK (workspace_id,draft_ticket_id) to tickets(workspace_id,id) ON DELETE CASCADE.",
+      "source": "migrations/000001_init.up.sql; migrations/000622_scoping.up.sql; internal/helpdesk/hd/attachments.go; internal/helpdesk/widget/attachments.go; migrations/000301_helpdesk.up.sql",
+      "impact": "Draft association writes the origin from the visible ticket. Removal/discard retains it; cleanup still uses active reservations. Current origin visibility is required before any signed-link branch; stream these files with no-store and no new storage redirect. Normal message linking clears origin atomically and takes over file access."
+    },
+    {
+      "table": "messages",
+      "change": "Add recipient_locked boolean NOT NULL DEFAULT false, written true only for reviewed draft sends. Existing creation/linking adds a narrow authorization path for reserved draft files.",
+      "used": "id uuid PK default gen_random_uuid(); workspace_id uuid NOT NULL FK workspaces CASCADE; ticket_id uuid NOT NULL FK tickets CASCADE; kind text NOT NULL CHECK reply/note; direction text NOT NULL CHECK inbound/outbound; body_html/body_text/subject/from_email/from_name text NOT NULL default ''; to_emails/cc_emails/bcc_emails text[] NOT NULL default '{}'; mailbox_id uuid nullable FK mailboxes SET NULL; author_user_id uuid nullable FK users SET NULL; reply_to text NOT NULL default ''; auth_failed boolean NOT NULL default false; delivery_status text NOT NULL default none CHECK none/pending/sent/failed/bounced; delivery_error text NOT NULL default ''; created_at timestamptz NOT NULL default now(). Proposed recipient_locked boolean NOT NULL DEFAULT false (internal, not JSON). reply_to/from_email/auth_failed and latest created_at select the current validated Reply-To; author_user_id selects normal sender attribution.",
+      "source": "migrations/000001_init.up.sql; internal/domain/write.go; internal/helpdesk/tickets/messages.go; migrations/000621_teams_brands.up.sql",
+      "impact": "domain.AddMessage remains the creation boundary. Reviewed recipients are stored once; the worker skips late Reply-To re-resolution when recipient_locked=true. Existing immediate sends keep false and preserve their behavior."
+    },
+    {
+      "table": "contacts and mailboxes",
+      "change": "No schema change; reuse current workspace-scoped recipient and sending-address resolution.",
+      "used": "contacts.id uuid PK default gen_random_uuid(), workspace_id uuid NOT NULL FK workspaces CASCADE, email citext nullable, name text NOT NULL default '', blocked boolean NOT NULL default false. mailboxes.id uuid PK default gen_random_uuid(), workspace_id uuid NOT NULL FK workspaces CASCADE, name text NOT NULL, email citext NOT NULL, display_name text NOT NULL default '', status text NOT NULL default active CHECK active/error/disabled, team_id uuid nullable FK teams SET NULL, brand_id uuid NOT NULL FK brands RESTRICT, inbound_kind text NOT NULL CHECK forwarding/imap/google/microsoft, outbound_kind text NOT NULL CHECK smtp/google/microsoft/system, forwarding_token text NOT NULL UNIQUE, aliases text[] NOT NULL default '{}', from_name_format text NOT NULL default '{agent} at {mailbox}'. These select contact eligibility, sender name/address, alias, capability and private sending permission; no credentials are projected. mailboxes.created_at timestamptz NOT NULL default now() orders the existing oldest eligible mailbox fallback.",
+      "source": "migrations/000001_init.up.sql; migrations/000621_teams_brands.up.sql; internal/email/outbound.go:loadTicketInfo/addressing/replyDestination; internal/email/mailbox.go:alias/displayName; internal/domain/visibility.go:CanSendFrom; internal/domain/write.go:CheckMailboxSending",
+      "impact": "Preview and send resolve the same current contact, latest Reply-To and mailbox rules; credentials stay server-side."
+    },
+    {
+      "table": "idempotency_keys",
+      "change": "No schema or TTL change. Bypass response caching for draft POSTs, preparation-enabled ticket creation and the outer /mcp envelope before serving a cached response.",
+      "used": "id uuid PK default gen_random_uuid(); workspace_id uuid nullable FK workspaces CASCADE; user_id uuid nullable FK users CASCADE; api_key_id uuid nullable FK api_keys CASCADE; CHECK exactly one of user_id/api_key_id non-null; key text NOT NULL length 1..255; method/path text NOT NULL; request_hash bytea NOT NULL; status integer nullable; content_type/location text NOT NULL default ''; body_enc bytea nullable; created_at timestamptz NOT NULL default now(); completed_at timestamptz nullable. Unique normalized workspace/principal/key expression index; created_at cleanup index. Cached status/content_type/location/body_enc represent a completed legacy transport response.",
+      "source": "migrations/000601_core_idempotency.up.sql; internal/idempotency/idempotency.go",
+      "impact": "Every feature retry executes current handler authorization and resolves its durable identity. Legacy inner API writes retain existing replay behavior. Outer /mcp bypass runs before its 32 MiB hashing bound; MCP itself enforces 36 MiB."
+    },
+    {
+      "table": "users, teams and brands (sender projection)",
+      "change": "Schema unchanged. New addressing helper projects only these non-secret identity/name inputs; template variable/signature loading remains inside the unchanged templates module.",
+      "used": "users.id uuid PK default gen_random_uuid(), users.name text NOT NULL default ''; teams.id uuid PK default gen_random_uuid(), teams.workspace_id uuid NOT NULL FK workspaces CASCADE, teams.name text NOT NULL, teams.private boolean NOT NULL default false; brands.id uuid PK default gen_random_uuid(), brands.workspace_id uuid NOT NULL FK workspaces CASCADE, brands.name text NOT NULL. Sender formatting uses the reviewing user name and ticket team/brand names; teams.private selects existing visibility rules.",
+      "source": "migrations/000001_init.up.sql; migrations/000621_teams_brands.up.sql; internal/email/outbound.go:loadTicketInfo; internal/email/sender.go:fromName; internal/domain/visibility.go",
+      "impact": "Preserve the current sender naming and private-team rules. No password, token or connection secret is copied into preview/draft data."
+    },
+    {
+      "table": "team_members and api_keys (existing visibility checks)",
+      "change": "Schema unchanged; reuse existing domain.CanSee/CanSendFrom.",
+      "used": "team_members.team_id/user_id uuid NOT NULL FKs teams/users CASCADE, composite PK(team_id,user_id); api_keys.id uuid PK default gen_random_uuid(), workspace_id uuid NOT NULL FK workspaces CASCADE, scopes text[] NOT NULL default '{}', private_team_ids uuid[] NOT NULL default '{}'. Membership/key grants control private visibility; scopes control available operations. Role resolution remains the existing auth boundary.",
+      "source": "migrations/000001_init.up.sql; migrations/000621_teams_brands.up.sql; internal/domain/visibility.go; internal/auth",
+      "impact": "Read current membership/grants per request, including all durable feature retries and draft-origin file fetches."
+    }
+  ]
+}
