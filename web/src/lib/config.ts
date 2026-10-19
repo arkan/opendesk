@@ -55,20 +55,21 @@ export function parseMailboxOAuth(raw: unknown, env: string | undefined): Mailbo
   return src.split(",").map((s) => s.trim()).filter(valid);
 }
 
+function parseBoolean(raw: unknown): boolean | null {
+  if (typeof raw === "boolean") return raw;
+  if (typeof raw !== "string") return null;
+  const value = raw.trim().toLowerCase();
+  if (value === "true" || value === "1" || value === "on") return true;
+  if (value === "false" || value === "0" || value === "off") return false;
+  return null;
+}
+
 /**
  * mailboxImap: a boolean (or "true"/"false") from config.js, else VITE_MAILBOX_IMAP,
  * else on (development and self-hosted instances).
  */
 export function parseMailboxImap(raw: unknown, env: string | undefined): boolean {
-  const read = (v: unknown): boolean | null => {
-    if (typeof v === "boolean") return v;
-    if (typeof v !== "string") return null;
-    const x = v.trim().toLowerCase();
-    if (x === "true" || x === "1" || x === "on") return true;
-    if (x === "false" || x === "0" || x === "off") return false;
-    return null;
-  };
-  return read(raw) ?? read(env) ?? true;
+  return parseBoolean(raw) ?? parseBoolean(env) ?? true;
 }
 
 /** helpDomain: a bare hostname, lowercase, without a scheme or trailing dot; anything else is "". */
@@ -89,7 +90,8 @@ function defaultGateway(): string {
 
 export function readConfig(): RuntimeConfig {
   const env = import.meta.env;
-  const selfHostedRaw = typeof window !== "undefined" ? window.__OPENDESK__?.selfHosted : undefined;
+  const runtime = typeof window !== "undefined" ? window.__OPENDESK__ : undefined;
+  const selfHostedRaw = runtime?.selfHosted;
   return {
     apiUrl: trimSlash(pick("apiUrl", env.VITE_API_URL)),
     gatewayUrl: trimSlash(pick("gatewayUrl", env.VITE_GATEWAY_URL)) || defaultGateway(),
@@ -97,9 +99,12 @@ export function readConfig(): RuntimeConfig {
     posthogHost: pick("posthogHost", env.VITE_POSTHOG_HOST) || "https://us.i.posthog.com",
     turnstileSiteKey: pick("turnstileSiteKey", env.VITE_TURNSTILE_SITE_KEY),
     selfHosted: selfHostedRaw === true || selfHostedRaw === "true" || env.VITE_SELF_HOSTED === "1",
-    mailboxOAuth: parseMailboxOAuth(typeof window !== "undefined" ? window.__OPENDESK__?.mailboxOAuth : undefined, env.VITE_MAILBOX_OAUTH),
-    mailboxImap: parseMailboxImap(typeof window !== "undefined" ? window.__OPENDESK__?.mailboxImap : undefined, env.VITE_MAILBOX_IMAP),
-    sharedDrafts: parseMailboxImap(typeof window !== "undefined" ? window.__OPENDESK__?.sharedDrafts : undefined, env.VITE_SHARED_DRAFTS_ENABLED),
+    mailboxOAuth: parseMailboxOAuth(runtime?.mailboxOAuth, env.VITE_MAILBOX_OAUTH),
+    mailboxImap: parseMailboxImap(runtime?.mailboxImap, env.VITE_MAILBOX_IMAP),
+    // A configured instance must explicitly advertise support for shared drafts.
+    sharedDrafts: runtime === undefined
+      ? parseBoolean(env.VITE_SHARED_DRAFTS_ENABLED) ?? true
+      : parseBoolean(runtime?.sharedDrafts) ?? false,
     helpDomain: parseHelpDomain(pick("helpDomain", env.VITE_HELP_DOMAIN)),
   };
 }

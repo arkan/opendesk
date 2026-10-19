@@ -8,7 +8,6 @@ import (
 	"github.com/useopendesk/opendesk/internal/auth"
 	"github.com/useopendesk/opendesk/internal/config"
 	"github.com/useopendesk/opendesk/internal/db"
-	"github.com/useopendesk/opendesk/internal/deps"
 	"github.com/useopendesk/opendesk/internal/domain"
 	"github.com/useopendesk/opendesk/internal/httpx"
 )
@@ -19,10 +18,11 @@ type DraftSender struct {
 	Name  string `json:"name"`
 }
 type DraftAddress struct {
-	MailboxID uuid.UUID
-	Subject   string
-	From      DraftSender
-	To        []string
+	MailboxID    uuid.UUID
+	MailboxEmail string
+	Subject      string
+	From         DraftSender
+	To           []string
 }
 
 // ResolveDraftAddress applies the delivery addressing rules without reading credentials.
@@ -40,7 +40,7 @@ func ResolveDraftAddress(ctx context.Context, q db.Querier, cfg *config.Config, 
 		id = t.mailboxID
 	}
 	if id == nil {
-		id, err = domain.BrandMailboxFor(ctx, q, p.WorkspaceID, t.brandID, t.teamID)
+		id, err = domain.ReplyMailbox(ctx, q, p.WorkspaceID, t.brandID, t.teamID)
 		if err != nil {
 			return out, err
 		}
@@ -78,11 +78,11 @@ func ResolveDraftAddress(ctx context.Context, q db.Querier, cfg *config.Config, 
 		}
 		names.agent = agentName(u.Name)
 	}
-	s := &service{d: &deps.Deps{Cfg: cfg}}
-	from, _, _ := s.addressing(&m, fromName(m.FromNameFormat, names), t.number, m.alias(t.receivedAt))
+	alias := m.alias(t.receivedAt)
+	from, _, _ := addressing(cfg, &m, fromName(m.FromNameFormat, names), t.number, alias)
 	to, err := replyDestination(ctx, q, p.WorkspaceID, tid, t.contactEmail, []string{*t.contactEmail})
 	if err != nil {
 		return out, err
 	}
-	return DraftAddress{MailboxID: m.ID, Subject: t.subject, From: DraftSender{Email: from.Address, Name: from.Name}, To: to}, nil
+	return DraftAddress{MailboxID: m.ID, MailboxEmail: firstNonEmpty(alias, m.Email), Subject: t.subject, From: DraftSender{Email: from.Address, Name: from.Name}, To: to}, nil
 }

@@ -23,7 +23,7 @@ func prepareDraft(ctx context.Context, tx pgx.Tx, d *deps.Deps, p *auth.Principa
 	if err != nil {
 		return out, nm, err
 	}
-	ref := templates.Ref{WorkspaceID: p.WorkspaceID, TicketID: &x.TicketID, AuthorUserID: p.ActorUserID(), MailboxID: &address.MailboxID}
+	ref := templates.Ref{WorkspaceID: p.WorkspaceID, TicketID: &x.TicketID, AuthorUserID: p.ActorUserID(), MailboxID: &address.MailboxID, MailboxEmail: address.MailboxEmail}
 	rawIDs := make([]string, len(x.Attachments))
 	for i, a := range x.Attachments {
 		rawIDs[i] = a.ID.String()

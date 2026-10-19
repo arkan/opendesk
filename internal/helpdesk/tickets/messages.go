@@ -253,7 +253,7 @@ func prepareTicketMessage(ctx context.Context, tx pgx.Tx, d *deps.Deps, p *auth.
 		}
 		reply = &id
 	case b.Kind == "reply" && channel == domain.ChannelEmail && mailboxID == nil:
-		m, err := replyMailbox(ctx, tx, wid, brand, team)
+		m, err := domain.ReplyMailbox(ctx, tx, wid, brand, team)
 		if err != nil {
 			return domain.NewMessage{}, err
 		}

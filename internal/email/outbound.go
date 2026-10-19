@@ -14,6 +14,7 @@ import (
 	xhtml "golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 
+	"github.com/useopendesk/opendesk/internal/config"
 	"github.com/useopendesk/opendesk/internal/db"
 	"github.com/useopendesk/opendesk/internal/displayname"
 	"github.com/useopendesk/opendesk/internal/domain"
@@ -125,17 +126,9 @@ func (s *service) sendingMailbox(ctx context.Context, wid uuid.UUID, t *ticketIn
 		}
 	}
 	if t.brandID != uuid.Nil {
-		var id *uuid.UUID
-		var err error
-		if t.teamID != nil {
-			if id, err = domain.TeamReplyMailbox(ctx, s.d.DB.Pool, wid, t.brandID, *t.teamID); err != nil {
-				return nil, err
-			}
-		}
-		if id == nil {
-			if id, err = domain.BrandMailboxFor(ctx, s.d.DB.Pool, wid, t.brandID, t.teamID); err != nil {
-				return nil, err
-			}
+		id, err := domain.ReplyMailbox(ctx, s.d.DB.Pool, wid, t.brandID, t.teamID)
+		if err != nil {
+			return nil, err
 		}
 		if id != nil {
 			m, err := loadMailbox(ctx, s.d.DB.Pool, wid, *id)
@@ -179,7 +172,7 @@ func threadHeaders(ctx context.Context, q db.Querier, wid, ticketID uuid.UUID, e
 // mailbox alias the customer wrote to, or "": SMTP sends as the alias, the platform sender
 // answers to it, and Google and Microsoft, whose send-as addresses are not known here,
 // send as the mailbox with the alias as Reply-To.
-func (s *service) addressing(m *mailboxRow, name string, number int64, alias string) (from mail.Address, replyTo *mail.Address, envFrom string) {
+func addressing(cfg *config.Config, m *mailboxRow, name string, number int64, alias string) (from mail.Address, replyTo *mail.Address, envFrom string) {
 	display := m.displayName()
 	if name == "" {
 		name = display
@@ -189,11 +182,11 @@ func (s *service) addressing(m *mailboxRow, name string, number int64, alias str
 		addr = alias
 	}
 	if m.InboundKind == InboundForwarding {
-		replyTo = &mail.Address{Name: display, Address: m.ForwardingToken + "+t" + itoa(number) + "@" + s.inboundDomain()}
+		replyTo = &mail.Address{Name: display, Address: m.ForwardingToken + "+t" + itoa(number) + "@" + strings.ToLower(strings.TrimSpace(cfg.InboundDomain))}
 	}
 	switch m.OutboundKind {
 	case OutboundSystem:
-		sys := s.systemFrom()
+		sys := systemFrom(cfg.MailFrom)
 		if replyTo == nil {
 			replyTo = &mail.Address{Name: display, Address: addr}
 		}
@@ -373,7 +366,7 @@ func (s *service) composeAndSend(ctx context.Context, wid, mid, ticketID uuid.UU
 		names.agent = agentName(bot.name)
 	}
 	alias := m.alias(t.receivedAt)
-	from, replyTo, envFrom := s.addressing(m, fromName(m.FromNameFormat, names), t.number, alias)
+	from, replyTo, envFrom := addressing(s.d.Cfg, m, fromName(m.FromNameFormat, names), t.number, alias)
 	inReplyTo, refs, err := threadHeaders(ctx, s.d.DB.Pool, wid, ticketID, mid)
 	if err != nil {
 		return "", nil, err
@@ -613,7 +606,7 @@ func (s *service) sendTicketEmail(ctx context.Context, a jobs.SendTicketEmailArg
 	names := t.names
 	names.mailbox = m.displayName()
 	alias := m.alias(t.receivedAt)
-	from, replyTo, envFrom := s.addressing(m, fromName(m.FromNameFormat, names), t.number, alias)
+	from, replyTo, envFrom := addressing(s.d.Cfg, m, fromName(m.FromNameFormat, names), t.number, alias)
 	inReplyTo, refs, err := threadHeaders(ctx, s.d.DB.Pool, a.WorkspaceID, t.id, uuid.Nil)
 	if err != nil {
 		return err

@@ -139,6 +139,17 @@ func TeamReplyMailbox(ctx context.Context, q db.Querier, wid, brandID, teamID uu
 	return &id, nil
 }
 
+// ReplyMailbox selects the team's reply address within a brand, then the brand's default.
+func ReplyMailbox(ctx context.Context, q db.Querier, wid, brand uuid.UUID, team *uuid.UUID) (*uuid.UUID, error) {
+	if team != nil {
+		id, err := TeamReplyMailbox(ctx, q, wid, brand, *team)
+		if err != nil || id != nil {
+			return id, err
+		}
+	}
+	return BrandMailboxFor(ctx, q, wid, brand, team)
+}
+
 // BrandMailboxFor is the brand's default address for a ticket of team (nil: none): its
 // oldest active address that is not another private team's, as only that team's members
 // send from it (contracts/teams.md "Reply address").

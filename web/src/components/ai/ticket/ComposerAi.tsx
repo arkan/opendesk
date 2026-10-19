@@ -7,7 +7,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { DropdownMenu as M, Popover as P } from "radix-ui";
 import { Languages, PenLine, Square, Undo2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import type { AIFeature, KBSource, RewriteMode, Ticket } from "@/lib/api/types";
 import { api } from "@/lib/api/endpoints";
@@ -68,15 +68,29 @@ export function useComposerAi(editor: RefObject<RichEditorHandle | null>, ticket
   const [sources, setSources] = useState<KBSource[]>([]);
   const [review, setReview] = useState<AiReview | null>(null);
   const abort = useRef<AbortController | null>(null);
+  const context = useMemo(() => ({ ticketId: ticket.id, mode, active: true }), [ticket.id, mode]);
   const lang = ticketLanguage(ticket);
   const target = mode === "reply" && lang && isForeign(lang) ? lang : null;
 
+  // Deferred actions belong to the editor context in which they were created.
+  useEffect(() => {
+    context.active = true;
+    setBusy(null);
+    setSources([]);
+    setReview(null);
+    return () => {
+      context.active = false;
+      abort.current?.abort();
+    };
+  }, [context]);
+
   const restore = useCallback(
     (html: string) => {
+      if (!context.active) return;
       editor.current?.setHtml(html);
-      setTimeout(() => editor.current?.focus(), 0);
+      setTimeout(() => { if (context.active) editor.current?.focus(); }, 0);
     },
-    [editor],
+    [editor, context],
   );
 
   const undoToast = (message: string, prev: string) =>
@@ -94,6 +108,7 @@ export function useComposerAi(editor: RefObject<RichEditorHandle | null>, ticket
   }, [review, editor]);
 
   const runDraft = async (instructions: string | undefined, prev: string) => {
+    if (!context.active) return;
     const ac = new AbortController();
     abort.current = ac;
     const started = Date.now();
@@ -108,6 +123,7 @@ export function useComposerAi(editor: RefObject<RichEditorHandle | null>, ticket
         {
           signal: ac.signal,
           onDelta: (_d, soFar) => {
+            if (!context.active) return;
             if (!writing) {
               writing = true;
               setBusy({ kind: "draft", started, writing: true });
@@ -116,23 +132,26 @@ export function useComposerAi(editor: RefObject<RichEditorHandle | null>, ticket
           },
         },
       );
+      if (!context.active) return;
       editor.current?.setHtml(res.body_html);
       setSources(res.sources ?? []);
       balanceSpent(qc);
       if (prev) undoToast(t("composer.draftReplaced"), prev);
     } catch (e) {
-      if (isAbort(e)) return;
+      if (!context.active || isAbort(e)) return;
       restore(prev);
       reportAiError(e, t("composer.draftFailed"));
     } finally {
-      abort.current = null;
-      setBusy(null);
-      setTimeout(() => editor.current?.focus(), 0);
+      if (context.active) {
+        abort.current = null;
+        setBusy(null);
+        setTimeout(() => { if (context.active) editor.current?.focus(); }, 0);
+      }
     }
   };
 
   const draft = (instructions?: string) => {
-    if (busy) return;
+    if (!context.active || busy) return;
     const prev = currentHtml(editor.current);
     if (prev) {
       confirm.show(t("composer.replaceBody"), () => void runDraft(instructions, prev), {
@@ -146,7 +165,7 @@ export function useComposerAi(editor: RefObject<RichEditorHandle | null>, ticket
 
   const rewrite = async (m: RewriteMode) => {
     const ed = editor.current?.editor;
-    if (busy || !ed || ed.isEmpty) return;
+    if (!context.active || busy || !ed || ed.isEmpty) return;
     const prev = ed.getHTML();
     const { from, to, empty } = ed.state.selection;
     const selection = !empty && to - from > 1;
@@ -162,11 +181,13 @@ export function useComposerAi(editor: RefObject<RichEditorHandle | null>, ticket
         {
           signal: ac.signal,
           onDelta: (_d, soFar) => {
+            if (!context.active) return;
             if (selection) setBusy({ kind: "rewrite", selection, preview: soFar, started, writing: true });
             else editor.current?.setHtml(streamTextToHtml(soFar));
           },
         },
       );
+      if (!context.active) return;
       if (selection) ed.chain().focus().insertContentAt({ from, to }, res.html).run();
       else editor.current?.setHtml(res.html);
       balanceSpent(qc);
@@ -178,31 +199,35 @@ export function useComposerAi(editor: RefObject<RichEditorHandle | null>, ticket
         prev,
       });
     } catch (e) {
+      if (!context.active) return;
       if (!isAbort(e)) {
         restore(prev);
         reportAiError(e, t("composer.rewriteFailed"));
       } else if (!selection) restore(prev);
     } finally {
-      abort.current = null;
-      setBusy(null);
+      if (context.active) {
+        abort.current = null;
+        setBusy(null);
+      }
     }
   };
 
   const translate = async () => {
     const prev = currentHtml(editor.current);
-    if (busy || !prev || !target) return;
+    if (!context.active || busy || !prev || !target) return;
     setBusy({ kind: "translate", started: Date.now() });
     setReview(null);
     try {
       const res = await api.ai.translate({ html: prev, target });
+      if (!context.active) return;
       const next = res.html ?? streamTextToHtml(res.text ?? "");
       editor.current?.setHtml(next);
       balanceSpent(qc);
       setReview({ id: Date.now(), title: t("composer.translated", { language: languageName(target) }), before: htmlToPlain(prev), after: htmlToPlain(next), prev });
     } catch (e) {
-      reportAiError(e, t("composer.translateFailed"));
+      if (context.active) reportAiError(e, t("composer.translateFailed"));
     } finally {
-      setBusy(null);
+      if (context.active) setBusy(null);
     }
   };
 
@@ -218,7 +243,7 @@ export function useComposerAi(editor: RefObject<RichEditorHandle | null>, ticket
     review,
     keepReview: () => setReview(null),
     undoReview: () => {
-      if (!review) return;
+      if (!context.active || !review) return;
       const prev = review.prev;
       setReview(null);
       restore(prev);

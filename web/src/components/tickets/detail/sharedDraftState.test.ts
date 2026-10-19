@@ -78,6 +78,40 @@ describe("shared draft saves", () => {
     expect(state.state.content.body_html).toBe("Local");
   });
 
+  it("rejects a flush when an in-flight save discovers conflicting newer local edits", async () => {
+    const result = deferred<TicketDraft>();
+    const write = vi.fn(() => result.promise);
+    const state = new SharedDraftStateMachine(write);
+    state.receive(draft());
+    state.edit({ body_html: "Submitted" });
+    const saving = state.flush();
+    state.edit({ body_html: "New local edit", attachment_ids: ["local-file"] });
+    state.receive(draft(3, "Teammate edit"));
+    result.resolve(draft(2, "Submitted"));
+    await expect(saving).rejects.toThrow("shared draft changed");
+    expect(state.state.content.body_html).toBe("New local edit");
+    expect(state.state.content.attachment_ids).toEqual(["local-file"]);
+    expect(state.state.dirty).toBe(true);
+    expect(state.state.conflict).toBe(true);
+    expect(write).toHaveBeenCalledOnce();
+    state.reload(null);
+  });
+
+  it.each([
+    { name: "ended", current: null },
+    { name: "replaced", current: { ...draft(), id: "d2" } },
+  ])("returns the current identity when a teammate $name the draft during a save", async ({ current }) => {
+    const result = deferred<TicketDraft>();
+    const state = new SharedDraftStateMachine(() => result.promise);
+    state.receive(draft());
+    state.edit({ body_html: "Submitted" });
+    const saving = state.flush();
+    state.receive(current);
+    result.resolve(draft(2, "Submitted"));
+    await expect(saving).resolves.toEqual(current);
+    expect(state.state.dirty).toBe(false);
+  });
+
   it("refreshes a clean editor but does not interpret its own in-flight event as a conflict", async () => {
     const result = deferred<TicketDraft>();
     const state = new SharedDraftStateMachine(() => result.promise);
@@ -120,5 +154,20 @@ describe("shared draft saves", () => {
     state.reload(draft(2, "Remote"));
     expect(state.state.content).toEqual(draftContent(draft(2, "Remote")));
     expect(state.state.dirty).toBe(false);
+  });
+
+  it("uses a new creation key after another teammate ends a saved draft", async () => {
+    const write = vi.fn(async (_server: TicketDraft | null, content: DraftContent, _requestId: string) => ({ ...draft(), ...content }));
+    const state = new SharedDraftStateMachine(write);
+    state.receive(null);
+    state.edit({ body_html: "First reply" });
+    await state.flush();
+    state.receive(null);
+    state.edit({ body_html: "Next reply" });
+    await state.flush();
+    expect(write).toHaveBeenCalledTimes(2);
+    expect(write.mock.calls[0][0]).toBeNull();
+    expect(write.mock.calls[1][0]).toBeNull();
+    expect(write.mock.calls[1][2]).not.toBe(write.mock.calls[0][2]);
   });
 });

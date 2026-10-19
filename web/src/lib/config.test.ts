@@ -35,7 +35,6 @@ describe("parseHelpDomain", () => {
   });
 });
 
-
 describe("shared draft rollout configuration", () => {
   afterEach(() => { delete window.__OPENDESK__; vi.unstubAllEnvs(); });
   it("defaults on for development and self-hosted apps without runtime configuration", () => {
@@ -50,8 +49,23 @@ describe("shared draft rollout configuration", () => {
     vi.stubEnv("VITE_SHARED_DRAFTS_ENABLED", "false");
     expect(readConfig().sharedDrafts).toBe(true);
   });
-  it("supports a disabled build fallback when no runtime switch is supplied", () => {
-    vi.stubEnv("VITE_SHARED_DRAFTS_ENABLED", "false");
+  it.each([false, true])("keeps shared drafts off with an older runtime (selfHosted=%s)", (selfHosted) => {
+    vi.stubEnv("VITE_SHARED_DRAFTS_ENABLED", "true");
+    window.__OPENDESK__ = { apiUrl: "https://api.example.test", selfHosted };
     expect(readConfig().sharedDrafts).toBe(false);
+  });
+  it.each([undefined, "", "${SHARED_DRAFTS_ENABLED}", "maybe", ["true"]].map((sharedDrafts) => ({ sharedDrafts })))("keeps shared drafts off with an invalid runtime switch ($sharedDrafts)", ({ sharedDrafts }) => {
+    vi.stubEnv("VITE_SHARED_DRAFTS_ENABLED", "true");
+    window.__OPENDESK__ = { sharedDrafts };
+    expect(readConfig().sharedDrafts).toBe(false);
+  });
+  it.each([["true", true], ["false", false], ["maybe", true]] as const)("uses the build fallback %s without runtime configuration", (env, enabled) => {
+    vi.stubEnv("VITE_SHARED_DRAFTS_ENABLED", env);
+    expect(readConfig().sharedDrafts).toBe(enabled);
+  });
+  it.each([["true", true], ["false", false]] as const)("preserves the IMAP build fallback %s with an older runtime", (env, enabled) => {
+    vi.stubEnv("VITE_MAILBOX_IMAP", env);
+    window.__OPENDESK__ = {};
+    expect(readConfig().mailboxImap).toBe(enabled);
   });
 });

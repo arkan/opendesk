@@ -420,8 +420,8 @@ func (s *service) sendSystem(ctx context.Context, env *envelope) error {
 }
 
 // systemFrom is the platform sender address (MAIL_FROM).
-func (s *service) systemFrom() mail.Address {
-	if a, err := mail.ParseAddress(s.d.Cfg.MailFrom); err == nil {
+func systemFrom(configured string) mail.Address {
+	if a, err := mail.ParseAddress(configured); err == nil {
 		return *a
 	}
 	return mail.Address{Address: "notifications@localhost"}

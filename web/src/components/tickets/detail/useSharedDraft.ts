@@ -13,6 +13,8 @@ export function useSharedDraft(ticketId: string, enabled: boolean) {
       : await draftApi.create(ticketId, { ...content, request_id });
     await qc.cancelQueries({ queryKey: draftKey(ticketId), exact: true });
     qc.setQueryData(draftKey(ticketId), result);
+    // Reconcile changes committed by teammates before this acknowledgement arrived.
+    void qc.invalidateQueries({ queryKey: draftKey(ticketId), exact: true });
     return result.draft;
   }), [ticketId, qc]);
   const state = useSyncExternalStore(machine.subscribe, machine.snapshot);

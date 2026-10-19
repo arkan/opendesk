@@ -130,7 +130,7 @@ func (s *service) registerConnectRoutes(api huma.API) {
 			out.Forwarding.Domain = s.inboundDomain()
 			out.MailboxIMAP = s.mailboxIMAP
 			out.SystemSend = s.systemSend
-			out.SystemSender = s.systemFrom().Address
+			out.SystemSender = systemFrom(cfg.MailFrom).Address
 			return &struct{ Body connectOptions }{out}, nil
 		})
 

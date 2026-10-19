@@ -70,7 +70,7 @@ func registerDrafts(d *deps.Deps, api huma.API) {
 				return httpx.Validation("request_id must have 1 to 255 characters")
 			}
 			v := ticketDraft{TicketID: tid, Cc: []string{}, Bcc: []string{}, Attachments: []domain.Attachment{}}
-			att, err := applyDraftValues(ctx, tx, p, &v, in.Body.DraftValues, false)
+			att, err := applyDraftValues(&v, in.Body.DraftValues)
 			if err != nil {
 				return err
 			}
@@ -151,8 +151,11 @@ func registerDrafts(d *deps.Deps, api huma.API) {
 				return err
 			}
 			before := draftHash(d, "values", x)
-			att, err := applyDraftValues(ctx, tx, p, x, in.Body.DraftValues, true)
+			att, err := applyDraftValues(x, in.Body.DraftValues)
 			if err != nil {
+				return err
+			}
+			if err := validateDraftMailbox(ctx, tx, p, x); err != nil {
 				return err
 			}
 			if in.Body.AttachmentIDs == nil {

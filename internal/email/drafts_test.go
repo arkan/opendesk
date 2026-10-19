@@ -10,6 +10,32 @@ import (
 	"github.com/useopendesk/opendesk/internal/domain"
 )
 
+func TestDraftAddressUsesTeamReplyMailbox(t *testing.T) {
+	w := newWorld(t)
+	generic := w.mailbox(InboundForwarding, OutboundSystem, nil)
+	team := w.team("Orders", false, "")
+	teamMailbox := w.mailbox(InboundForwarding, OutboundSystem, func(m *mailboxRow, _ *credentials) {
+		m.TeamID = &team
+	})
+	ticket, _ := firstTicket(t, w, generic, customer())
+	mustExec(t, w.d, `UPDATE tickets SET mailbox_id=NULL,team_id=$2 WHERE id=$1`, ticket.ID, team)
+	address, err := ResolveDraftAddress(w.ctx, w.d.DB.Pool, w.d.Cfg, w.admin, ticket.ID, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if address.MailboxID != teamMailbox.ID {
+		t.Fatalf("draft chose %s instead of the team's mailbox %s", address.MailboxID, teamMailbox.ID)
+	}
+	info, err := loadTicketInfo(w.ctx, w.d.DB.Pool, w.wid, ticket.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sending, err := w.s.sendingMailbox(w.ctx, w.wid, info, nil)
+	if err != nil || sending.ID != address.MailboxID {
+		t.Fatalf("draft and delivery disagree: %v %v", sending, err)
+	}
+}
+
 func TestReviewedRecipientsStayFrozenDuringDelivery(t *testing.T) {
 	for _, locked := range []bool{true, false} {
 		t.Run(map[bool]string{true: "reviewed", false: "legacy"}[locked], func(t *testing.T) {

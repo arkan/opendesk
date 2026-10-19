@@ -152,21 +152,23 @@ function draftEvent(ctx: Ctx, d: TicketDraft, verb: string) {
   publish(ctx.ws, `ticket_draft.${verb}`, { ticket_id: d.ticket_id, draft_id: d.id, revision: d.revision, state: d.state });
 }
 function patchDraft(ctx: Ctx, d: TicketDraft) {
-  if (typeof ctx.body.body_html === "string") d.body_html = ctx.body.body_html;
+  const next = { ...d };
+  if (typeof ctx.body.body_html === "string") next.body_html = ctx.body.body_html;
   if ("mailbox_id" in ctx.body) {
-    if (ctx.body.mailbox_id !== null && typeof ctx.body.mailbox_id !== "string") throw invalid("Invalid mailbox");
+    const mailboxId = ctx.body.mailbox_id;
+    if (mailboxId !== null && typeof mailboxId !== "string") throw invalid("Invalid mailbox");
     const t = ticket(ctx);
-    if (ctx.body.mailbox_id) checkPatch(ctx.ws, t, { mailbox_id: ctx.body.mailbox_id as string });
-    d.mailbox_id = ctx.body.mailbox_id as string | null;
+    if (mailboxId) checkPatch(ctx.ws, t, { mailbox_id: mailboxId });
+    next.mailbox_id = mailboxId;
   }
-  if (ctx.body.cc) d.cc = strArr(ctx.body.cc) ?? [];
-  if (ctx.body.bcc) d.bcc = strArr(ctx.body.bcc) ?? [];
+  if (ctx.body.cc) next.cc = strArr(ctx.body.cc) ?? [];
+  if (ctx.body.bcc) next.bcc = strArr(ctx.body.bcc) ?? [];
   if (ctx.body.attachment_ids) {
     const ids = strArr(ctx.body.attachment_ids) ?? [];
     if (ids.length > 20) throw invalid("A draft can contain up to 20 attachments");
-    d.attachments = attachmentsFor(ids);
+    next.attachments = attachmentsFor(ids);
   }
-  d.updated_by = { type: "user", id: db.meId }; d.updated_at = nowIso();
+  Object.assign(d, next, { updated_by: { type: "user", id: db.meId }, updated_at: nowIso() });
 }
 function endDraft(ctx: Ctx, d: TicketDraft, state: "sent" | "discarded") {
   d.state = state; d.revision++; d.ended_at = nowIso(); d.body_html = ""; d.mailbox_id = null; d.cc = []; d.bcc = []; d.attachments = [];
@@ -194,7 +196,7 @@ function registerDrafts() {
     const t = ticket(ctx); const d = checkedDraft(ctx, t);
     const mb = ctx.ws.mailboxes.find((m) => m.id === (d.mailbox_id ?? t.mailbox_id));
     const review_token = uuid();
-    draftReviews.set(review_token, JSON.stringify({ draft: draftContent(d), revision: d.revision, ticket: t, actor: db.meId }));
+    draftReviews.set(review_token, JSON.stringify({ draft_id: d.id, draft: draftContent(d), revision: d.revision, ticket: t, actor: db.meId }));
     const preview: DraftPreview = { draft_id: d.id, revision: d.revision, subject: t.subject, from: { name: me().name, email: mb?.email ?? "" }, to: t.contact?.email ? [t.contact.email] : [], cc: d.cc, bcc: d.bcc, body_html: d.body_html, signature_html: "", attachments: d.attachments, review_token };
     return respond(200, preview);
   });
@@ -206,7 +208,7 @@ function registerDrafts() {
       return respond(200, { message_id: message.id, ticket_id: t.id, status: t.status, delivery_status: message.delivery_status });
     }
     const d = checkedDraft(ctx, t);
-    if (draftReviews.get(String(ctx.body.review_token)) !== JSON.stringify({ draft: draftContent(d), revision: d.revision, ticket: t, actor: db.meId })) throw conflict();
+    if (draftReviews.get(String(ctx.body.review_token)) !== JSON.stringify({ draft_id: d.id, draft: draftContent(d), revision: d.revision, ticket: t, actor: db.meId })) throw conflict();
     if (!d.body_html && !d.attachments.length) throw invalid("The draft is empty");
     const status = s(ctx, "status") as TicketStatus | undefined;
     if (status && !STATUSES.includes(status)) throw invalid("Unknown status");
@@ -344,6 +346,9 @@ export function registerTickets() {
     const into = findTicket(ctx.ws, required(ctx, "into_id"));
     if (!into || !canSeeTicket(ctx.ws, into)) throw notFound("Target ticket");
     if (into.id === src.id) throw invalid("A ticket can't be merged into itself");
+    if (activeDraft(ctx, src) || activeDraft(ctx, into)) {
+      throw new HttpError(409, "draft_merge_conflict", "Send or discard the shared draft before merging tickets.");
+    }
     for (const m of ctx.ws.messages.filter((x) => x.ticket_id === src.id)) {
       ctx.ws.messages.push({ ...m, id: uuid(), ticket_id: into.id });
       into.message_count++;

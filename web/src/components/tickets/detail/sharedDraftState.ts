@@ -12,7 +12,7 @@ export class SharedDraftStateMachine {
   state: SharedDraftState = { server: null, content: emptyDraftContent(), dirty: false, saving: false, loaded: false, conflict: false, error: null };
   private listeners = new Set<() => void>();
   private timer: ReturnType<typeof setTimeout> | undefined;
-  private running: Promise<TicketDraft | null> | null = null;
+  private running: Promise<void> | null = null;
   private requestId = crypto.randomUUID();
   private creation: DraftContent | null = null;
   private deferred: TicketDraft | null | undefined;
@@ -27,6 +27,7 @@ export class SharedDraftStateMachine {
       if (server?.id !== this.state.server?.id || server?.revision !== this.state.server?.revision) this.set({ conflict: true });
       return;
     }
+    if (!server && this.state.server) this.requestId = crypto.randomUUID();
     this.set({ server, content: server ? draftContent(server) : emptyDraftContent(), loaded: true, error: null, conflict: false });
   }
   edit(patch: Partial<DraftContent>) {
@@ -43,9 +44,10 @@ export class SharedDraftStateMachine {
     if (!this.state.dirty) return this.state.server;
     if (!this.state.loaded) throw new Error("The shared draft has not loaded yet.");
     this.running = this.save();
-    try { return await this.running; } finally { this.running = null; }
+    try { await this.running; } finally { this.running = null; }
+    return this.flush();
   }
-  private async save(): Promise<TicketDraft | null> {
+  private async save(): Promise<void> {
     const content = this.state.content;
     const server = this.state.server;
     // A lost creation response must retry the original payload with the original durable key.
@@ -61,8 +63,6 @@ export class SharedDraftStateMachine {
       const deferred = this.deferred;
       this.deferred = undefined;
       if (deferred !== undefined && (deferred === null || deferred.id !== saved.id || deferred.revision > saved.revision)) this.receive(deferred);
-      if (dirty && !this.state.conflict) return this.save();
-      return saved;
     } catch (error) {
       this.set({ saving: false, error, conflict: typeof error === "object" && error !== null && "status" in error && error.status === 409 });
       throw error;

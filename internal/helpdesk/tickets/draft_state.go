@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"slices"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -105,9 +104,9 @@ func draftAttachmentIDs(x *ticketDraft) []uuid.UUID {
 	}
 	return out
 }
-func applyDraftValues(ctx context.Context, q db.Querier, p *auth.Principal, x *ticketDraft, v DraftValues, validateMailbox bool) ([]uuid.UUID, error) {
+func applyDraftValues(x *ticketDraft, v DraftValues) ([]uuid.UUID, error) {
 	if v.BodyHTML != nil {
-		x.BodyHTML = hd.SanitizeRich(*v.BodyHTML)
+		x.BodyHTML = hd.SanitizeRichTemplate(*v.BodyHTML)
 	}
 	if v.MailboxID.Set {
 		x.MailboxID = nil
@@ -117,11 +116,6 @@ func applyDraftValues(ctx context.Context, q db.Querier, p *auth.Principal, x *t
 				return nil, err
 			}
 			x.MailboxID = &id
-		}
-	}
-	if validateMailbox {
-		if err := validateDraftMailbox(ctx, q, p, x); err != nil {
-			return nil, err
 		}
 	}
 	if v.Cc != nil {
@@ -155,19 +149,17 @@ func applyDraftValues(ctx context.Context, q db.Querier, p *auth.Principal, x *t
 }
 func reserveDraftAttachments(ctx context.Context, tx pgx.Tx, p *auth.Principal, x *ticketDraft, att []uuid.UUID) error {
 	all := append(slices.Clone(att), draftAttachmentIDs(x)...)
-	sorted := slices.Clone(all)
-	slices.SortFunc(sorted, func(a, b uuid.UUID) int { return strings.Compare(a.String(), b.String()) })
-	sorted = slices.Compact(sorted)
-	for _, id := range sorted {
-		if !slices.Contains(att, id) {
-			var locked uuid.UUID
-			if err := tx.QueryRow(ctx, `SELECT id FROM attachments WHERE workspace_id=$1 AND id=$2 FOR UPDATE`, p.WorkspaceID, id).Scan(&locked); err != nil {
-				return err
-			}
-			continue
-		}
+	rows, err := tx.Query(ctx, `SELECT id FROM attachments WHERE workspace_id=$1 AND id=ANY($2) ORDER BY id FOR UPDATE`, p.WorkspaceID, all)
+	if err != nil {
+		return err
+	}
+	if _, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID]); err != nil {
+		return err
+	}
+	// Read reservations after obtaining every lock so concurrent commits are visible.
+	for _, id := range att {
 		var user, key, visitor, origin, reservation *uuid.UUID
-		err := tx.QueryRow(ctx, `SELECT a.uploaded_by,a.uploaded_by_api_key_id,a.uploaded_by_contact_id,a.draft_ticket_id,(SELECT r.draft_id FROM ticket_draft_attachments r WHERE r.attachment_id=a.id) FROM attachments a WHERE a.workspace_id=$1 AND a.id=$2 AND a.message_id IS NULL FOR UPDATE`, p.WorkspaceID, id).Scan(&user, &key, &visitor, &origin, &reservation)
+		err := tx.QueryRow(ctx, `SELECT a.uploaded_by,a.uploaded_by_api_key_id,a.uploaded_by_contact_id,a.draft_ticket_id,(SELECT r.draft_id FROM ticket_draft_attachments r WHERE r.attachment_id=a.id) FROM attachments a WHERE a.workspace_id=$1 AND a.id=$2 AND a.message_id IS NULL`, p.WorkspaceID, id).Scan(&user, &key, &visitor, &origin, &reservation)
 		if db.IsNotFound(err) {
 			return httpx.Validation("attachment_ids must be available uploads")
 		}

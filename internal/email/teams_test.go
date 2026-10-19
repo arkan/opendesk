@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jhillyerd/enmime/v2"
 
+	"github.com/useopendesk/opendesk/internal/config"
 	"github.com/useopendesk/opendesk/internal/crypto"
 	"github.com/useopendesk/opendesk/internal/ids"
 )
@@ -308,20 +309,29 @@ func TestOutboundAddressNameAndSignature(t *testing.T) {
 	}
 }
 
-func TestOutboundSMTPSendsAsAlias(t *testing.T) {
-	w := newWorld(t)
-	m := w.mailbox(InboundIMAP, OutboundSystem, func(m *mailboxRow, _ *credentials) {
-		m.Aliases = []string{"team@acme.test"}
-	})
+func TestOutboundAddressing(t *testing.T) {
+	cfg := &config.Config{InboundDomain: " In.Acme.Test ", MailFrom: "opendesk <notifications@acme.test>"}
+	m := &mailboxRow{}
+	m.Email, m.InboundKind = "support@acme.test", InboundIMAP
 	m.OutboundKind = OutboundSMTP
-	from, replyTo, env := w.s.addressing(m, "Anna at Support", 3, "team@acme.test")
+	from, replyTo, env := addressing(cfg, m, "Anna at Support", 3, "team@acme.test")
 	if from.Address != "team@acme.test" || replyTo != nil || env != m.Email {
 		t.Fatalf("smtp alias: %v %v %q", from, replyTo, env)
 	}
 	m.OutboundKind = KindGoogle
-	from, replyTo, _ = w.s.addressing(m, "Anna at Support", 3, "team@acme.test")
+	from, replyTo, _ = addressing(cfg, m, "Anna at Support", 3, "team@acme.test")
 	if from.Address != m.Email || replyTo == nil || replyTo.Address != "team@acme.test" {
 		t.Fatalf("google alias: %v %v", from, replyTo)
+	}
+	m.OutboundKind, m.InboundKind, m.ForwardingToken = OutboundSystem, InboundForwarding, "forward"
+	from, replyTo, env = addressing(cfg, m, "Anna at Support", 3, "team@acme.test")
+	if from.Address != "notifications@acme.test" || env != from.Address || replyTo == nil || replyTo.Address != "forward+t3@in.acme.test" {
+		t.Fatalf("system forwarding: %v %v %q", from, replyTo, env)
+	}
+	cfg.MailFrom = "invalid"
+	from, _, env = addressing(cfg, m, "Anna at Support", 3, "")
+	if from.Address != "notifications@localhost" || env != from.Address {
+		t.Fatalf("system fallback: %v %q", from, env)
 	}
 }
 

@@ -275,7 +275,7 @@ func applyPatch(ctx context.Context, tx pgx.Tx, d *deps.Deps, wid, tid uuid.UUID
 				return nil, err
 			}
 			if !inBrand {
-				m, err := replyMailbox(ctx, tx, wid, next.Brand, next.Team)
+				m, err := domain.ReplyMailbox(ctx, tx, wid, next.Brand, next.Team)
 				if err != nil {
 					return nil, err
 				}
@@ -321,7 +321,7 @@ func applyPatch(ctx context.Context, tx pgx.Tx, d *deps.Deps, wid, tid uuid.UUID
 				return nil, err
 			}
 			if private {
-				if m, err = replyMailbox(ctx, tx, wid, next.Brand, next.Team); err != nil {
+				if m, err = domain.ReplyMailbox(ctx, tx, wid, next.Brand, next.Team); err != nil {
 					return nil, err
 				}
 			}
@@ -659,16 +659,4 @@ func mailboxInBrand(ctx context.Context, q db.Querier, wid, brand uuid.UUID, mai
 	err := q.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM mailboxes WHERE workspace_id = $1 AND id = $2 AND brand_id = $3)`,
 		wid, *mailbox, brand).Scan(&ok)
 	return ok, err
-}
-
-// replyMailbox is where a ticket of team in brand replies from by default: the brand's
-// address of the team, else the brand's default address (nil when it has none).
-func replyMailbox(ctx context.Context, q db.Querier, wid, brand uuid.UUID, team *uuid.UUID) (*uuid.UUID, error) {
-	if team != nil {
-		m, err := domain.TeamReplyMailbox(ctx, q, wid, brand, *team)
-		if err != nil || m != nil {
-			return m, err
-		}
-	}
-	return domain.BrandMailboxFor(ctx, q, wid, brand, team)
 }

@@ -15,7 +15,7 @@ No deployment, external mailbox delivery or production database change was perfo
 | Shared files and cleanup | Reservation/send/discard/purge tests, retained origin, old-signature refusal, private/deleted ticket access and authenticated no-store streaming | Verified |
 | Reviewed recipients | Email worker test compares frozen draft recipients with legacy late Reply-To resolution | Verified |
 | API and MCP | MCP full suite, including upload/create/update/replay/conflict/preview/discard workflow; no new send tool | Verified |
-| Shared composer | Full web suite: 68 files, 450 tests; TypeScript and production build pass; browser mock autosave/navigation retains acknowledged content | Verified |
+| Shared composer | Full web suite: 73 files, 506 tests; TypeScript, ESLint, app/widget builds pass; browser mock exercises autosave, review, send and attachment cleanup | Verified |
 | Instance rollout | Go config/runtime tests and Pages generator: 16 tests; disabled mode retains existing composer behavior | Verified |
 | Physical deletion | Import undo locks tickets before collecting message-linked and draft-origin file keys; `TestUndo` asserts stored bytes are removed | Verified |
 | Migration rollback | Separate empty local PostgreSQL database: down/up passes; populated preparation identity intentionally refuses down | Verified |
@@ -39,6 +39,39 @@ They concern existing billing assertions (200 instead of expected 402), outside 
 
 The browser check exposed an editor hydration issue: changing editability emitted empty content as an edit.
 `RichEditor` suppresses that programmatic update; a component regression test and repeated navigation verify the fix.
+
+## PR #4 quality review
+
+Local review, 2026-10-19. The approved API, schema and product scope remain unchanged.
+Independent read-only verification: **PASS**, `/root/verify_pr4_corrections`, including 65 focused web tests on the final patch.
+
+| Invariant | Evidence |
+| --- | --- |
+| Saved template links survive sanitization and render safely | `tickets/draft_regressions_test.go`: create, update and preview |
+| Attachment reservation checks observe commits made while waiting for locks | Same suite: two tickets contend for one upload; the rejected update leaves both drafts intact |
+| Preview and delivery share mailbox selection and alias projection | `tickets/draft_preview_test.go`, `email/drafts_test.go`, `email/teams_test.go`; canonical `domain.ReplyMailbox` |
+| Draft-origin files require current workspace access | `widget/attachments_test.go`: users, API keys and existing signed URLs |
+| Review and conflict dialogs protect private content and act on the displayed identity | `useSharedDraftActions.test.tsx`: exact revision, replacement identity, uncertain send and pending discard |
+| Delayed save responses reconcile without losing newer local edits | `useSharedDraft.test.tsx`: canceled reads, ended/replaced drafts, retained text and files |
+| Flush completes only after pending edits are saved without conflict | `sharedDraftState.test.ts`: delayed conflicts reject; ended or replaced drafts return their reconciled identity |
+| A new draft receives a new durable creation key | `sharedDraftState.test.ts`; browser mock teammate-discard/create check |
+| Upload resources belong to their composer and mode | `useComposerUploads.test.tsx`: teardown, late responses, mode isolation and remote removal; ongoing uploads remain active |
+| Mock lifecycle matches rejected writes and merge constraints | `mock/handlers/drafts.test.ts`: atomic updates, replacement-draft token rejection and merge refusal on either ticket |
+| Configured instances explicitly advertise shared draft support | `config.test.ts`: absent or invalid runtime capability keeps the legacy reply flow, regardless of build settings |
+| Composer controls respect loading and send state without blocking notes or chat | `Composer.test.tsx`: recipients, sender, file controls, mode changes and asynchronous edits |
+| Deferred AI actions belong to their original ticket and mode | `ComposerAi.test.tsx`: Undo, confirmations, streaming and translation; `Composer.test.tsx`: Reply hydration before generation from Note |
+
+Draft field normalization is pure; routes perform mailbox authorization explicitly before writes.
+Address projection is pure and no longer constructs a service to obtain configuration.
+Draft actions use one dialog state for review, replacement and discard.
+One upload owner replaces separate collections, generation tracking and scattered resource cleanup.
+Composer decreases from 894 to 788 lines. No source file newly exceeds 1,000 lines.
+Flush owns the save loop and checks the reconciled state before reporting success.
+Post-save reconciliation adds one draft read per acknowledged save; it does not poll.
+Browser mock checks cover autosave, protected review content, explicit send, editor clearing and preview URL release after file removal.
+Affected Go suites pass with the race detector against isolated UTF-8 PostgreSQL.
+Final `go build ./...` and `go vet ./...` pass; focused AI email tests pass.
+Final Jev means: server 8.01, integrations 8.23, web 8.04. Each scope exceeds 8; no unchanged-score plateau occurred.
 
 Production schema, live provider delivery and coordinated deployment remain unverified.
 Enable `SHARED_DRAFTS_ENABLED` only after replacing old API/worker processes, then release the matching frontend runtime setting.

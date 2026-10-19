@@ -142,14 +142,11 @@ func loadStored(ctx context.Context, q db.Querier, id uuid.UUID) (storedAttachme
 // the file or whose conversation carries it in a public reply.
 func mayRead(r *http.Request, q db.Querier, id uuid.UUID, a storedAttachment) (bool, error) {
 	if a.DraftTicketID != nil {
-		p := auth.FromContext(r.Context())
-		if p == nil || p.WorkspaceID != a.WorkspaceID || (p.Kind != auth.KindUser && p.Kind != auth.KindAPIKey) {
+		p, err := auth.RequireWorkspace(r.Context(), auth.RoleViewer, auth.ScopeTicketsRead)
+		if err != nil || p.WorkspaceID != a.WorkspaceID {
 			return false, nil
 		}
-		if p.Kind == auth.KindUser && (!p.Role.Valid() || p.GrantID != uuid.Nil && !p.HasScope(auth.ScopeTicketsRead)) || p.Kind == auth.KindAPIKey && !p.HasScope(auth.ScopeTicketsRead) {
-			return false, nil
-		}
-		_, err := domain.LoadVisibleTicket(r.Context(), q, p, *a.DraftTicketID)
+		_, err = domain.LoadVisibleTicket(r.Context(), q, p, *a.DraftTicketID)
 		if db.IsNotFound(err) {
 			return false, nil
 		}
