@@ -71,7 +71,13 @@ type ticketContactInput struct {
 	Name  string `json:"name,omitempty" maxLength:"200"`
 }
 
+type ticketPreparation struct {
+	Namespace string `json:"namespace" minLength:"1" maxLength:"100"`
+	Reference string `json:"reference" minLength:"1" maxLength:"255"`
+}
+
 type ticketCreateBody struct {
+	Preparation   *ticketPreparation  `json:"preparation,omitempty"`
 	Subject       string              `json:"subject" minLength:"1" maxLength:"500"`
 	ContactID     string              `json:"contact_id,omitempty"`
 	Contact       *ticketContactInput `json:"contact,omitempty"`
@@ -245,21 +251,32 @@ func registerTickets(d *deps.Deps, api huma.API) {
 
 	huma.Register(api, huma.Operation{OperationID: "create-ticket", Method: http.MethodPost, Path: "/v1/tickets",
 		Summary: "Create a ticket", Tags: tags, DefaultStatus: http.StatusCreated},
-		func(ctx context.Context, in *struct{ Body ticketCreateBody }) (*ticketOut, error) {
+		func(ctx context.Context, in *struct{ Body ticketCreateBody }) (*struct {
+			Status int
+			Body   domain.Ticket
+		}, error) {
 			p, err := auth.RequireWorkspace(ctx, auth.RoleAgent, auth.ScopeTicketsWrite)
 			if err != nil {
 				return nil, httpx.Wrap(err)
 			}
 			var t domain.Ticket
+			replay := false
 			err = d.DB.Tx(ctx, func(tx pgx.Tx) error {
 				var err error
-				t, err = createTicket(ctx, tx, d, p, in.Body)
+				t, replay, err = createPreparedTicket(ctx, tx, d, p, in.Body)
 				return err
 			})
 			if err != nil {
 				return nil, httpx.Wrap(err)
 			}
-			return &ticketOut{t}, nil
+			status := http.StatusCreated
+			if replay {
+				status = http.StatusOK
+			}
+			return &struct {
+				Status int
+				Body   domain.Ticket
+			}{status, t}, nil
 		})
 
 	huma.Register(api, huma.Operation{OperationID: "get-ticket", Method: http.MethodGet, Path: "/v1/tickets/{id}",
@@ -567,7 +584,14 @@ func createTicket(ctx context.Context, tx pgx.Tx, d *deps.Deps, p *auth.Principa
 	kind := b.Kind
 	if kind == "" {
 		kind = "reply"
+		if b.Preparation != nil {
+			kind = "note"
+		}
 	}
+	if b.Preparation != nil && (kind != "note" || nt.Channel != domain.ChannelEmail || nt.MailboxID == nil || contactEmail == nil || *contactEmail == "") {
+		return domain.Ticket{}, httpx.Validation("preparation requires an email ticket, a mailbox and an email contact, with an internal note")
+	}
+
 	if nt.Channel == domain.ChannelEmail {
 		if nt.MailboxID == nil {
 			return domain.Ticket{}, httpx.Validation("an email ticket needs mailbox_id")
@@ -682,6 +706,12 @@ func createTicket(ctx context.Context, tx pgx.Tx, d *deps.Deps, p *auth.Principa
 	if err != nil {
 		return domain.Ticket{}, err
 	}
+	if b.Preparation != nil {
+		hash := draftHash(d, "preparation", preparationInput(b))
+		if _, err := tx.Exec(ctx, `INSERT INTO ticket_preparations(workspace_id,namespace,reference,request_hash,ticket_id) VALUES($1,$2,$3,$4,$5)`, wid, b.Preparation.Namespace, b.Preparation.Reference, hash, t.ID); err != nil {
+			return domain.Ticket{}, err
+		}
+	}
 	if len(b.Tags) > 0 {
 		create, err := hd.CanCreateLabels(ctx, tx, p)
 		if err != nil {
@@ -774,6 +804,16 @@ func mergeTickets(ctx context.Context, tx pgx.Tx, d *deps.Deps, wid, src, dst uu
 		} else {
 			dstState = s
 		}
+	}
+	var active bool
+	if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM ticket_drafts WHERE workspace_id=$1 AND ticket_id=ANY($2) AND state='draft')`, wid, []uuid.UUID{src, dst}).Scan(&active); err != nil {
+		return err
+	}
+	if active {
+		return httpx.E(409, "draft_merge_conflict", "Send or discard the shared draft before merging tickets.")
+	}
+	if _, err := tx.Exec(ctx, `UPDATE ticket_preparations SET ticket_id=$3 WHERE workspace_id=$1 AND ticket_id=$2`, wid, src, dst); err != nil {
+		return err
 	}
 	var srcMerged *uuid.UUID
 	if err := tx.QueryRow(ctx, `SELECT merged_into_id FROM tickets WHERE workspace_id = $1 AND id = $2`, wid, src).Scan(&srcMerged); err != nil {

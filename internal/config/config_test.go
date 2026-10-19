@@ -215,3 +215,37 @@ func TestAdminURL(t *testing.T) {
 		t.Fatalf("development: %v %q", err, c.AdminURL)
 	}
 }
+
+func TestSharedDraftInstanceRolloutDefaults(t *testing.T) {
+	productionEnv(t)
+	t.Setenv("STRIPE_SECRET_KEY", "")
+	t.Setenv("SHARED_DRAFTS_ENABLED", "")
+	c, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.SharedDraftsDisabled {
+		t.Fatal("self-hosted drafts disabled by default")
+	}
+	t.Setenv("STRIPE_SECRET_KEY", "test-billing-configuration")
+	t.Setenv("STRIPE_WEBHOOK_SECRET", "test-webhook-configuration")
+	t.Setenv("STRIPE_PRICE_PRO", "test-price-configuration")
+	c, err = Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !c.SharedDraftsDisabled {
+		t.Fatal("hosted promotion enabled before rollout")
+	}
+	t.Setenv("SHARED_DRAFTS_ENABLED", "true")
+	c, err = Load()
+	if err != nil || c.SharedDraftsDisabled {
+		t.Fatalf("explicit rollout: %v", err)
+	}
+	t.Setenv("STRIPE_SECRET_KEY", "")
+	t.Setenv("SHARED_DRAFTS_ENABLED", "false")
+	c, err = Load()
+	if err != nil || !c.SharedDraftsDisabled {
+		t.Fatalf("self-hosted maintenance: %v", err)
+	}
+}

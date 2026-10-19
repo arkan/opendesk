@@ -28,6 +28,10 @@ const CSATTTL = 30 * 24 * time.Hour
 // requestCSAT sends the satisfaction survey when a ticket is solved and the workspace
 // has CSAT enabled. The token is stored hashed; the email carries it once.
 func requestCSAT(ctx context.Context, tx pgx.Tx, d *deps.Deps, wid, tid uuid.UUID) error {
+	guarded, err := domain.PreparationGuarded(ctx, tx, wid, tid)
+	if err != nil || guarded {
+		return err
+	}
 	s, err := hd.LoadSettings(ctx, tx, wid)
 	if err != nil || !s.CSATEnabled {
 		return err

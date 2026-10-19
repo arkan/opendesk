@@ -5,6 +5,7 @@
 import type { InfiniteData, QueryClient } from "@tanstack/react-query";
 import type { TicketListQuery } from "./api/endpoints";
 import type { Page, Priority, Severity, Team, Ticket, TicketFilters, View } from "./api/types";
+import { draftKey } from "./api/drafts";
 import { qk } from "./queries";
 
 export type TicketPages = InfiniteData<Page<Ticket>, string | null>;
@@ -180,6 +181,7 @@ export function forgetTicket(qc: QueryClient, id: string) {
   removeTicketEverywhere(qc, id);
   const keys = [id, ...(known ? [String(known.number), `#${known.number}`] : [])];
   for (const k of keys) qc.removeQueries({ queryKey: qk.ticket(k), exact: true });
+  qc.removeQueries({ queryKey: draftKey(id), exact: true });
   qc.removeQueries({ queryKey: qk.messages(id), exact: true });
   qc.removeQueries({ queryKey: qk.activities(id), exact: true });
   qc.removeQueries({ queryKey: qk.suggestedReply(id), exact: true });

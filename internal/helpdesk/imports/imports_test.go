@@ -853,6 +853,15 @@ func TestUndo(t *testing.T) {
 	e.Scalar(`SELECT id FROM contacts WHERE workspace_id = $1 AND email = 'dora@customer.test'`, &dora, e.ws.ID)
 	var attachmentKey string
 	e.Scalar(`SELECT storage_key FROM attachments WHERE workspace_id = $1`, &attachmentKey, e.ws.ID)
+	// A draft file on an imported ticket is removed from storage when undo removes its origin.
+	draftTicket := e.ticketByRef(t, "101")
+	draftFile := ids.New()
+	draftKey := "workspaces/" + e.ws.ID.String() + "/attachments/" + draftFile.String()
+	if err := e.D.Storage.Put(e.Ctx, draftKey, strings.NewReader("draft pdf"), 9, "application/pdf"); err != nil {
+		t.Fatal(err)
+	}
+	e.Exec(`INSERT INTO attachments(id,workspace_id,filename,content_type,size_bytes,storage_key,uploaded_by) VALUES($1,$2,'draft.pdf','application/pdf',9,$3,$4)`, draftFile, e.ws.ID, draftKey, e.ws.Agent.ID)
+	e.Do("POST", "/v1/tickets/"+draftTicket.String()+"/draft", e.ws.Agent.As(e.ws), map[string]any{"request_id": "undo-draft", "attachment_ids": []string{draftFile.String()}}).Want(t, 201)
 	// Bob writes in again, not through the import.
 	var own domain.Ticket
 	if err := e.D.DB.Tx(e.Ctx, func(tx pgx.Tx) error {
@@ -908,6 +917,10 @@ func TestUndo(t *testing.T) {
 	if rc, err := e.D.Storage.Get(e.Ctx, attachmentKey); err == nil {
 		rc.Close()
 		t.Error("the attachment file stayed")
+	}
+	if rc, err := e.D.Storage.Get(e.Ctx, draftKey); err == nil {
+		rc.Close()
+		t.Error("the draft-origin attachment file stayed after hard ticket deletion")
 	}
 	e.Do("POST", path+"/undo", e.admin, nil).Want(t, 409)
 	e.Do("POST", path+"/sync", e.admin, nil).Want(t, 409)

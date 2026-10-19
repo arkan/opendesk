@@ -10,7 +10,7 @@ test("defaults to production URLs and leaves optional keys out", () => {
   assert.deepEqual(buildConfig({}), {
     apiUrl: "https://api.opendesk.sh",
     gatewayUrl: "wss://gateway.opendesk.sh/socket",
-    selfHosted: false,
+    selfHosted: false, sharedDrafts: false,
   });
 });
 
@@ -28,7 +28,7 @@ test("reads every key from the environment", () => {
     posthogKey: "phc_x",
     posthogHost: "https://us.i.posthog.com",
     turnstileSiteKey: "0x4AAA",
-    selfHosted: false,
+    selfHosted: false, sharedDrafts: false,
   });
 });
 
@@ -145,4 +145,11 @@ test("writes mailboxImap into both config files", () => {
   vm.runInNewContext(readFileSync(files[0], "utf8"), ctx);
   assert.equal(ctx.window.__OPENDESK__.mailboxImap, false);
   assert.equal(JSON.parse(readFileSync(files[1], "utf8")).mailboxImap, false);
+});
+
+test("shared drafts remain disabled until hosted promotion explicitly enables them", () => {
+  assert.equal(buildConfig({}).sharedDrafts, false);
+  assert.equal(buildConfig({ SHARED_DRAFTS_ENABLED: "true" }).sharedDrafts, true);
+  assert.equal(buildConfig({ SHARED_DRAFTS_ENABLED: "false" }).sharedDrafts, false);
+  assert.throws(() => buildConfig({ SHARED_DRAFTS_ENABLED: "invalid" }), /SHARED_DRAFTS_ENABLED/);
 });

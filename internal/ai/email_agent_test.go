@@ -315,3 +315,20 @@ func TestEmailAgentOnJev(t *testing.T) {
 		t.Fatalf("not answered %+v", ms)
 	}
 }
+
+func TestEmailAgentSkipsUnreleasedPreparation(t *testing.T) {
+	e := newEnv(t, opts{billing: true})
+	tid, mid := e.emailTicket(e.emailMailbox("send"), customerEmail(), "Weekly order", "Internal context")
+	e.Exec(`INSERT INTO ticket_preparations(workspace_id,namespace,reference,request_hash,ticket_id) VALUES($1,'orders','guarded',decode(repeat('00',32),'hex'),$2)`, e.WS.ID, tid)
+	before := e.F.calls()
+	e.emailAnswer(tid, mid)
+	if e.F.calls() != before {
+		t.Fatal("preparation invoked automatic email generation")
+	}
+	if len(publicMessages(e, tid)) != 1 {
+		t.Fatal("preparation created an automatic reply")
+	}
+	if n := e.count(`SELECT count(*) FROM river_job WHERE kind='email.send_message' AND args->>'ticket_id'=$1`, tid.String()); n != 0 {
+		t.Fatalf("preparation queued %d outgoing sends", n)
+	}
+}

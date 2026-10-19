@@ -11,7 +11,7 @@ import (
 // TestConfigJSON: /config.json is the JSON twin of /config.js, never cached.
 func TestConfigJSON(t *testing.T) {
 	rc := RuntimeConfig{APIURL: "https://desk.example.com", GatewayURL: "wss://desk.example.com/socket", SelfHosted: true,
-		MailboxOAuth: []string{"microsoft"}, MailboxIMAP: true}
+		MailboxOAuth: []string{"microsoft"}, MailboxIMAP: true, SharedDrafts: true}
 	h := Handler(rc, "default-src 'self'")
 
 	w := httptest.NewRecorder()

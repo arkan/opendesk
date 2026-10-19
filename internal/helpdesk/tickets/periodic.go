@@ -206,6 +206,7 @@ func (w *PurgeAttachmentsWorker) Work(ctx context.Context, _ *river.Job[PurgeAtt
 // PurgeAttachments deletes stale unattached uploads from storage and the database.
 func PurgeAttachments(ctx context.Context, d *deps.Deps) error {
 	rows, err := d.DB.Pool.Query(ctx, `SELECT id, storage_key FROM attachments WHERE message_id IS NULL
+		AND NOT EXISTS(SELECT 1 FROM ticket_draft_attachments r WHERE r.attachment_id=attachments.id)
 		AND created_at < now() - interval '24 hours' ORDER BY created_at LIMIT $1`, scanBatch)
 	if err != nil {
 		return err
@@ -224,11 +225,23 @@ func PurgeAttachments(ctx context.Context, d *deps.Deps) error {
 	}
 	for _, a := range list {
 		// Claim the row first so an upload attached meanwhile is never removed.
-		tag, err := d.DB.Pool.Exec(ctx, `DELETE FROM attachments WHERE id = $1 AND message_id IS NULL`, a.id)
+		var removed bool
+		err := d.DB.Tx(ctx, func(tx pgx.Tx) error {
+			var id uuid.UUID
+			if err := tx.QueryRow(ctx, `SELECT id FROM attachments WHERE id=$1 FOR UPDATE`, a.id).Scan(&id); err != nil {
+				if db.IsNotFound(err) {
+					return nil
+				}
+				return err
+			}
+			tag, err := tx.Exec(ctx, `DELETE FROM attachments WHERE id=$1 AND message_id IS NULL AND NOT EXISTS(SELECT 1 FROM ticket_draft_attachments r WHERE r.attachment_id=attachments.id)`, a.id)
+			removed = tag.RowsAffected() > 0
+			return err
+		})
 		if err != nil {
 			return err
 		}
-		if tag.RowsAffected() == 0 {
+		if !removed {
 			continue
 		}
 		if err := d.Storage.Delete(ctx, a.key); err != nil {

@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 
+	"github.com/useopendesk/opendesk/internal/auth"
 	"github.com/useopendesk/opendesk/internal/db"
 	"github.com/useopendesk/opendesk/internal/displayname"
 	"github.com/useopendesk/opendesk/internal/events"
@@ -172,24 +173,28 @@ func CreateTicket(ctx context.Context, tx pgx.Tx, nt NewTicket) (Ticket, error) 
 }
 
 type NewMessage struct {
-	WorkspaceID     uuid.UUID
-	TicketID        uuid.UUID
-	Kind            string // reply | note
-	Direction       string // inbound | outbound
-	AuthorType      string // contact | user | system | api
-	AuthorUserID    *uuid.UUID
-	AuthorContactID *uuid.UUID
-	BodyHTML        string // already sanitized by the caller
-	BodyText        string
-	FullHTML        string // inbound: the full original including quoted history
-	Subject         string
-	FromEmail       string
-	FromName        string
-	To, Cc, Bcc     []string
-	EmailMessageID  *string
-	InReplyTo       string
-	References      []string
-	InboundEmailID  *uuid.UUID
+	// DraftID permits linking files reserved by this exact reviewed draft.
+	DraftID             *uuid.UUID
+	PreparationApproved bool
+	RecipientLocked     bool
+	WorkspaceID         uuid.UUID
+	TicketID            uuid.UUID
+	Kind                string // reply | note
+	Direction           string // inbound | outbound
+	AuthorType          string // contact | user | system | api
+	AuthorUserID        *uuid.UUID
+	AuthorContactID     *uuid.UUID
+	BodyHTML            string // already sanitized by the caller
+	BodyText            string
+	FullHTML            string // inbound: the full original including quoted history
+	Subject             string
+	FromEmail           string
+	FromName            string
+	To, Cc, Bcc         []string
+	EmailMessageID      *string
+	InReplyTo           string
+	References          []string
+	InboundEmailID      *uuid.UUID
 	// MailboxID is the address the message is sent from (outbound) or arrived at (inbound).
 	MailboxID     *uuid.UUID
 	AttachmentIDs []uuid.UUID // previously uploaded, unattached attachments to link
@@ -265,6 +270,18 @@ func AddMessage(ctx context.Context, tx pgx.Tx, jc Jobs, nm NewMessage) (Message
 		nm.DeliveryStatus, nm.Trigger = "none", "none"
 	}
 	if nm.Kind == "reply" && nm.Direction == "outbound" && channel == ChannelEmail && nm.DeliveryStatus == "pending" {
+		guarded, err := PreparationGuarded(ctx, tx, nm.WorkspaceID, nm.TicketID)
+		if err != nil {
+			return Message{}, err
+		}
+		if guarded && !nm.PreparationApproved {
+			return Message{}, httpx.E(409, "ticket_preparation_pending", "This ticket needs an explicit outgoing send before automatic email is allowed.")
+		}
+		if nm.PreparationApproved {
+			if _, err := tx.Exec(ctx, `UPDATE ticket_preparations SET released_at=COALESCE(released_at,now()) WHERE workspace_id=$1 AND ticket_id=$2`, nm.WorkspaceID, nm.TicketID); err != nil {
+				return Message{}, err
+			}
+		}
 		from := nm.MailboxID
 		if from == nil {
 			from = ticketMailbox
@@ -288,23 +305,55 @@ func AddMessage(ctx context.Context, tx pgx.Tx, jc Jobs, nm NewMessage) (Message
 	_, err := tx.Exec(ctx, `INSERT INTO messages (id, workspace_id, ticket_id, kind, direction, author_type, author_user_id,
 		author_contact_id, body_html, body_text, full_html, subject, from_email, from_name, to_emails, cc_emails, bcc_emails,
 		email_message_id, in_reply_to, "references", inbound_email_id, delivery_status, created_at, ai, ai_action, mailbox_id,
-		reply_to, auth_failed, no_auto_reply, form_sender, bot_id, received_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32)`,
+		reply_to, auth_failed, no_auto_reply, form_sender, bot_id, received_at, recipient_locked)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)`,
 		id, nm.WorkspaceID, nm.TicketID, nm.Kind, nm.Direction, nm.AuthorType, nm.AuthorUserID, nm.AuthorContactID,
 		nm.BodyHTML, nm.BodyText, nm.FullHTML, truncateRunes(nm.Subject, 500), nm.FromEmail, nm.FromName, nm.To, nm.Cc, nm.Bcc,
 		nm.EmailMessageID, nm.InReplyTo, nm.References, nm.InboundEmailID, nm.DeliveryStatus, nm.CreatedAt, nm.AI, nm.AIAction, nm.MailboxID,
 		truncateRunes(nm.ReplyTo, 320), nm.AuthFailed, nm.NoAutoReply, truncateRunes(nm.FormSender, 320), nm.BotID,
-		truncateRunes(strings.ToLower(strings.TrimSpace(nm.ReceivedAt)), 320))
+		truncateRunes(strings.ToLower(strings.TrimSpace(nm.ReceivedAt)), 320), nm.RecipientLocked)
 	if err != nil {
 		return Message{}, fmt.Errorf("insert message: %w", err)
 	}
 	if len(nm.AttachmentIDs) > 0 {
-		// An agent's or visitor's upload goes only on their own message.
-		if _, err := tx.Exec(ctx, `UPDATE attachments SET message_id = $1 WHERE workspace_id = $2 AND id = ANY($3) AND message_id IS NULL
-			AND (uploaded_by IS NULL OR uploaded_by IS NOT DISTINCT FROM $4)
-			AND (uploaded_by_contact_id IS NULL OR uploaded_by_contact_id IS NOT DISTINCT FROM $5)`,
-			id, nm.WorkspaceID, nm.AttachmentIDs, nm.AuthorUserID, nm.AuthorContactID); err != nil {
+		// Lock in a stable order; reservations and cleanup take the same row locks.
+		rows, err := tx.Query(ctx, `SELECT id FROM attachments WHERE workspace_id=$1 AND id=ANY($2) ORDER BY id FOR UPDATE`, nm.WorkspaceID, nm.AttachmentIDs)
+		if err != nil {
+			return Message{}, err
+		}
+		_, err = pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+		if err != nil {
+			return Message{}, err
+		}
+		if nm.DraftID == nil {
+			origins, err := tx.Query(ctx, `SELECT DISTINCT draft_ticket_id FROM attachments WHERE workspace_id=$1 AND id=ANY($2) AND draft_ticket_id IS NOT NULL`, nm.WorkspaceID, nm.AttachmentIDs)
+			if err != nil {
+				return Message{}, err
+			}
+			originIDs, err := pgx.CollectRows(origins, pgx.RowTo[uuid.UUID])
+			if err != nil {
+				return Message{}, err
+			}
+			for _, origin := range originIDs {
+				principal := auth.FromContext(ctx)
+				if principal == nil {
+					return Message{}, httpx.Validation("attachment origin is unavailable")
+				}
+				if _, err := LoadVisibleTicket(ctx, tx, principal, origin); err != nil {
+					return Message{}, httpx.Validation("attachment origin is unavailable")
+				}
+			}
+		}
+		tag, err := tx.Exec(ctx, `UPDATE attachments a SET message_id=$1,draft_ticket_id=NULL WHERE workspace_id=$2 AND id=ANY($3) AND message_id IS NULL
+          AND (($6::uuid IS NOT NULL AND EXISTS(SELECT 1 FROM ticket_draft_attachments r WHERE r.workspace_id=$2 AND r.draft_id=$6 AND r.attachment_id=a.id))
+          OR ($6::uuid IS NULL AND NOT EXISTS(SELECT 1 FROM ticket_draft_attachments r WHERE r.attachment_id=a.id)
+          AND (uploaded_by IS NULL OR uploaded_by IS NOT DISTINCT FROM $4)
+          AND (uploaded_by_contact_id IS NULL OR uploaded_by_contact_id IS NOT DISTINCT FROM $5)))`, id, nm.WorkspaceID, nm.AttachmentIDs, nm.AuthorUserID, nm.AuthorContactID, nm.DraftID)
+		if err != nil {
 			return Message{}, fmt.Errorf("link attachments: %w", err)
+		}
+		if tag.RowsAffected() != int64(len(nm.AttachmentIDs)) {
+			return Message{}, httpx.Validation("attachments changed before the message could be sent")
 		}
 	}
 

@@ -94,6 +94,17 @@ type Message = {
   // reply_to, auth_failed, form_sender and received_at are for agents: the widget and public events always carry "", false, "" and "".
   created_at: string;
 };
+type TicketDraft = {
+  id: string; ticket_id: string; state: "draft" | "sent" | "discarded"; revision: number;
+  body_html: string; mailbox_id: string | null; cc: string[]; bcc: string[]; attachments: Attachment[];
+  created_by: { type: "user" | "api"; id: string | null }; updated_by: { type: "user" | "api"; id: string | null };
+  created_at: string; updated_at: string; ended_at: string | null; message_id: string | null;
+};
+type DraftPreview = {
+  draft_id: string; revision: number; subject: string; from: { email: string; name: string };
+  to: string[]; cc: string[]; bcc: string[]; body_html: string; signature_html: string;
+  attachments: Attachment[]; review_token: string;
+};
 type Attachment = { id: string; filename: string; content_type: string; size_bytes: number; inline: boolean; url: string };
 type Activity = { id: string; ticket_id: string; actor: { type: string; user: UserRef | null }; type: string; data: Record<string, unknown>; created_at: string };
 // activity types: status_changed{from,to, reason?: "sender_unverified", message_id?} (with a reason, from equals to: a reply that failed sender checks left the status where it was, actor "system") priority_changed{from,to} severity_changed{from: Severity | null, to: Severity | null} assigned{from,to,via?: "round_robin"|"load_balanced"|"triage"} (actor "system", or "ai" for via "triage") team_changed{from,to,via: "agent"|"automation"|"api"|"triage"|..., mailbox_from?, mailbox_to? /* the reply address switched with the team */} brand_changed{from,to} mailbox_changed{from,to} /* the reply address */ tagged{tag} untagged{tag} sla_breached{kind} merged{into, into_number /* null when the target is in another, private team */} csat_received{score} linked{link_id,url,title,provider} unlinked{url,title,provider}
@@ -458,6 +469,47 @@ Each value is overridable: `NOTIFY_EMAIL_DELAY`, `NOTIFY_EMAIL_COOLDOWNS` (e.g. 
 | GET | `/v1/reports/overview?from=&to=&team_id=&brand_id=` | → `{created, solved, open_now, first_response_p50_minutes, resolution_p50_minutes, csat_avg, csat_count, sla_breached, by_day: [{date, created, solved}], by_channel: {...}, by_severity: Record<Severity \| "none", number> /* tickets created in the range */, by_agent: [{user, solved, first_response_p50_minutes}], by_team: [{team_id: string \| null, created, solved, open_now, first_response_p50_minutes}], by_brand: [{brand_id, created, solved, open_now, first_response_p50_minutes}]}`. `team_id` (a team, or `none`) and `brand_id` narrow every figure. Private teams' tickets are counted, with no subjects or contacts |
 | POST | `/v1/attachments` | multipart `file` → `Attachment` (unattached, linked when sent). Only whoever uploaded it (that user, or that API key) may send it in `attachment_ids` (`422` otherwise) |
 | GET | `/v1/attachments/{id}` | → 302 to signed URL or streamed (`?token=` for img tags). A file on a ticket the caller may not see is `404` (contracts/teams.md "Visibility") |
+
+#### Shared email drafts
+
+One active draft belongs to each email ticket. Existing ticket visibility and scopes apply.
+Drafts are separate from conversation messages and never send automatically.
+SHARED_DRAFTS_ENABLED controls instance rollout, default on for self-hosts and off for hosted promotion.
+The app's runtime `sharedDrafts` setting must match the API. When disabled, the composer keeps its existing local reply flow.
+
+| Method | Path | Input and result |
+| --- | --- | --- |
+| GET | `/v1/tickets/{id}/draft` | Viewer+, `tickets:read` → `{draft: TicketDraft \| null}` |
+| POST | `/v1/tickets/{id}/draft` | Agent+, `tickets:write`. `{request_id, body_html?, mailbox_id?, cc?, bcc?, attachment_ids?}` → `{draft: TicketDraft}`; 201 new, 200 durable replay |
+| PATCH | `/v1/tickets/{id}/draft` | Agent+, `tickets:write`. `{draft_id, expected_revision, body_html?, mailbox_id?, cc?, bcc?, attachment_ids?}` → `{draft: TicketDraft}` |
+| DELETE | `/v1/tickets/{id}/draft` | Agent+, `tickets:write`. `{draft_id, expected_revision}` → 204, permanent discard |
+| POST | `/v1/tickets/{id}/draft/preview` | Agent+, `tickets:read`. `{draft_id, expected_revision}` → `DraftPreview` |
+| POST | `/v1/tickets/{id}/draft/send` | Agent+, `tickets:write`. `{draft_id, expected_revision, review_token, status?}` → `{message_id, ticket_id, status, delivery_status}`; 201 accepted, 200 already sent |
+
+Create allows empty content. PATCH changes only supplied fields; `mailbox_id:null` restores inheritance.
+Cc/Bcc each allow 20 addresses; attachment_ids allows 20 distinct files. HTML allows 500,000 characters.
+Files use the existing upload endpoint. A shared draft reserves them against cleanup and ordinary message linking.
+Draft file URLs require authenticated fetching with current origin-ticket visibility, including after removal or discard.
+They stream with `Cache-Control: private, no-store`; clients create local blob URLs for display and download.
+Terminal drafts retain identity but return empty body/recipient/file arrays and a null mailbox.
+
+`request_id` durably identifies original creation input, including after edits, send or discard.
+Changed input conflicts with `409 draft_request_conflict`; another active draft gives `409 draft_exists`.
+Stale edits give `409 draft_revision_conflict`. A changed preview context gives `409 draft_context_changed`.
+Send is transactional and creates at most one message per draft. Send replay returns the same message identity
+with current authorized ticket/status/delivery values. A deleted result gives `410 draft_result_gone`.
+Merging tickets with active drafts gives `409 draft_merge_conflict`.
+
+Ticket creation accepts optional `preparation: {namespace, reference}` (1..100 and 1..255 characters, case-sensitive).
+It requires an email contact and mailbox. An omitted kind becomes `note`; explicit `reply` is invalid.
+The reference durably deduplicates original input: 201 new, 200 replay, `409 preparation_conflict` for changed input,
+`410 preparation_result_gone` for a physically deleted result. Current permissions apply to every replay.
+Preparation suppresses ticket-driven customer email until an authorized explicit send releases it.
+Saving/discarding a draft or resolving the ticket does not release this protection.
+
+Draft POSTs, preparation-enabled ticket creation and the outer MCP transport bypass cached response replay.
+They use durable feature identities and check current authorization on every request.
+Existing immediate-send endpoints and other transport idempotency behavior keep their defaults.
 
 #### Labels and custom fields
 

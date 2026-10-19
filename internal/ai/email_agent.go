@@ -127,6 +127,10 @@ func (s *Service) loadEmailConv(ctx context.Context, wid, tid uuid.UUID) (*email
 	if !s.Enabled() {
 		return nil, nil
 	}
+	guarded, err := domain.PreparationGuarded(ctx, s.d.DB.Pool, wid, tid)
+	if err != nil || guarded {
+		return nil, err
+	}
 	st, err := hd.LoadSettings(ctx, s.d.DB.Pool, wid)
 	if err != nil {
 		return nil, err
@@ -345,6 +349,13 @@ func (s *Service) postEmailAnswer(ctx context.Context, in agentInput, mode strin
 		if err := tx.QueryRow(ctx, `SELECT assignee_id, custom, subject, status FROM tickets WHERE workspace_id = $1 AND id = $2
 			AND deleted_at IS NULL FOR UPDATE`, wid, tid).Scan(&assignee, &custom, &subject, &status); err != nil {
 			return err
+		}
+		guarded, err := domain.PreparationGuarded(ctx, tx, wid, tid)
+		if err != nil {
+			return err
+		}
+		if guarded {
+			return errStale
 		}
 		var latest uuid.UUID
 		if err := tx.QueryRow(ctx, `SELECT id FROM messages WHERE workspace_id = $1 AND ticket_id = $2 AND kind = 'reply'

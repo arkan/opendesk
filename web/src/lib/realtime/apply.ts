@@ -20,6 +20,7 @@ import type {
   TicketLink,
   Workspace,
 } from "../api/types";
+import { draftKey } from "../api/drafts";
 import { qk, removeFromList, upsertInList } from "../queries";
 import { applyAgentQualityEvent } from "../agentTests";
 import { updateWorkspace, useSession } from "../session";
@@ -193,7 +194,15 @@ export function applyEnvelope(qc: QueryClient, env: Envelope, ctx: ApplyContext)
       const id = d.ticket_id as string;
       removeTicketEverywhere(qc, id);
       qc.removeQueries({ queryKey: qk.ticket(id) });
+      qc.removeQueries({ queryKey: draftKey(id), exact: true });
       refreshCounts(qc);
+      return;
+    }
+    case "ticket_draft.created":
+    case "ticket_draft.updated":
+    case "ticket_draft.sent":
+    case "ticket_draft.discarded": {
+      if (typeof d.ticket_id === "string") void qc.invalidateQueries({ queryKey: draftKey(d.ticket_id), exact: true });
       return;
     }
     case "message.created":

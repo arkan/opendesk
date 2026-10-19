@@ -294,10 +294,11 @@ func (s *service) sendMessage(ctx context.Context, wid, mid uuid.UUID, lastAttem
 	var kind, direction, bodyHTML, bodyText, subject, status, authorType string
 	var to, cc, bcc []string
 	var authorID, mailboxID *uuid.UUID
+	var locked bool
 	var bot ollieSender
 	err := s.d.DB.Pool.QueryRow(ctx, `SELECT ticket_id, kind, direction, body_html, body_text, subject, to_emails, cc_emails, bcc_emails,
-		delivery_status, author_user_id, ai, from_name, mailbox_id, author_type FROM messages WHERE workspace_id = $1 AND id = $2`, wid, mid).
-		Scan(&ticketID, &kind, &direction, &bodyHTML, &bodyText, &subject, &to, &cc, &bcc, &status, &authorID, &bot.ai, &bot.name, &mailboxID, &authorType)
+		delivery_status, author_user_id, ai, from_name, mailbox_id, author_type,recipient_locked FROM messages WHERE workspace_id = $1 AND id = $2`, wid, mid).
+		Scan(&ticketID, &kind, &direction, &bodyHTML, &bodyText, &subject, &to, &cc, &bcc, &status, &authorID, &bot.ai, &bot.name, &mailboxID, &authorType, &locked)
 	if db.IsNotFound(err) {
 		return nil
 	}
@@ -307,8 +308,12 @@ func (s *service) sendMessage(ctx context.Context, wid, mid uuid.UUID, lastAttem
 	if status != "pending" || kind != "reply" || direction != "outbound" {
 		return nil
 	}
+	guarded, err := domain.PreparationGuarded(ctx, s.d.DB.Pool, wid, ticketID)
+	if err != nil || guarded {
+		return err
+	}
 	bot.system = authorType == "system"
-	stamped, sent, err := s.composeAndSend(ctx, wid, mid, ticketID, bodyHTML, bodyText, subject, to, cc, bcc, authorID, bot, mailboxID)
+	stamped, sent, err := s.composeAndSend(ctx, wid, mid, ticketID, bodyHTML, bodyText, subject, to, cc, bcc, authorID, bot, mailboxID, locked)
 	if err == nil {
 		return s.recordDelivery(ctx, wid, mid, ticketID, "sent", "", stamped, sent)
 	}
@@ -332,7 +337,7 @@ func (s *service) sendMessage(ctx context.Context, wid, mid uuid.UUID, lastAttem
 }
 
 func (s *service) composeAndSend(ctx context.Context, wid, mid, ticketID uuid.UUID, bodyHTML, bodyText, subject string,
-	to, cc, bcc []string, authorID *uuid.UUID, bot ollieSender, mailboxID *uuid.UUID) (string, *sentAs, error) {
+	to, cc, bcc []string, authorID *uuid.UUID, bot ollieSender, mailboxID *uuid.UUID, recipientLocked bool) (string, *sentAs, error) {
 	t, err := loadTicketInfo(ctx, s.d.DB.Pool, wid, ticketID)
 	if db.IsNotFound(err) {
 		return "", nil, permanent("The ticket no longer exists.")
@@ -353,8 +358,10 @@ func (s *service) composeAndSend(ctx context.Context, wid, mid, ticketID uuid.UU
 		}
 		to = []string{*t.contactEmail}
 	}
-	if to, err = replyDestination(ctx, s.d.DB.Pool, wid, ticketID, t.contactEmail, to); err != nil {
-		return "", nil, err
+	if !recipientLocked {
+		if to, err = replyDestination(ctx, s.d.DB.Pool, wid, ticketID, t.contactEmail, to); err != nil {
+			return "", nil, err
+		}
 	}
 	names := t.names
 	names.mailbox = m.displayName()
@@ -582,6 +589,10 @@ func (s *service) recordDelivery(ctx context.Context, wid, mid, ticketID uuid.UU
 // has no author: the From name reads the address, team or brand, and the signature is the
 // team's or the address's.
 func (s *service) sendTicketEmail(ctx context.Context, a jobs.SendTicketEmailArgs) error {
+	guarded, err := domain.PreparationGuarded(ctx, s.d.DB.Pool, a.WorkspaceID, a.TicketID)
+	if err != nil || guarded {
+		return err
+	}
 	t, err := loadTicketInfo(ctx, s.d.DB.Pool, a.WorkspaceID, a.TicketID)
 	if db.IsNotFound(err) {
 		return nil

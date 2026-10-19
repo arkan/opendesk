@@ -99,20 +99,22 @@ func ticketTools() []*tool {
 			Name: "create_ticket", Title: "Create a ticket", Scopes: []string{auth.ScopeTicketsWrite}, OpenWorld: true,
 			Description: "Create a ticket for a contact by email (the contact is created when new). The body is the first message: " +
 				"a reply (default) or an internal note. With mailbox_id the ticket is an email ticket and a reply is emailed to the contact; " +
-				"without it the ticket is recorded on the api channel and nothing is sent.",
+				"without it the ticket is recorded on the api channel and nothing is sent. " +
+				"Use preparation with a mailbox to create context as an internal note, protect against automatic email, and deduplicate retries.",
 			Schema: obj(map[string]any{
-				"email":      strN("The contact's email address.", 3, 254),
-				"name":       strN("The contact's name, used when the contact is new.", 1, 200),
-				"subject":    strN("The ticket subject.", 1, 500),
-				"body":       strN("The first message, in markdown.", 1, maxBodyChars),
-				"kind":       enum("Whether the body is a reply to the contact (default) or an internal note.", "reply", "note"),
-				"mailbox_id": str("Send from this mailbox: makes an email ticket and emails a reply to the contact."),
-				"status":     enum("Initial status (default open).", statuses...),
-				"priority":   enum("Initial priority (default normal).", priorities...),
-				"severity":   enum("Initial severity.", severities...),
-				"assignee":   str("Assign to a teammate by user id or email (an email needs the settings:read scope)."),
-				"team":       str("A team id, or a team name (a name needs the settings:read scope)."),
-				"labels":     arr("Label names.", strN("", 1, 50), 50),
+				"email":       strN("The contact's email address.", 3, 254),
+				"name":        strN("The contact's name, used when the contact is new.", 1, 200),
+				"subject":     strN("The ticket subject.", 1, 500),
+				"body":        strN("The first message, in markdown.", 1, maxBodyChars),
+				"kind":        enum("Whether the body is a reply to the contact (default) or an internal note.", "reply", "note"),
+				"mailbox_id":  str("Send from this mailbox: makes an email ticket and emails a reply to the contact."),
+				"status":      enum("Initial status (default open).", statuses...),
+				"priority":    enum("Initial priority (default normal).", priorities...),
+				"severity":    enum("Initial severity.", severities...),
+				"assignee":    str("Assign to a teammate by user id or email (an email needs the settings:read scope)."),
+				"team":        str("A team id, or a team name (a name needs the settings:read scope)."),
+				"labels":      arr("Label names.", strN("", 1, 50), 50),
+				"preparation": obj(map[string]any{"namespace": strN("Integration namespace.", 1, 100), "reference": strN("Durable order reference.", 1, 255)}, "namespace", "reference"),
 			}, "email", "subject"),
 			Run: createTicket,
 		},
@@ -625,18 +627,19 @@ func updateTicket(ctx context.Context, c *caller, raw json.RawMessage) (any, err
 
 func createTicket(ctx context.Context, c *caller, raw json.RawMessage) (any, error) {
 	a, err := decode[struct {
-		Email     string   `json:"email"`
-		Name      string   `json:"name"`
-		Subject   string   `json:"subject"`
-		Body      string   `json:"body"`
-		Kind      string   `json:"kind"`
-		MailboxID string   `json:"mailbox_id"`
-		Status    string   `json:"status"`
-		Priority  string   `json:"priority"`
-		Severity  string   `json:"severity"`
-		Assignee  string   `json:"assignee"`
-		Team      string   `json:"team"`
-		Labels    []string `json:"labels"`
+		Email       string             `json:"email"`
+		Name        string             `json:"name"`
+		Subject     string             `json:"subject"`
+		Body        string             `json:"body"`
+		Kind        string             `json:"kind"`
+		MailboxID   string             `json:"mailbox_id"`
+		Status      string             `json:"status"`
+		Priority    string             `json:"priority"`
+		Severity    string             `json:"severity"`
+		Assignee    string             `json:"assignee"`
+		Team        string             `json:"team"`
+		Labels      []string           `json:"labels"`
+		Preparation *ticketPreparation `json:"preparation"`
 	}](raw)
 	if err != nil {
 		return nil, err
@@ -654,6 +657,9 @@ func createTicket(ctx context.Context, c *caller, raw json.RawMessage) (any, err
 		contact["name"] = clip(n, 200)
 	}
 	body := map[string]any{"subject": subject, "contact": contact}
+	if a.Preparation != nil {
+		body["preparation"] = a.Preparation
+	}
 	if strings.TrimSpace(a.Body) != "" {
 		html, err := markdownBody(a.Body)
 		if err != nil {

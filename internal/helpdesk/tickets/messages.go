@@ -197,123 +197,12 @@ func registerMessages(d *deps.Deps, api huma.API) {
 
 // postMessage adds an agent or API reply or note and applies an optional status.
 func postMessage(ctx context.Context, tx pgx.Tx, d *deps.Deps, p *auth.Principal, tid uuid.UUID, b ticketMessageBody) (domain.Message, error) {
-	wid := p.WorkspaceID
-	actor := actorOf(p)
-	var channel, subject string
-	var mailboxEmail, mailboxName, contactEmail *string
-	var mailboxID, team *uuid.UUID
-	var brand uuid.UUID
-	if err := tx.QueryRow(ctx, `SELECT t.channel, t.subject, t.mailbox_id, t.brand_id, t.team_id, mb.email, mb.display_name, c.email FROM tickets t
-		LEFT JOIN mailboxes mb ON mb.id = t.mailbox_id LEFT JOIN contacts c ON c.id = t.contact_id
-		WHERE t.workspace_id = $1 AND t.id = $2`, wid, tid).Scan(&channel, &subject, &mailboxID, &brand, &team, &mailboxEmail, &mailboxName, &contactEmail); err != nil {
-		return domain.Message{}, err
-	}
-	// The reply address: the one asked for (it becomes the ticket's), else the ticket's,
-	// else, for an email reply on a ticket without one, the brand's address of its team.
-	var reply *uuid.UUID
-	switch {
-	case strings.TrimSpace(b.MailboxID) != "":
-		if b.Kind != "reply" {
-			return domain.Message{}, httpx.Validation("mailbox_id applies to replies")
-		}
-		id, err := hd.ParseRef(b.MailboxID, "mailbox_id")
-		if err != nil {
-			return domain.Message{}, err
-		}
-		reply = &id
-	case b.Kind == "reply" && channel == domain.ChannelEmail && mailboxID == nil:
-		m, err := replyMailbox(ctx, tx, wid, brand, team)
-		if err != nil {
-			return domain.Message{}, err
-		}
-		if m == nil {
-			return domain.Message{}, httpx.Validation("this ticket's brand has no address to reply from")
-		}
-		reply = m
-	}
-	// The address a reply actually goes out from must be one the caller may send from: a
-	// private team's address is for that team's members (contracts/teams.md "Reply address").
-	if b.Kind == "reply" && strings.TrimSpace(b.MailboxID) == "" {
-		from := mailboxID
-		if reply != nil {
-			from = reply
-		}
-		if from != nil && (channel == domain.ChannelEmail || reply != nil) {
-			ok, err := domain.CanSendFrom(ctx, tx, p, *from)
-			if err != nil {
-				return domain.Message{}, err
-			}
-			if !ok {
-				return domain.Message{}, httpx.E(403, "reply_address_forbidden",
-					"You can't send from this ticket's reply address. Pick another address to reply from.")
-			}
-		}
-	}
-	if reply != nil && !sameID(reply, mailboxID) {
-		patch := Patch{Mailbox: reply}
-		if strings.TrimSpace(b.MailboxID) != "" {
-			if err := patch.checkCaller(ctx, tx, p, tid); err != nil {
-				return domain.Message{}, err
-			}
-		}
-		if _, err := applyPatch(ctx, tx, d, wid, tid, actor, patch, applyOpts{}); err != nil {
-			return domain.Message{}, err
-		}
-		mailboxID = reply
-		if err := tx.QueryRow(ctx, `SELECT email, display_name FROM mailboxes WHERE workspace_id = $1 AND id = $2`, wid, *reply).
-			Scan(&mailboxEmail, &mailboxName); err != nil {
-			return domain.Message{}, err
-		}
-	}
-	bodyHTML := hd.SanitizeRich(b.BodyHTML)
-	if b.Kind == "reply" {
-		ref := templates.Ref{WorkspaceID: wid, TicketID: &tid, AuthorUserID: actor.UserID, MailboxID: mailboxID}
-		var err error
-		if bodyHTML, err = hd.FillReply(ctx, tx, d.Cfg, ref, b.BodyHTML); err != nil {
-			return domain.Message{}, err
-		}
-	}
-	bodyText := hd.HTMLToText(bodyHTML)
-	attIDs, err := hd.ParseAttachmentIDs(b.AttachmentIDs)
+	nm, err := prepareTicketMessage(ctx, tx, d, p, tid, b, prepareMessageOptions{ApplyMailbox: true})
 	if err != nil {
 		return domain.Message{}, err
 	}
-	if bodyText == "" && len(attIDs) == 0 && !strings.Contains(bodyHTML, "<img") {
-		return domain.Message{}, httpx.Validation("the message is empty")
-	}
-	if err := hd.CheckAttachments(ctx, tx, wid, attIDs, hd.Uploader{User: p.ActorUserID(), APIKey: p.ActorAPIKeyID()}); err != nil {
-		return domain.Message{}, err
-	}
-	authorType := actor.Type
-	if authorType == "ai" {
-		authorType = "user" // the assistant writes on the user's behalf, after their approval
-	}
-	nm := domain.NewMessage{WorkspaceID: wid, TicketID: tid, Kind: b.Kind, Direction: "outbound", AuthorType: authorType,
-		AuthorUserID: actor.UserID, BodyHTML: bodyHTML, BodyText: bodyText, Subject: replySubject(subject), AttachmentIDs: attIDs}
-	if b.Kind == "reply" && channel == domain.ChannelEmail {
-		if contactEmail == nil || *contactEmail == "" {
-			return domain.Message{}, httpx.Validation("this ticket's contact has no email address to reply to")
-		}
-		cc, err := cleanEmails(b.Cc)
-		if err != nil {
-			return domain.Message{}, err
-		}
-		bcc, err := cleanEmails(b.Bcc)
-		if err != nil {
-			return domain.Message{}, err
-		}
-		nm.To, nm.Cc, nm.Bcc = []string{*contactEmail}, cc, bcc
-		nm.FromEmail, nm.FromName = str(mailboxEmail), str(mailboxName)
-		nm.MailboxID = mailboxID
-		nm.DeliveryStatus = "pending"
-	} else if len(b.Cc)+len(b.Bcc) > 0 {
-		return domain.Message{}, httpx.Validation("cc and bcc apply only to email replies")
-	}
-	if actor.UserID != nil && nm.FromName == "" {
-		if u, err := domain.LoadUserRef(ctx, tx, *actor.UserID); err == nil {
-			nm.FromName = u.Name
-		}
-	}
+	actor := actorOf(p)
+	wid := p.WorkspaceID
 	msg, err := domain.AddMessage(ctx, tx, d.Jobs, nm)
 	if err != nil {
 		return domain.Message{}, err
@@ -329,6 +218,147 @@ func postMessage(ctx context.Context, tx pgx.Tx, d *deps.Deps, p *auth.Principal
 		}
 	}
 	return msg, nil
+}
+
+type prepareMessageOptions struct {
+	Draft        *ticketDraft
+	AllowEmpty   bool
+	ApplyMailbox bool
+}
+
+// prepareTicketMessage owns shared validation and rendering for immediate and reviewed replies.
+func prepareTicketMessage(ctx context.Context, tx pgx.Tx, d *deps.Deps, p *auth.Principal, tid uuid.UUID, b ticketMessageBody, opts prepareMessageOptions) (domain.NewMessage, error) {
+	wid := p.WorkspaceID
+	actor := actorOf(p)
+	var channel, subject string
+	var mailboxEmail, mailboxName, contactEmail *string
+	var mailboxID, team *uuid.UUID
+	var brand uuid.UUID
+	if err := tx.QueryRow(ctx, `SELECT t.channel, t.subject, t.mailbox_id, t.brand_id, t.team_id, mb.email, mb.display_name, c.email FROM tickets t
+		LEFT JOIN mailboxes mb ON mb.id = t.mailbox_id LEFT JOIN contacts c ON c.id = t.contact_id
+		WHERE t.workspace_id = $1 AND t.id = $2`, wid, tid).Scan(&channel, &subject, &mailboxID, &brand, &team, &mailboxEmail, &mailboxName, &contactEmail); err != nil {
+		return domain.NewMessage{}, err
+	}
+	// The reply address: the one asked for (it becomes the ticket's), else the ticket's,
+	// else, for an email reply on a ticket without one, the brand's address of its team.
+	var reply *uuid.UUID
+	switch {
+	case strings.TrimSpace(b.MailboxID) != "":
+		if b.Kind != "reply" {
+			return domain.NewMessage{}, httpx.Validation("mailbox_id applies to replies")
+		}
+		id, err := hd.ParseRef(b.MailboxID, "mailbox_id")
+		if err != nil {
+			return domain.NewMessage{}, err
+		}
+		reply = &id
+	case b.Kind == "reply" && channel == domain.ChannelEmail && mailboxID == nil:
+		m, err := replyMailbox(ctx, tx, wid, brand, team)
+		if err != nil {
+			return domain.NewMessage{}, err
+		}
+		if m == nil {
+			return domain.NewMessage{}, httpx.Validation("this ticket's brand has no address to reply from")
+		}
+		reply = m
+	}
+	// The address a reply actually goes out from must be one the caller may send from: a
+	// private team's address is for that team's members (contracts/teams.md "Reply address").
+	if b.Kind == "reply" && strings.TrimSpace(b.MailboxID) == "" {
+		from := mailboxID
+		if reply != nil {
+			from = reply
+		}
+		if from != nil && (channel == domain.ChannelEmail || reply != nil) {
+			ok, err := domain.CanSendFrom(ctx, tx, p, *from)
+			if err != nil {
+				return domain.NewMessage{}, err
+			}
+			if !ok {
+				return domain.NewMessage{}, httpx.E(403, "reply_address_forbidden",
+					"You can't send from this ticket's reply address. Pick another address to reply from.")
+			}
+		}
+	}
+	if reply != nil && !sameID(reply, mailboxID) {
+		patch := Patch{Mailbox: reply}
+		if strings.TrimSpace(b.MailboxID) != "" {
+			if err := patch.checkCaller(ctx, tx, p, tid); err != nil {
+				return domain.NewMessage{}, err
+			}
+		}
+		if opts.ApplyMailbox {
+			if _, err := applyPatch(ctx, tx, d, wid, tid, actor, patch, applyOpts{}); err != nil {
+				return domain.NewMessage{}, err
+			}
+		}
+		mailboxID = reply
+		if err := tx.QueryRow(ctx, `SELECT email, display_name FROM mailboxes WHERE workspace_id = $1 AND id = $2`, wid, *reply).
+			Scan(&mailboxEmail, &mailboxName); err != nil {
+			return domain.NewMessage{}, err
+		}
+	}
+	bodyHTML := hd.SanitizeRich(b.BodyHTML)
+	if b.Kind == "reply" {
+		ref := templates.Ref{WorkspaceID: wid, TicketID: &tid, AuthorUserID: actor.UserID, MailboxID: mailboxID}
+		var err error
+		if bodyHTML, err = hd.FillReply(ctx, tx, d.Cfg, ref, b.BodyHTML); err != nil {
+			return domain.NewMessage{}, err
+		}
+	}
+	bodyText := hd.HTMLToText(bodyHTML)
+	attIDs, err := hd.ParseAttachmentIDs(b.AttachmentIDs)
+	if err != nil {
+		return domain.NewMessage{}, err
+	}
+	if !opts.AllowEmpty && bodyText == "" && len(attIDs) == 0 && !strings.Contains(bodyHTML, "<img") {
+		return domain.NewMessage{}, httpx.Validation("the message is empty")
+	}
+	if opts.Draft == nil {
+		if err := hd.CheckAttachments(ctx, tx, wid, attIDs, hd.Uploader{User: p.ActorUserID(), APIKey: p.ActorAPIKeyID()}); err != nil {
+			return domain.NewMessage{}, err
+		}
+	} else {
+		var count int
+		if err := tx.QueryRow(ctx, `SELECT count(*) FROM ticket_draft_attachments r JOIN attachments a ON a.workspace_id=r.workspace_id AND a.id=r.attachment_id WHERE r.workspace_id=$1 AND r.draft_id=$2 AND a.id=ANY($3) AND a.message_id IS NULL`, wid, opts.Draft.ID, attIDs).Scan(&count); err != nil {
+			return domain.NewMessage{}, err
+		}
+		if count != len(attIDs) {
+			return domain.NewMessage{}, httpx.Validation("draft attachments are no longer available")
+		}
+	}
+	authorType := actor.Type
+	if authorType == "ai" {
+		authorType = "user" // the assistant writes on the user's behalf, after their approval
+	}
+	nm := domain.NewMessage{WorkspaceID: wid, TicketID: tid, Kind: b.Kind, Direction: "outbound", AuthorType: authorType,
+		AuthorUserID: actor.UserID, BodyHTML: bodyHTML, BodyText: bodyText, Subject: replySubject(subject), AttachmentIDs: attIDs, PreparationApproved: true}
+	if b.Kind == "reply" && channel == domain.ChannelEmail {
+		if contactEmail == nil || *contactEmail == "" {
+			return domain.NewMessage{}, httpx.Validation("this ticket's contact has no email address to reply to")
+		}
+		cc, err := cleanEmails(b.Cc)
+		if err != nil {
+			return domain.NewMessage{}, err
+		}
+		bcc, err := cleanEmails(b.Bcc)
+		if err != nil {
+			return domain.NewMessage{}, err
+		}
+		nm.To, nm.Cc, nm.Bcc = []string{*contactEmail}, cc, bcc
+		nm.FromEmail, nm.FromName = str(mailboxEmail), str(mailboxName)
+		nm.MailboxID = mailboxID
+		nm.DeliveryStatus = "pending"
+	} else if len(b.Cc)+len(b.Bcc) > 0 {
+		return domain.NewMessage{}, httpx.Validation("cc and bcc apply only to email replies")
+	}
+	if actor.UserID != nil && nm.FromName == "" {
+		if u, err := domain.LoadUserRef(ctx, tx, *actor.UserID); err == nil {
+			nm.FromName = u.Name
+		}
+	}
+
+	return nm, nil
 }
 
 func replySubject(s string) string {

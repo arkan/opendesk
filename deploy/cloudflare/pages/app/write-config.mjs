@@ -95,6 +95,9 @@ export function buildConfig(env = process.env) {
   if (env.WEB_POSTHOG_HOST) cfg.posthogHost = url("WEB_POSTHOG_HOST", env.WEB_POSTHOG_HOST, ["https:"]);
   if (env.TURNSTILE_SITE_KEY) cfg.turnstileSiteKey = env.TURNSTILE_SITE_KEY;
   cfg.selfHosted = false;
+  const draftRollout = (env.SHARED_DRAFTS_ENABLED ?? "false").trim().toLowerCase();
+  if (draftRollout !== "true" && draftRollout !== "false") throw new Error("SHARED_DRAFTS_ENABLED must be true or false");
+  cfg.sharedDrafts = draftRollout === "true";
   if (env.MAILBOX_OAUTH !== undefined && env.MAILBOX_OAUTH.trim() !== "") cfg.mailboxOAuth = mailboxOAuth(env.MAILBOX_OAUTH);
   if (env.HELP_DOMAIN !== undefined && env.HELP_DOMAIN.trim() !== "") cfg.helpDomain = helpDomain(env.HELP_DOMAIN);
   if (env.MAILBOX_IMAP !== undefined && env.MAILBOX_IMAP.trim() !== "") cfg.mailboxImap = mailboxImap(env.MAILBOX_IMAP);

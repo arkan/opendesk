@@ -9,6 +9,7 @@ import {
   onSession,
   parseFrame,
   refreshSession,
+  requestBlob,
   setAccessToken,
   setActiveAccount,
   setTransport,
@@ -23,6 +24,20 @@ function json(status: number, body: unknown) {
 afterEach(() => __resetClientForTests());
 
 describe("api client", () => {
+  it("downloads protected draft bytes with account authorization and workspace headers", async () => {
+    const calls: RequestInit[] = [];
+    setTransport(async (_url, init) => {
+      calls.push(init);
+      return new Response("PDF bytes", { status: 200, headers: { "content-type": "application/pdf" } });
+    });
+    setAccessToken("tok_file"); setWorkspaceId("w1");
+    const blob = await requestBlob("/v1/attachments/file1");
+    expect(await blob.text()).toBe("PDF bytes");
+    const headers = calls[0].headers as Record<string, string>;
+    expect(headers.Authorization).toBe("Bearer tok_file");
+    expect(headers["OD-Workspace"]).toBe("w1");
+    expect(headers.Accept).toBe("application/octet-stream");
+  });
   it("sends the bearer token and workspace header", async () => {
     const calls: RequestInit[] = [];
     setTransport(async (_u, init) => (calls.push(init), json(200, { ok: true })));

@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/useopendesk/opendesk/internal/auth"
 	"github.com/useopendesk/opendesk/internal/db"
 	"github.com/useopendesk/opendesk/internal/domain"
 	"github.com/useopendesk/opendesk/internal/httpx"
@@ -205,8 +206,35 @@ func CheckAttachments(ctx context.Context, q db.Querier, wid uuid.UUID, attIDs [
 	if len(attIDs) == 0 {
 		return nil
 	}
+	origins, err := q.Query(ctx, `SELECT DISTINCT draft_ticket_id FROM attachments WHERE workspace_id=$1 AND id=ANY($2) AND draft_ticket_id IS NOT NULL`, wid, attIDs)
+	if err != nil {
+		return err
+	}
+	var originIDs []uuid.UUID
+	for origins.Next() {
+		var origin uuid.UUID
+		if err := origins.Scan(&origin); err != nil {
+			origins.Close()
+			return err
+		}
+		originIDs = append(originIDs, origin)
+	}
+	origins.Close()
+	if err := origins.Err(); err != nil {
+		return err
+	}
+	for _, origin := range originIDs {
+		p := auth.FromContext(ctx)
+		if p == nil {
+			return httpx.Validation("attachment origin is unavailable")
+		}
+		if _, err := domain.LoadVisibleTicket(ctx, q, p, origin); err != nil {
+			return httpx.Validation("attachment origin is unavailable")
+		}
+	}
 	var n int
 	if err := q.QueryRow(ctx, `SELECT count(*) FROM attachments WHERE workspace_id = $1 AND id = ANY($2) AND message_id IS NULL
+		AND NOT EXISTS(SELECT 1 FROM ticket_draft_attachments r WHERE r.attachment_id=attachments.id)
 		AND uploaded_by IS NOT DISTINCT FROM $3 AND uploaded_by_api_key_id IS NOT DISTINCT FROM $4
 		AND uploaded_by_contact_id IS NOT DISTINCT FROM $5`, wid, attIDs, by.User, by.APIKey, by.Contact).Scan(&n); err != nil {
 		return err

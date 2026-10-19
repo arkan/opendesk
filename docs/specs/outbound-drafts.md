@@ -1,7 +1,8 @@
 # Shared email drafts
 
 Status: Approved, including the reviewed file-origin amendment, on 2026-10-19. Independent technical review PASS.
-Current stage: specification and architecture complete. Implementation and deployment are outside this task.
+Current stage: implemented as a local patch after explicit user authorization on 2026-10-19. Deployment remains outside this task.
+Implementation evidence: [independent verification](../architecture/features/outbound-drafts/verification.md).
 
 ## Problem and solution
 
@@ -250,7 +251,7 @@ The baseline is the existing opendesk API, composer, attachment cleanup and MCP 
 - Validation-approach approval: approved in the same response.
 - Shared persistence for all manually started email replies: approved by the subsequent "oui".
 - Architecture/data approval: approved by the user's latest "oui" on 2026-10-19, including discard, merge, review-context and rollout choices.
-- Independent architecture review: PASS after targeted round 2; see the architecture review record. Implementation remains outside the requested specification work.
+- Independent architecture review: PASS after targeted round 2; see the architecture review record.
 - Round-1 replay/field-contract blockers and terminal/file-access warnings are closed at design level.
 - File-origin amendment: approved by the user's latest "oui" on 2026-10-19, including nullable attachments.draft_ticket_id, authenticated streaming and retained origin checks after removal/discard.
-- Specification/design workflow: complete. No functional code, database migration or deployment was performed.
+- Specification/design workflow: complete. The user subsequently authorized implementation as a local patch on 2026-10-19. No deployment was performed.

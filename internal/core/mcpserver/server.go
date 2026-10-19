@@ -86,7 +86,7 @@ func New(d *deps.Deps, api http.Handler) *Handler {
 		// browser origins are checked below; the SDK's loopback Host check would refuse
 		// self-hosts behind a reverse proxy on the same machine.
 		DisableLocalhostProtection: true,
-		MaxRequestBodyBytes:        1 << 20,
+		MaxRequestBodyBytes:        36 << 20,
 	})
 	return h
 }
@@ -137,6 +137,9 @@ func (h *Handler) server(p *auth.Principal, clientKey string) *mcp.Server {
 	s := mcp.NewServer(&mcp.Implementation{Name: "opendesk", Title: "opendesk", Version: version.Version},
 		&mcp.ServerOptions{Instructions: instructions})
 	for _, t := range catalog() {
+		if h.d.Cfg.SharedDraftsDisabled && isDraftTool(t.Name) {
+			continue
+		}
 		if !t.offered(&cp) {
 			continue
 		}

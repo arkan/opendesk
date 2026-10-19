@@ -232,7 +232,7 @@ func TestOrigin(t *testing.T) {
 		t.Fatalf("allowed origin: %v", err)
 	}
 	defer s.Close()
-	if n := toolNames(t, s); len(n) != 2 {
+	if n := toolNames(t, s); len(n) != 4 {
 		t.Fatalf("tools: %v", n)
 	}
 }
@@ -240,7 +240,7 @@ func TestOrigin(t *testing.T) {
 func TestToolsFollowScopes(t *testing.T) {
 	e := newEnv(t)
 	got := toolNames(t, e.session(e.APIKey(e.WS, auth.ScopeTicketsRead)))
-	if !slices.Equal(got, []string{"get_ticket", "search_tickets"}) {
+	if !slices.Equal(got, []string{"get_ticket", "get_ticket_draft", "preview_ticket_draft", "search_tickets"}) {
 		t.Fatalf("tickets:read tools: %v", got)
 	}
 	got = toolNames(t, e.session(e.APIKey(e.WS, auth.ScopeKBRead, auth.ScopeContactsRead)))
@@ -258,14 +258,15 @@ func TestToolsFollowScopes(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []string{"search_tickets", "get_ticket", "reply_to_ticket", "add_note", "update_ticket", "create_ticket",
-		"search_contacts", "get_contact", "search_knowledge", "create_kb_draft", "get_report"}
+		"search_contacts", "get_contact", "search_knowledge", "create_kb_draft", "get_report",
+		"get_ticket_draft", "create_ticket_draft", "update_ticket_draft", "discard_ticket_draft", "preview_ticket_draft", "upload_attachment"}
 	var names []string
 	for _, tl := range res.Tools {
 		names = append(names, tl.Name)
 		if tl.Description == "" || tl.InputSchema == nil || tl.Annotations == nil {
 			t.Fatalf("%s lacks a description, schema or annotations", tl.Name)
 		}
-		read := strings.HasPrefix(tl.Name, "search_") || strings.HasPrefix(tl.Name, "get_")
+		read := strings.HasPrefix(tl.Name, "search_") || strings.HasPrefix(tl.Name, "get_") || tl.Name == "preview_ticket_draft"
 		if tl.Annotations.ReadOnlyHint != read {
 			t.Fatalf("%s readOnlyHint = %v", tl.Name, tl.Annotations.ReadOnlyHint)
 		}

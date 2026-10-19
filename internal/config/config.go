@@ -29,6 +29,9 @@ type Config struct {
 	GatewayURL string
 	SiteURL    string
 	ServeWeb   bool // serve the embedded web app and /config.js from this binary
+	// SharedDraftsDisabled keeps new draft/preparation writes off during an instance rollout.
+	// SHARED_DRAFTS_ENABLED defaults on for self-hosts and off for hosted promotion.
+	SharedDraftsDisabled bool
 	// AdminURL is where the instance admin panel lives (ADMIN_URL, default <APP_URL>/admin,
 	// or the panel's dev server on a development API that does not serve the web app);
 	// its origin is the only one the admin routes accept (contracts/admin.md).
@@ -659,6 +662,7 @@ func Load() (*Config, error) {
 	if c.BillingEnabled() && (c.StripeWebhookSecret == "" || c.StripePricePro == "") {
 		return nil, errors.New("STRIPE_WEBHOOK_SECRET and STRIPE_PRICE_PRO are required when STRIPE_SECRET_KEY is set")
 	}
+	c.SharedDraftsDisabled = !envBool("SHARED_DRAFTS_ENABLED", !c.BillingEnabled())
 	return c, nil
 }
 

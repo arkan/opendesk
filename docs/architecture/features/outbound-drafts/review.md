@@ -3,7 +3,8 @@
 Technical gate: PASS after round 2. The user approved the file-origin amendment on 2026-10-19; specification/design gates are complete.
 
 The user approved the functional scope, tests, architecture and reconciled target data contract on 2026-10-19.
-This task covers specification and design only. No implementation or deployment is authorized.
+This record covers the completed design review. The user subsequently authorized a local implementation patch on 2026-10-19.
+Implementation results are recorded in [verification](verification.md). Deployment remains outside scope.
 
 Round 1: fresh-context, read-only review by `/root/architecture_reviewer`.
 Evidence: [specification](../../../specs/outbound-drafts.md), [architecture](architecture.md),
@@ -35,7 +36,7 @@ This was a design review only; no implementation, runtime race, live schema or p
 - **R4:** Add nullable attachments.draft_ticket_id for origin checks after removal/discard. Authenticate and resolve origin visibility before any signed-link branch. Stream marked files with no-store and no new external redirect; document the maximum five-minute lifetime of pre-association storage redirects.
 
 The extra file-origin column and authenticated-streaming policy formed a material data-contract amendment.
-The user approved it after the independent technical re-review. Implementation remains outside this task.
+The user approved it after the independent technical re-review. Implementation was subsequently authorized; see the separate verification record.
 
 ## Round 2 independent result
 

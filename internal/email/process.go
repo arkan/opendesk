@@ -713,11 +713,15 @@ func (s *service) recordBounce(ctx context.Context, wid, mailboxID uuid.UUID, pm
 // queueAutoReply sends the mailbox auto-reply for a new ticket, at most once per sender
 // and address per window, so writing to two addresses gets both.
 func (s *service) queueAutoReply(ctx context.Context, tx pgx.Tx, m *mailboxRow, t domain.Ticket, sender, senderName string) error {
+	guarded, err := domain.PreparationGuarded(ctx, tx, m.WorkspaceID, t.ID)
+	if err != nil || guarded {
+		return err
+	}
 	if !m.AutoReplyEnabled || strings.TrimSpace(m.AutoReplyHTML) == "" {
 		return nil
 	}
 	var ok bool
-	err := tx.QueryRow(ctx, `INSERT INTO email_auto_replies (workspace_id, mailbox_id, email) VALUES ($1, $2, $3)
+	err = tx.QueryRow(ctx, `INSERT INTO email_auto_replies (workspace_id, mailbox_id, email) VALUES ($1, $2, $3)
 		ON CONFLICT (workspace_id, mailbox_id, email) DO UPDATE SET sent_at = now()
 		WHERE email_auto_replies.sent_at < now() - $4::interval RETURNING true`,
 		m.WorkspaceID, m.ID, sender, fmt.Sprintf("%d seconds", int(autoReplyEvery.Seconds()))).Scan(&ok)

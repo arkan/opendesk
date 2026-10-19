@@ -55,6 +55,7 @@ fetches them with `GET /v1/events?since=<last_seq>`.
 | `ticket.created`         | agents     | —                                     | `{ "ticket": Ticket }` |
 | `ticket.updated`         | agents     | `user:<assignee>` when assignee changes | `{ "ticket": Ticket, "changes": ["status","assignee_id","tags","fields",...] }` |
 | `ticket.deleted`         | agents     | —                                     | `{ "ticket_id": "..." }` |
+| `ticket_draft.created` / `ticket_draft.updated` / `ticket_draft.sent` / `ticket_draft.discarded` | agents | — | `{ "ticket_id", "draft_id", "revision", "state" }`; includes Event.TicketID for private-team routing; clients refetch the authorized draft |
 | `message.created`        | agents (note) / public (reply on chat ticket) / agents (reply on email ticket) | `contact:<wid>:<cid>:<brand_id>` when public | `{ "ticket_id": "...", "message": Message }` |
 | `message.updated`        | agents (public on chat tickets) | `contact:<wid>:<cid>:<brand_id>` when public | `{ "ticket_id": "...", "message": Message }` (delivery status; the widget agent's action card status and visitor rating, `contracts/agent.md`) |
 | `activity.created`       | agents     | —                                     | `{ "ticket_id": "...", "activity": Activity }` |

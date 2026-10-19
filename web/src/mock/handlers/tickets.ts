@@ -1,5 +1,7 @@
 // Tickets, messages, activities, attachments, search and reports.
 
+import type { DraftPreview, TicketDraft } from "@/lib/api/drafts";
+import { draftContent } from "@/lib/api/drafts";
 import type { Attachment, Channel, Priority, ReportsOverview, Severity, SuggestionField, Ticket, TicketPatch, TicketStatus } from "@/lib/api/types";
 import { contactRef, db, me, userRef, type WsData } from "../db";
 import { publish } from "../gateway";
@@ -133,7 +135,94 @@ function simulateDelivery(ws: WsData, t: Ticket, msgId: string) {
   }, 1500);
 }
 
+// In-memory counterpart of the shared draft API for the development app.
+const drafts = new Map<string, TicketDraft>();
+const draftOwners = new Map<string, string>();
+const draftRequests = new Map<string, { input: string; id: string }>();
+const draftReviews = new Map<string, string>();
+const activeDraft = (ctx: Ctx, t: Ticket) => [...drafts.values()].find((d) => d.ticket_id === t.id && d.state === "draft" && draftOwners.get(d.id) === ctx.ws.workspace.id) ?? null;
+const conflict = () => new HttpError(409, "draft_conflict", "The shared draft changed. Reload it before trying again.");
+function checkedDraft(ctx: Ctx, t: Ticket) {
+  const d = drafts.get(String(ctx.body.draft_id));
+  if (!d || d.ticket_id !== t.id || draftOwners.get(d.id) !== ctx.ws.workspace.id) throw notFound("Draft");
+  if (d.state !== "draft" || d.revision !== ctx.body.expected_revision) throw conflict();
+  return d;
+}
+function draftEvent(ctx: Ctx, d: TicketDraft, verb: string) {
+  publish(ctx.ws, `ticket_draft.${verb}`, { ticket_id: d.ticket_id, draft_id: d.id, revision: d.revision, state: d.state });
+}
+function patchDraft(ctx: Ctx, d: TicketDraft) {
+  if (typeof ctx.body.body_html === "string") d.body_html = ctx.body.body_html;
+  if ("mailbox_id" in ctx.body) {
+    if (ctx.body.mailbox_id !== null && typeof ctx.body.mailbox_id !== "string") throw invalid("Invalid mailbox");
+    const t = ticket(ctx);
+    if (ctx.body.mailbox_id) checkPatch(ctx.ws, t, { mailbox_id: ctx.body.mailbox_id as string });
+    d.mailbox_id = ctx.body.mailbox_id as string | null;
+  }
+  if (ctx.body.cc) d.cc = strArr(ctx.body.cc) ?? [];
+  if (ctx.body.bcc) d.bcc = strArr(ctx.body.bcc) ?? [];
+  if (ctx.body.attachment_ids) {
+    const ids = strArr(ctx.body.attachment_ids) ?? [];
+    if (ids.length > 20) throw invalid("A draft can contain up to 20 attachments");
+    d.attachments = attachmentsFor(ids);
+  }
+  d.updated_by = { type: "user", id: db.meId }; d.updated_at = nowIso();
+}
+function endDraft(ctx: Ctx, d: TicketDraft, state: "sent" | "discarded") {
+  d.state = state; d.revision++; d.ended_at = nowIso(); d.body_html = ""; d.mailbox_id = null; d.cc = []; d.bcc = []; d.attachments = [];
+  draftEvent(ctx, d, state);
+}
+function registerDrafts() {
+  get("/v1/tickets/:id/draft", (ctx) => ({ draft: activeDraft(ctx, ticket(ctx)) }));
+  post("/v1/tickets/:id/draft", (ctx) => {
+    const t = ticket(ctx); if (t.channel !== "email") throw invalid("Drafts require an email ticket");
+    const key = `${ctx.ws.workspace.id}:${t.id}:${required(ctx, "request_id")}`;
+    const input = JSON.stringify(ctx.body); const previous = draftRequests.get(key);
+    if (previous) { if (previous.input !== input) throw conflict(); return respond(200, { draft: drafts.get(previous.id) }); }
+    if (activeDraft(ctx, t)) throw conflict();
+    const d: TicketDraft = { id: uuid(), ticket_id: t.id, state: "draft", revision: 1, body_html: "", mailbox_id: null, cc: [], bcc: [], attachments: [], created_by: { type: "user", id: db.meId }, updated_by: { type: "user", id: db.meId }, created_at: nowIso(), updated_at: nowIso(), ended_at: null, message_id: null };
+    patchDraft(ctx, d); drafts.set(d.id, d); draftOwners.set(d.id, ctx.ws.workspace.id); draftRequests.set(key, { input, id: d.id }); draftEvent(ctx, d, "created");
+    return respond(201, { draft: d });
+  });
+  patch("/v1/tickets/:id/draft", (ctx) => { const d = checkedDraft(ctx, ticket(ctx)); patchDraft(ctx, d); d.revision++; draftEvent(ctx, d, "updated"); return { draft: d }; });
+  del("/v1/tickets/:id/draft", (ctx) => {
+    const t = ticket(ctx); const previous = drafts.get(String(ctx.body.draft_id));
+    if (previous?.ticket_id === t.id && draftOwners.get(previous.id) === ctx.ws.workspace.id && previous.state === "discarded") return respond(204);
+    const d = checkedDraft(ctx, t); endDraft(ctx, d, "discarded"); return respond(204);
+  });
+  post("/v1/tickets/:id/draft/preview", (ctx) => {
+    const t = ticket(ctx); const d = checkedDraft(ctx, t);
+    const mb = ctx.ws.mailboxes.find((m) => m.id === (d.mailbox_id ?? t.mailbox_id));
+    const review_token = uuid();
+    draftReviews.set(review_token, JSON.stringify({ draft: draftContent(d), revision: d.revision, ticket: t, actor: db.meId }));
+    const preview: DraftPreview = { draft_id: d.id, revision: d.revision, subject: t.subject, from: { name: me().name, email: mb?.email ?? "" }, to: t.contact?.email ? [t.contact.email] : [], cc: d.cc, bcc: d.bcc, body_html: d.body_html, signature_html: "", attachments: d.attachments, review_token };
+    return respond(200, preview);
+  });
+  post("/v1/tickets/:id/draft/send", (ctx) => {
+    const t = ticket(ctx); const previous = drafts.get(String(ctx.body.draft_id));
+    if (previous?.ticket_id === t.id && draftOwners.get(previous.id) === ctx.ws.workspace.id && previous.state === "sent") {
+      const message = ctx.ws.messages.find((m) => m.id === previous.message_id);
+      if (!message) throw notFound("Message");
+      return respond(200, { message_id: message.id, ticket_id: t.id, status: t.status, delivery_status: message.delivery_status });
+    }
+    const d = checkedDraft(ctx, t);
+    if (draftReviews.get(String(ctx.body.review_token)) !== JSON.stringify({ draft: draftContent(d), revision: d.revision, ticket: t, actor: db.meId })) throw conflict();
+    if (!d.body_html && !d.attachments.length) throw invalid("The draft is empty");
+    const status = s(ctx, "status") as TicketStatus | undefined;
+    if (status && !STATUSES.includes(status)) throw invalid("Unknown status");
+    if (status === "solved" || status === "closed") checkRequiredOnSolve(ctx.ws, t.fields);
+    const mb = ctx.ws.mailboxes.find((m) => m.id === (d.mailbox_id ?? t.mailbox_id));
+    if (mb && sendingOf(mb) === "system_off") throw cannotSend();
+    const user = userRef(db.meId);
+    if (d.mailbox_id && d.mailbox_id !== t.mailbox_id) applyPatch(ctx.ws, t, { mailbox_id: d.mailbox_id }, user);
+    const message = addMessage(ctx.ws, t, { kind: "reply", direction: "outbound", html: d.body_html, user, cc: d.cc, bcc: d.bcc, attachments: d.attachments, delivery: "pending" }, { status, actor: user });
+    d.message_id = message.id; endDraft(ctx, d, "sent"); simulateDelivery(ctx.ws, t, message.id);
+    return respond(201, { message_id: message.id, ticket_id: t.id, status: t.status, delivery_status: message.delivery_status });
+  });
+}
+
 export function registerTickets() {
+  registerDrafts();
   get("/v1/tickets", (ctx) => {
     const f = filtersFrom(ctx);
     const list = ctx.ws.tickets.filter((t) => matches(ctx.ws, t, f, db.meId));
@@ -320,9 +409,15 @@ export function registerTickets() {
     db.attachments.push(a);
     return respond(201, a);
   });
-  get("/v1/attachments/:id", (ctx) => {
+  get("/v1/attachments/:id", async (ctx) => {
     const a = db.attachments.find((x) => x.id === ctx.params.id);
     if (!a) throw notFound("Attachment");
+    const origin = [...drafts.values()].find((d) => draftOwners.get(d.id) === ctx.ws.workspace.id && d.attachments.some((file) => file.id === a.id));
+    if (origin) {
+      const t = findTicket(ctx.ws, origin.ticket_id);
+      if (!t || !canSeeTicket(ctx.ws, t)) throw notFound("Attachment");
+      return fetch(a.url);
+    }
     return respond(302, undefined, { location: a.url });
   });
 

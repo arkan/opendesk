@@ -19,6 +19,8 @@ export type RuntimeConfig = {
    * Google or Microsoft mailbox). Off, every mailbox receives by forwarding.
    */
   mailboxImap: boolean;
+  /** Instance rollout switch. Enable only after every worker understands shared draft reservations. */
+  sharedDrafts: boolean;
   /**
    * The domain help centers live under, as https://<slug>.<helpDomain>
    * (HELP_DOMAIN), or "" when they are at /help/<slug> on the app's host.
@@ -97,6 +99,7 @@ export function readConfig(): RuntimeConfig {
     selfHosted: selfHostedRaw === true || selfHostedRaw === "true" || env.VITE_SELF_HOSTED === "1",
     mailboxOAuth: parseMailboxOAuth(typeof window !== "undefined" ? window.__OPENDESK__?.mailboxOAuth : undefined, env.VITE_MAILBOX_OAUTH),
     mailboxImap: parseMailboxImap(typeof window !== "undefined" ? window.__OPENDESK__?.mailboxImap : undefined, env.VITE_MAILBOX_IMAP),
+    sharedDrafts: parseMailboxImap(typeof window !== "undefined" ? window.__OPENDESK__?.sharedDrafts : undefined, env.VITE_SHARED_DRAFTS_ENABLED),
     helpDomain: parseHelpDomain(pick("helpDomain", env.VITE_HELP_DOMAIN)),
   };
 }

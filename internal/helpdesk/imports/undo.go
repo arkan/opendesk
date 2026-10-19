@@ -143,6 +143,10 @@ func (s *Service) undoBatch(ctx context.Context, x *row, kind, remove string, em
 		}
 		gone := ids
 		if kind == "ticket" {
+			// Serialize draft association and message writes before deciding what can be removed.
+			if _, err := pgxCollect[uuid.UUID](tx.Query(ctx, `SELECT id FROM tickets WHERE workspace_id=$1 AND id=ANY($2) ORDER BY id FOR UPDATE`, x.WorkspaceID, ids)); err != nil {
+				return err
+			}
 			// A ticket the team has written on since stays: it has a message no import wrote.
 			// Its records are forgotten all the same, and what it uses stays with it.
 			kept, err := pgxCollect[uuid.UUID](tx.Query(ctx, `SELECT DISTINCT m.ticket_id FROM messages m
@@ -152,8 +156,8 @@ func (s *Service) undoBatch(ctx context.Context, x *row, kind, remove string, em
 				return err
 			}
 			gone = slices.DeleteFunc(slices.Clone(ids), func(id uuid.UUID) bool { return slices.Contains(kept, id) })
-			if keys, err = pgxCollect[string](tx.Query(ctx, `SELECT a.storage_key FROM attachments a JOIN messages m ON m.id = a.message_id
-				WHERE a.workspace_id = $1 AND m.ticket_id = ANY($2)`, x.WorkspaceID, gone)); err != nil {
+			if keys, err = pgxCollect[string](tx.Query(ctx, `SELECT a.storage_key FROM attachments a LEFT JOIN messages m ON m.workspace_id=a.workspace_id AND m.id=a.message_id
+                WHERE a.workspace_id=$1 AND (m.ticket_id=ANY($2) OR a.draft_ticket_id=ANY($2))`, x.WorkspaceID, gone)); err != nil {
 				return err
 			}
 			if _, err := tx.Exec(ctx, `DELETE FROM import_records WHERE import_id = $1 AND kind = 'message'

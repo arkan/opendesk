@@ -110,6 +110,7 @@ func (h *handler) save(ctx context.Context, in *attachmentUploadInput, up hd.Upl
 }
 
 type storedAttachment struct {
+	DraftTicketID    *uuid.UUID
 	WorkspaceID      uuid.UUID
 	Filename         string
 	ContentType      string
@@ -128,11 +129,11 @@ func loadStored(ctx context.Context, q db.Querier, id uuid.UUID) (storedAttachme
 	var a storedAttachment
 	err := q.QueryRow(ctx, `SELECT a.workspace_id, a.filename, a.content_type, a.size_bytes, a.storage_key,
 		a.uploaded_by_contact_id, t.contact_id, m.kind, COALESCE(t.deleted_at IS NOT NULL, false), m.id IS NOT NULL,
-		t.team_id, t.assignee_id
+		t.team_id, t.assignee_id,a.draft_ticket_id
 		FROM attachments a LEFT JOIN messages m ON m.id = a.message_id LEFT JOIN tickets t ON t.id = m.ticket_id
 		WHERE a.id = $1`, id).Scan(&a.WorkspaceID, &a.Filename, &a.ContentType, &a.Size, &a.Key,
 		&a.UploaderContact, &a.TicketContact, &a.MessageKind, &a.TicketDeleted, &a.TicketIsAttached,
-		&a.TicketTeam, &a.TicketAssignee)
+		&a.TicketTeam, &a.TicketAssignee, &a.DraftTicketID)
 	return a, err
 }
 
@@ -140,6 +141,20 @@ func loadStored(ctx context.Context, q db.Querier, id uuid.UUID) (storedAttachme
 // see the ticket carrying it (contracts/teams.md "Visibility"), or the visitor who uploaded
 // the file or whose conversation carries it in a public reply.
 func mayRead(r *http.Request, q db.Querier, id uuid.UUID, a storedAttachment) (bool, error) {
+	if a.DraftTicketID != nil {
+		p := auth.FromContext(r.Context())
+		if p == nil || p.WorkspaceID != a.WorkspaceID || (p.Kind != auth.KindUser && p.Kind != auth.KindAPIKey) {
+			return false, nil
+		}
+		if p.Kind == auth.KindUser && (!p.Role.Valid() || p.GrantID != uuid.Nil && !p.HasScope(auth.ScopeTicketsRead)) || p.Kind == auth.KindAPIKey && !p.HasScope(auth.ScopeTicketsRead) {
+			return false, nil
+		}
+		_, err := domain.LoadVisibleTicket(r.Context(), q, p, *a.DraftTicketID)
+		if db.IsNotFound(err) {
+			return false, nil
+		}
+		return err == nil, err
+	}
 	query := r.URL.Query()
 	if exp, sig := query.Get("exp"), query.Get("sig"); exp != "" && sig != "" && domain.VerifyAttachmentSig(id, exp, sig) {
 		return true, nil
@@ -194,7 +209,7 @@ func (h *handler) download(w http.ResponseWriter, r *http.Request) {
 		writeProblem(w, r, http.StatusNotFound, "not_found", "Attachment not found")
 		return
 	}
-	if signed, err := h.d.Storage.SignedURL(ctx, a.Key, a.Filename, 5*time.Minute); err == nil && signed != "" {
+	if signed, err := draftStorageURL(ctx, h.d.Storage, a); err == nil && signed != "" {
 		w.Header().Set("Cache-Control", "private, no-store")
 		http.Redirect(w, r, signed, http.StatusFound)
 		return
@@ -222,6 +237,9 @@ func (h *handler) download(w http.ResponseWriter, r *http.Request) {
 	hdr.Set("Content-Disposition", contentDisposition(a.Filename, hd.InlineSafe(ct)))
 	hdr.Set("X-Content-Type-Options", "nosniff")
 	hdr.Set("Cache-Control", "private, max-age=300")
+	if a.DraftTicketID != nil {
+		hdr.Set("Cache-Control", "private, no-store")
+	}
 	hdr.Set("Content-Security-Policy", "default-src 'none'; sandbox")
 	hdr.Set("Cross-Origin-Resource-Policy", "cross-origin")
 	w.WriteHeader(http.StatusOK)
@@ -245,4 +263,11 @@ func contentDisposition(filename string, inline bool) string {
 		ascii = "file"
 	}
 	return kind + `; filename="` + ascii + `"; filename*=UTF-8''` + url.PathEscape(filename)
+}
+
+func draftStorageURL(ctx context.Context, st storage.Storage, a storedAttachment) (string, error) {
+	if a.DraftTicketID != nil {
+		return "", nil
+	}
+	return st.SignedURL(ctx, a.Key, a.Filename, 5*time.Minute)
 }

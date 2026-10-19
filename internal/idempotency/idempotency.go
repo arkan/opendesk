@@ -50,6 +50,7 @@ const (
 // responses are tokens or set cookies) and routes called by other systems.
 var skipPrefixes = []string{
 	"/v1/auth/",
+	"/mcp",
 	"/v1/me/password",
 	"/v1/me/passkeys/register/",
 	"/v1/realtime/token",
@@ -108,6 +109,10 @@ func (s *Store) Middleware(next http.Handler) http.Handler {
 			return
 		}
 		key := vals[0]
+		if strings.HasPrefix(r.URL.Path, "/v1/tickets/") && strings.Contains(r.URL.Path, "/draft") {
+			next.ServeHTTP(w, r)
+			return
+		}
 
 		body, err := io.ReadAll(io.LimitReader(r.Body, maxRequestBody+1))
 		if err != nil {
@@ -119,6 +124,13 @@ func (s *Store) Middleware(next http.Handler) http.Handler {
 			return
 		}
 		r.Body = io.NopCloser(bytes.NewReader(body))
+		if r.URL.Path == "/v1/tickets" {
+			var obj map[string]json.RawMessage
+			if json.Unmarshal(body, &obj) == nil && len(obj["preparation"]) > 0 && string(obj["preparation"]) != "null" {
+				next.ServeHTTP(w, r)
+				return
+			}
+		}
 		hash := s.hash(r.URL.RawQuery, body)
 
 		sc := scope{workspace: p.WorkspaceID, user: p.ActorUserID(), apiKey: p.ActorAPIKeyID(), key: key}

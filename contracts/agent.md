@@ -574,11 +574,25 @@ Tools (offered only when the key has the scope):
 | `reply_to_ticket` | `tickets:write` | a public reply (`body` markdown) |
 | `add_note` | `tickets:write` | an internal note |
 | `update_ticket` | `tickets:write` | status, priority, severity, assignee, team, labels |
-| `create_ticket` | `tickets:write` | a ticket for a contact email |
+| `create_ticket` | `tickets:write` | a ticket for a contact email; optional preparation namespace/reference creates safe internal context with durable deduplication |
+| `get_ticket_draft` | `tickets:read` | the shared draft, or null |
+| `create_ticket_draft` | `tickets:write` | an unsent shared draft with a durable request_id |
+| `update_ticket_draft` | `tickets:write` | explicit fields at draft_id/expected_revision |
+| `discard_ticket_draft` | `tickets:write` | permanent discard at draft_id/expected_revision |
+| `preview_ticket_draft` | `tickets:read` | agent+; sender, recipients, rendered body and files for review |
+| `upload_attachment` | `tickets:write` | filename and standard content_base64, at most 25 MiB decoded |
 | `search_contacts` / `get_contact` | `contacts:read` | |
 | `search_knowledge` | `kb:read` | KB articles and knowledge sources |
 | `create_kb_draft` | `kb:write` | a draft article |
 | `get_report` | `tickets:read` + `settings:read` | the overview report for a range |
+
+Draft tools use `ticket` references and `body` markdown (at most 20,000 characters, empty allowed).
+Create/update accept mailbox_id (null inherits), cc, bcc and attachment_ids. Omitted update fields remain unchanged.
+Results use the API JSON; discard returns `{discarded:true}`. These tools never send mail.
+Existing `reply_to_ticket` remains an immediate send. Shared draft sending requires the reviewed API/UI flow.
+Upload accepts no paths, remote URLs or data-URL prefix. Encoded content is limited to 34,952,536 characters.
+MCP bounds request bodies at 36 MiB after authentication, origin checks and rate limiting.
+The outer MCP response is never cached; existing inner legacy writes retain transport idempotency.
 
 Tool annotations mark read-only and destructive tools. Output is JSON text. No `Mcp-Session-Id` is
 issued. The server checks `Origin` (browser requests must come from

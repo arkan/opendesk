@@ -100,7 +100,7 @@ func (s *Service) registerSuggested(api huma.API) {
 				body := s.fillAnswer(ctx, tx, p.WorkspaceID, tid, bot.Name, r.BodyHTML)
 				msg, err = domain.AddMessage(ctx, tx, s.d.Jobs, domain.NewMessage{WorkspaceID: p.WorkspaceID, TicketID: tid, Kind: "reply",
 					Direction: "outbound", AuthorType: "system", BodyHTML: body, BodyText: hd.HTMLToText(body), Subject: subject,
-					Trigger: "none", AI: true, FromName: bot.Name, BotID: bot.IDPtr(), DeliveryStatus: "pending"})
+					Trigger: "none", AI: true, FromName: bot.Name, BotID: bot.IDPtr(), DeliveryStatus: "pending", PreparationApproved: true})
 				if err != nil {
 					return err
 				}

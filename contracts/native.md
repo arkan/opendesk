@@ -21,8 +21,12 @@ builds) and reads the runtime config the web app already uses:
 ```jsonc
 { "apiUrl": "https://api.opendesk.sh", "gatewayUrl": "wss://gateway.opendesk.sh/socket",
   "selfHosted": false, "turnstileSiteKey": "…"?, "mailboxOAuth": ["microsoft"]?, "mailboxImap": false?,
-  "helpDomain": "opendeskhelp.com"? }
+  "helpDomain": "opendeskhelp.com"?, "sharedDrafts": false }
 ```
+
+`sharedDrafts` follows SHARED_DRAFTS_ENABLED for the instance. Clients use shared email drafts only when true.
+It is always written by the binary and Pages configuration generator. Hosted promotion defaults to false.
+The web composer retains its local reply flow while this switch is off.
 
 `helpDomain` is `HELP_DOMAIN` (`HELP_DOMAIN` on Pages too): help centers are at
 `https://<slug>.<helpDomain>`, else at `/help/<slug>` on the app's host. Clients link a brand's

@@ -303,6 +303,11 @@ export async function request<T>(method: string, path: string, opts: RequestOpti
   return (await res.json()) as T;
 }
 
+/** Fetch protected file bytes through the same account/workspace authorization as JSON. */
+export async function requestBlob(path: string): Promise<Blob> {
+  return (await raw("GET", path, { headers: { Accept: "application/octet-stream" } })).blob();
+}
+
 /** Sends a request with auth, refresh and retry; throws ApiError unless 2xx. */
 async function raw(method: string, path: string, opts: RequestOptions = {}): Promise<Response> {
   const useAuth = opts.auth !== false;

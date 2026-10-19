@@ -65,6 +65,11 @@ func (c *caller) do(ctx context.Context, method, path string, query url.Values, 
 			return err
 		}
 	}
+	return c.doRaw(ctx, method, path, query, raw, "application/json", out)
+}
+
+// doRaw shares API routing, authentication and problem handling with multipart uploads.
+func (c *caller) doRaw(ctx context.Context, method, path string, query url.Values, raw []byte, contentType string, out any) error {
 	target := path
 	if len(query) > 0 {
 		target += "?" + query.Encode()
@@ -79,7 +84,7 @@ func (c *caller) do(ctx context.Context, method, path string, query url.Values, 
 	req := httptest.NewRequestWithContext(auth.WithPrincipal(ctx, c.p), method, target, rd)
 	req.Header.Set("Accept", "application/json")
 	if raw != nil {
-		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Content-Type", contentType)
 	}
 	if method == http.MethodPost && c.idem != nil {
 		if k := c.idem(method, path, raw); k != "" {

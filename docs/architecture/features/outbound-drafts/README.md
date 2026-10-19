@@ -1,7 +1,8 @@
 # Shared email drafts: architecture proposal
 
 Stage: complete. Functional scope, tests, architecture and amended target data contract approved on 2026-10-19.
-Implementation and deployment are outside this specification-only task.
+The user subsequently authorized a local implementation patch on 2026-10-19. Deployment remains outside this task.
+Implementation evidence: [independent verification](verification.md).
 Independent targeted review passed. The user approved the subsequent draft-file provenance and access-policy amendment.
 
 Canonical scope and decisions: [functional specification](../../../specs/outbound-drafts.md).

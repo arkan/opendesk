@@ -21,6 +21,8 @@ export type RichEditorHandle = {
 
 export type RichEditorProps = {
   value?: string;
+  /** Apply acknowledged shared edits even while this editor holds focus. */
+  syncWhileFocused?: boolean;
   onChange?: (html: string) => void;
   placeholder?: string;
   className?: string;
@@ -41,6 +43,7 @@ export type RichEditorProps = {
 export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(function RichEditor(
   {
     value = "",
+    syncWhileFocused = false,
     onChange,
     placeholder,
     className,
@@ -96,11 +99,11 @@ export const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(function
   useEffect(() => {
     if (!editor) return;
     const cur = editor.isEmpty ? "" : editor.getHTML();
-    if (value !== cur && !editor.isFocused) editor.commands.setContent(value || "", { emitUpdate: false });
-  }, [value, editor]);
+    if (value !== cur && (syncWhileFocused || !editor.isFocused)) editor.commands.setContent(value || "", { emitUpdate: false });
+  }, [value, editor, syncWhileFocused]);
 
   useEffect(() => {
-    editor?.setEditable(editable);
+    editor?.setEditable(editable, false);
   }, [editable, editor]);
 
   useImperativeHandle(

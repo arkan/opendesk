@@ -1,6 +1,6 @@
 # Shared email drafts: architecture proposal
 
-Status: Approved, including the file-provenance amendment, on 2026-10-19. Independent technical review PASS. Not implemented.
+Status: Approved, including the file-provenance amendment, on 2026-10-19. Independent technical review PASS. Implemented as a local patch on 2026-10-19.
 Functional scope, tests and sharing of manually started email drafts are approved.
 Canonical specification: [shared email drafts](../../../specs/outbound-drafts.md).
 
@@ -13,7 +13,7 @@ Canonical specification: [shared email drafts](../../../specs/outbound-drafts.md
 
 Keep orchestration in `internal/helpdesk/tickets`, with focused draft API, state and preview files.
 Extract one prepared-reply builder from `postMessage`; draft send and immediate send share validation and normal rendering.
-Move recipient selection into a narrow `internal/email/addressing` helper shared by preview, draft send and the existing worker.
+Reuse the narrow `internal/email.replyDestination` helper through `ResolveDraftAddress`, shared by preview, draft send and the existing worker.
 This helper preserves the current authenticated same-domain Reply-To rules; it owns no delivery or credentials.
 Do not make draft handlers call HTTP handlers internally. MCP continues calling the public API in process.
 
@@ -197,7 +197,8 @@ Existing sends retain default behavior; no change to public Ticket or Message JS
 An old backend does not honor file reservations or preparation protection.
 For self-hosted role=all, stop the old process before starting the new binary, as normal maintenance.
 For hosted split roles, stop/replace old workers and drain old API tasks before enabling preparation/draft writes on the new version.
-Use a process-local instance rollout switch default off for hosted promotion; expose no workspace/plan feature gate.
+Use the process-local SHARED_DRAFTS_ENABLED instance rollout switch, default off for hosted promotion and on for self-hosts.
+Expose no workspace/plan feature gate. Enable it after draining old API/workers, then release the updated composer.
 Do not allow mixed-version workers to purge uploads referenced by new drafts.
 The down migration refuses to run while any draft identity, reservation, preparation reference, draft-origin file or locked-recipient message remains.
 This prevents a rollback from silently discarding draft state or retry guarantees. Use forward fixes after enabling writes.
@@ -217,9 +218,9 @@ Check migration reversibility on an empty feature state and intentional refusal 
 
 Baseline architecture approval was given on 2026-10-19, including the lifecycle and migration choices.
 The review correction adds durable draft-file provenance and authenticated streaming; the user approved this amendment on 2026-10-19.
-Targeted independent review passed; [review record](review.md). This does not authorize implementation.
-Request one independent architecture review and resolve blocking findings before finalizing this specification-only task.
-No live database schema or provider delivery behavior has been verified. Informix is not involved.
+Targeted independent design review passed; [review record](review.md).
+The user subsequently authorized implementation as a local patch. See [implementation verification](verification.md).
+Local PostgreSQL migration behavior is verified. Production schema and provider delivery remain unverified. Informix is not involved.
 
 ## Target data contract
 

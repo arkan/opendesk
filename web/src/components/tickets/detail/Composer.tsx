@@ -1,3 +1,4 @@
+import { useBlocker } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRightLeft, Check, ChevronDown, Loader2, Lock, MessageSquareText, Paperclip, TriangleAlert, X } from "lucide-react";
 import { Morph } from "@/components/motion";
@@ -9,12 +10,17 @@ import { create } from "zustand";
 import { DropdownMenu as M } from "radix-ui";
 import type { Activity, Attachment, Mailbox, Member, Message, SavedReply, Ticket, TicketStatus } from "@/lib/api/types";
 import { api, type SendMessageBody } from "@/lib/api/endpoints";
+import { draftApi, draftIdentity, draftKey, type DraftContent, type DraftPreview, type TicketDraft } from "@/lib/api/drafts";
+import { useSharedDraft } from "./useSharedDraft";
+import { Dialog } from "@/components/ui/dialog";
+import { sanitizeHtml } from "@/lib/sanitize";
 import { errorMessage } from "@/lib/api/client";
 import { q, qk } from "@/lib/queries";
 import { useSession } from "@/lib/session";
 import { realtime } from "@/lib/realtime/manager";
 import { bytes } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { config } from "@/lib/config";
 import { keyName } from "@/lib/hotkeys";
 import { Button } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/tabs";
@@ -159,8 +165,30 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
   const writingArea = useRef<HTMLDivElement>(null);
   const leaving = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(leaving.current), []);
-  const draft = useDrafts((s) => s[ticket.id]) ?? emptyDraft;
-  const setDraft = useCallback((p: Partial<Draft>) => useDrafts.setState((s) => ({ [ticket.id]: { ...(s[ticket.id] ?? emptyDraft), ...p } })), [ticket.id]);
+  const localDraft = useDrafts((s) => s[ticket.id]) ?? emptyDraft;
+  const sharedEnabled = config.sharedDrafts && ticket.channel === "email";
+  const shared = useSharedDraft(ticket.id, sharedEnabled);
+  const sharedReply = sharedEnabled && localDraft.mode === "reply";
+  const sharedMachine = shared.machine;
+  const draft: Draft = sharedReply ? {
+    ...localDraft, html: shared.content.body_html, cc: shared.content.cc, bcc: shared.content.bcc,
+    mailboxId: shared.content.mailbox_id ?? undefined,
+    showCc: localDraft.showCc || shared.content.cc.length > 0 || shared.content.bcc.length > 0,
+  } : localDraft;
+  const setDraft = useCallback((p: Partial<Draft>) => {
+    const current = useDrafts.getState()[ticket.id] ?? emptyDraft;
+    const targetMode = p.mode ?? current.mode;
+    const isShared = sharedEnabled && targetMode === "reply";
+    if (isShared) {
+      const patch: Partial<DraftContent> = {};
+      if (p.html !== undefined) patch.body_html = p.html;
+      if (p.cc !== undefined) patch.cc = p.cc;
+      if (p.bcc !== undefined) patch.bcc = p.bcc;
+      if ("mailboxId" in p) patch.mailbox_id = p.mailboxId ?? null;
+      if (Object.keys(patch).length && sharedMachine.state.loaded) sharedMachine.edit(patch);
+      useDrafts.setState({ [ticket.id]: { ...current, mode: targetMode, showCc: p.showCc ?? current.showCc } });
+    } else useDrafts.setState({ [ticket.id]: { ...current, ...p } });
+  }, [ticket.id, sharedEnabled, sharedMachine]);
   const { mode } = draft;
 
   const { data: members } = useQuery(q.members());
@@ -194,6 +222,8 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
   const varsRef = useRef(vars);
   const catalogRef = useRef(catalog);
   const tRef = useRef(t);
+  const sharedReadyRef = useRef(true);
+  sharedReadyRef.current = !sharedEnabled || shared.loaded;
   membersRef.current = members ?? [];
   repliesRef.current = replies;
   modeRef.current = mode;
@@ -208,6 +238,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
   // A reply that can't be filled goes in as written (the server fills it on send).
   const [filling, setFilling] = useState(0);
   const insertSavedReply = useCallback((html: string, clear?: () => void) => {
+    if (modeRef.current === "reply" && !sharedReadyRef.current) return;
     clear?.();
     if (modeRef.current === "note") return editor.current?.insertHtml(html);
     const id = ticketRef.current;
@@ -245,7 +276,60 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
     if (!catalog.loading) refreshTags(editor.current?.editor);
   }, [catalog.loading, catalog.known]);
 
-  const [uploads, setUploads] = useState<Upload[]>([]);
+  const [localUploads, setLocalUploads] = useState<Upload[]>([]);
+  const [replyUploads, setReplyUploads] = useState<Upload[]>([]);
+  const uploadGeneration = useRef(0);
+  const uploads = sharedReply ? replyUploads : localUploads;
+  useEffect(() => {
+    if (!shared.dirty && shared.loaded) setReplyUploads((items) => items.filter((u) => u.status !== "done" || shared.content.attachment_ids.includes(u.attachment!.id)));
+  }, [shared.loaded, shared.dirty, shared.content.attachment_ids]);
+  useBlocker({
+    shouldBlockFn: () => {
+      if (replyUploads.some((u) => u.status === "uploading")) { toast.error("Wait for the attachments to finish uploading before leaving."); return true; }
+      return false;
+    },
+    enableBeforeUnload: () => replyUploads.some((u) => u.status === "uploading"),
+  });
+  const setUploads = sharedReply ? setReplyUploads : setLocalUploads;
+  const savedAttachments = sharedReply ? (shared.server?.attachments ?? []).filter((a) => shared.content.attachment_ids.includes(a.id) && !uploads.some((u) => u.attachment?.id === a.id)) : [];
+  const [review, setReview] = useState<{ preview: DraftPreview; status?: TicketStatus } | null>(null);
+  const [conflictReview, setConflictReview] = useState<{ draft: TicketDraft | null } | null>(null);
+  const [discardDraft, setDiscardDraft] = useState<TicketDraft | null>(null);
+  const [reviewing, setReviewing] = useState(false);
+  const draftSend = useMutation({
+    mutationFn: async () => {
+      if (!review) throw new Error("Review the draft before sending.");
+      if (shared.dirty || shared.conflict || shared.server?.id !== review.preview.draft_id || shared.server?.revision !== review.preview.revision)
+        throw new Error("The draft changed. Review it again before sending.");
+      return draftApi.send(ticket.id, { draft_id: review.preview.draft_id, expected_revision: review.preview.revision, review_token: review.preview.review_token, status: review.status });
+    },
+    onSuccess: () => {
+      uploadGeneration.current++;
+      shared.machine.reload(null);
+      setReplyUploads((items) => { items.forEach((u) => u.preview && URL.revokeObjectURL(u.preview)); return []; });
+      setReview(null);
+      ai.dismissSources();
+      for (const key of [draftKey(ticket.id), qk.ticket(ticket.id), qk.messages(ticket.id), qk.activities(ticket.id), qk.counts]) void qc.invalidateQueries({ queryKey: key });
+    },
+    onError: (e) => {
+      setReview(null); toast.error(e, "Could not confirm the send. Check the conversation before retrying.");
+      for (const key of [draftKey(ticket.id), qk.messages(ticket.id), qk.ticket(ticket.id)]) void qc.invalidateQueries({ queryKey: key });
+    },
+  });
+  const inspectConflict = async () => {
+    try { setConflictReview(await draftApi.get(ticket.id)); } catch (e) { toast.error(e, "Could not load the shared draft"); }
+  };
+  const discard = async () => {
+    try {
+      if (!discardDraft) return;
+      await draftApi.discard(ticket.id, draftIdentity(discardDraft));
+      uploadGeneration.current++;
+      shared.machine.reload(null);
+      setReplyUploads((items) => { items.forEach((u) => u.preview && URL.revokeObjectURL(u.preview)); return []; });
+      setDiscardDraft(null);
+      await qc.invalidateQueries({ queryKey: draftKey(ticket.id) });
+    } catch (e) { toast.error(e, "Could not discard the draft"); }
+  };
   const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const send = useSend(ticket, teams);
@@ -253,7 +337,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
   const ai = useComposerAi(editor, ticket, mode);
   /** Ollie drafts a reply; false when it can't here (AI off, or the composer is disabled). */
   const draftReply = () => {
-    if (!ai.available || disabled) return false;
+    if (!ai.available || disabled || (sharedEnabled && !shared.loaded)) return false;
     if (mode !== "reply") setDraft({ mode: "reply" });
     ai.draft();
     return true;
@@ -282,18 +366,30 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
   }, [hasDraft, mode]);
 
   const upload = (files: FileList | File[]) => {
+    if (sharedReply && !shared.loaded) return;
+    const generation = uploadGeneration.current;
+    let attachmentCount = shared.machine.state.content.attachment_ids.length + uploads.filter((u) => u.status === "uploading").length;
     for (const file of Array.from(files)) {
+      if (sharedReply && attachmentCount >= 20) {
+        toast.error("A shared draft can contain up to 20 attachments."); break;
+      }
       if (file.size > 25 * 1024 * 1024) {
         toast.error(t("composer.tooLarge", { name: file.name }));
         continue;
       }
+      attachmentCount++;
       const key = `${file.name}-${file.size}-${Math.random().toString(36).slice(2)}`;
       const preview = file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined;
       setUploads((u) => [...u, { key, file, status: "uploading", preview }]);
       api.attachments
         .upload(file)
-        .then((attachment) => setUploads((u) => u.map((x) => (x.key === key ? { ...x, status: "done", attachment } : x))))
+        .then((attachment) => {
+          if (sharedReply && generation !== uploadGeneration.current) return;
+          setUploads((u) => u.map((x) => (x.key === key ? { ...x, status: "done", attachment } : x)));
+          if (sharedReply) shared.machine.edit({ attachment_ids: [...shared.machine.state.content.attachment_ids, attachment.id] });
+        })
         .catch((e) => {
+          if (sharedReply && generation !== uploadGeneration.current) return;
           setUploads((u) => u.map((x) => (x.key === key ? { ...x, status: "error" } : x)));
           toast.error(e, t("composer.uploadFailed", { name: file.name }));
         });
@@ -303,7 +399,8 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
   const busyUploads = uploads.some((u) => u.status === "uploading");
   // A reply from an address that has no way to send is refused (mailbox_cannot_send): say so up front.
   const noSender = mode === "reply" && ticket.channel === "email" && teams.mailbox(draft.mailboxId ?? ticket.mailbox_id)?.sending === "system_off";
-  const canSend = !!draft.html && !busyUploads && !disabled && !ai.busy && !noSender && !filling;
+  const sharedBlocked = sharedReply && (!shared.loaded || !!shared.query.error || shared.conflict || !!shared.error || reviewing || draftSend.isPending);
+  const canSend = (!!draft.html || (sharedReply && shared.content.attachment_ids.length > 0)) && !busyUploads && !disabled && !ai.busy && !noSender && !filling && !sharedBlocked;
 
   // The send button's moment: sending while the request is out, then a check.
   const [sent, setSent] = useState(false);
@@ -317,10 +414,23 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
     }
     wasPending.current = send.isPending;
   }, [send.isPending, send.isSuccess]);
-  const phase = send.isPending ? "sending" : sent ? "sent" : "idle";
+  const phase = send.isPending || draftSend.isPending || reviewing ? "sending" : sent ? "sent" : "idle";
 
-  const submit = (status?: TicketStatus) => {
+  const submit = async (status?: TicketStatus) => {
     if (!canSend) return;
+    if (sharedReply) {
+      setReviewing(true);
+      try {
+        const saved = await shared.machine.flush();
+        if (!saved) return;
+        const preview = await draftApi.preview(ticket.id, draftIdentity(saved));
+        if (shared.machine.state.dirty || shared.machine.state.server?.revision !== preview.revision)
+          throw new Error("The draft changed. Review it again.");
+        setReview({ preview, status });
+      } catch (e) { toast.error(e, "Could not prepare the draft for review"); }
+      finally { setReviewing(false); }
+      return;
+    }
     const body: SendMessageBody = {
       kind: mode,
       body_html: draft.html,
@@ -355,7 +465,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
   const note = mode === "note";
   const recipient = ticket.contact?.email ?? ticket.contact?.name ?? t("composer.theCustomer");
   // The editor opens up while in use or holding a draft, and rests small otherwise.
-  const open = focused || !!draft.html || uploads.length > 0;
+  const open = focused || !!draft.html || uploads.length > 0 || savedAttachments.length > 0;
 
   // mod+J in the reply box asks Ollie for a draft; everywhere else it opens Ollie
   // (AssistantRoot). Handled here first, so the app-wide binding sees it as taken.
@@ -367,7 +477,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
   return (
     <div className="shrink-0 px-5 pb-4" onKeyDown={onComposerKey}>
       <div className="mx-auto w-full max-w-[820px]">
-        {!disabled && (
+        {!disabled && (!sharedEnabled || shared.loaded) && (
           <SuggestedReplyCard
             ticket={ticket}
             hasDraft={!!draft.html}
@@ -493,22 +603,24 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
             <RichEditor
               ref={editor}
               value={draft.html}
+              syncWhileFocused={sharedReply && !shared.dirty}
               onChange={(html) => setDraft({ html })}
               placeholder={note ? t("composer.notePlaceholder") : t("composer.replyPlaceholder", { braces: "{{", interpolation: { escapeValue: false } })}
               extensions={extensions}
               onSubmit={() => submit()}
               onKeyDown={onKeyDown}
-              editable={!disabled && !ai.busy}
+              editable={!disabled && !ai.busy && (!sharedReply || shared.loaded) && !draftSend.isPending}
               contentClassName={cn("max-h-[40vh] transition-[min-height] duration-200 ease-out motion-reduce:transition-none", open ? "min-h-[96px]" : "min-h-[44px]")}
               ariaLabel={note ? "Note" : "Reply"}
               toolbarEnd={
                 <>
-                  <ComposerAiMenu ai={ai} hasDraft={!!draft.html} disabled={disabled} />
+                  <ComposerAiMenu ai={ai} hasDraft={!!draft.html} disabled={disabled || (sharedReply && !shared.loaded)} />
                   <input ref={fileInput} type="file" multiple hidden onChange={(e) => e.target.files && upload(e.target.files)} />
                   <Tooltip content={t("composer.attach")}>
                     <button
                       type="button"
                       aria-label="Attach files"
+                      disabled={sharedReply && (!shared.loaded || draftSend.isPending)}
                       onClick={() => fileInput.current?.click()}
                       className="flex size-7 items-center justify-center rounded-md text-fg-3 transition-colors hover:bg-hover hover:text-fg active:scale-95"
                     >
@@ -541,8 +653,18 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
               }
             />
           </div>
+          {sharedReply && (
+            <div className="flex flex-wrap items-center gap-2 border-t border-line-soft px-3 py-2 text-xs text-fg-3" role="status">
+              <span className="flex-1">{shared.query.error ? "Could not load the shared draft" : !shared.loaded ? "Loading shared draft…" : shared.conflict ? "The shared draft changed. Your local edits are preserved." : shared.error ? errorMessage(shared.error, "Draft not saved") : shared.saving ? "Saving shared draft…" : shared.dirty ? "Unsaved changes" : shared.server ? "Shared draft saved" : "Replies are saved as shared drafts"}</span>
+              {shared.query.error && <button type="button" className="underline" onClick={() => void shared.query.refetch()}>Retry</button>}
+              {shared.conflict && <button type="button" className="underline" onClick={() => void inspectConflict()}>Review changes</button>}
+              {!!shared.error && !shared.conflict && <button type="button" className="underline" onClick={() => void shared.machine.flush().catch((e) => toast.error(e, "Draft not saved"))}>Retry save</button>}
+              {shared.server && !shared.conflict && <button type="button" className="underline" disabled={shared.saving || draftSend.isPending || busyUploads} onClick={() => void shared.machine.flush().then((saved) => setDiscardDraft(saved)).catch((e) => toast.error(e, "Draft not saved"))}>Discard</button>}
+            </div>
+          )}
           <ComposerSources ai={ai} />
           <ComposerAiStatus ai={ai} />
+          {savedAttachments.length > 0 && <div className="flex flex-wrap gap-2 px-3 pb-2">{savedAttachments.map((a) => <div key={a.id} className="flex items-center gap-2 rounded-md border border-line px-2 py-1 text-xs"><DraftAttachment attachment={a} /><button type="button" aria-label={`Remove ${a.filename}`} className="flex size-6 items-center justify-center rounded-sm hover:bg-hover" onClick={() => shared.machine.edit({ attachment_ids: shared.content.attachment_ids.filter((id) => id !== a.id) })}><X className="size-3" /></button></div>)}</div>}
           {uploads.length > 0 && (
             <div className="flex flex-wrap gap-1.5 px-3 pb-2.5">
               {uploads.map((u) => (
@@ -555,7 +677,11 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
                   {u.status === "uploading" ? (
                     <Loader2 className="size-3.5 shrink-0 animate-spin text-fg-4" />
                   ) : (
-                    <button type="button" aria-label={`Remove ${u.file.name}`} onClick={() => setUploads((x) => x.filter((y) => y.key !== u.key))} className="flex size-5 shrink-0 items-center justify-center rounded-sm text-fg-4 hover:bg-hover hover:text-fg">
+                    <button type="button" aria-label={`Remove ${u.file.name}`} onClick={() => {
+                      setUploads((x) => x.filter((y) => y.key !== u.key));
+                      if (sharedReply && u.attachment) shared.machine.edit({ attachment_ids: shared.content.attachment_ids.filter((id) => id !== u.attachment!.id) });
+                      if (u.preview) URL.revokeObjectURL(u.preview);
+                    }} className="flex size-5 shrink-0 items-center justify-center rounded-sm text-fg-4 hover:bg-hover hover:text-fg">
                       <X className="size-3" />
                     </button>
                   )}
@@ -569,12 +695,46 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
             </div>
           )}
         </div>
+        <Dialog open={!!review} onOpenChange={(o) => !o && !draftSend.isPending && setReview(null)} title="Review email" size="lg"
+          footer={<><Button variant="ghost" onClick={() => setReview(null)} disabled={draftSend.isPending}>Back to draft</Button><Button disabled={draftSend.isPending || shared.dirty || shared.conflict || shared.server?.revision !== review?.preview.revision} onClick={() => draftSend.mutate()}>{review?.status === "solved" ? "Send and resolve" : "Send email"}</Button></>}>
+          {review && <DraftReview preview={review.preview} />}
+        </Dialog>
+        <Dialog open={!!conflictReview} onOpenChange={(o) => !o && setConflictReview(null)} title="Shared draft changed" description="Your local edits are preserved. Review the latest shared version before choosing which version to keep."
+          footer={<><Button variant="ghost" onClick={() => setConflictReview(null)}>Keep editing locally</Button><Button variant="ghost" onClick={() => { uploadGeneration.current++; shared.machine.reload(conflictReview!.draft); setReplyUploads((items) => { items.forEach((u) => u.preview && URL.revokeObjectURL(u.preview)); return []; }); setConflictReview(null); }}>Use shared version</Button><Button onClick={() => { void shared.machine.replace(conflictReview!.draft).then(() => setConflictReview(null)).catch((e) => toast.error(e, "Draft not saved")); }}>Replace with my edits</Button></>}>
+          {conflictReview?.draft ? <div className="space-y-3"><p className="text-xs text-fg-3">Cc: {conflictReview.draft.cc.join(", ") || "None"} · Bcc: {conflictReview.draft.bcc.join(", ") || "None"}</p><div className="prose-od" dangerouslySetInnerHTML={{ __html: sanitizeHtml(conflictReview.draft.body_html) }} /><p className="text-xs">{conflictReview.draft.attachments.map((a) => a.filename).join(", ")}</p></div> : <p className="text-sm">The shared draft has been sent or discarded.</p>}
+        </Dialog>
+        <Dialog open={!!discardDraft} onOpenChange={(o) => !o && setDiscardDraft(null)} title="Discard shared draft?" description="This removes the draft for everyone on this ticket. This action cannot be undone."
+          footer={<><Button variant="ghost" onClick={() => setDiscardDraft(null)}>Cancel</Button><Button variant="danger-solid" onClick={() => void discard()}>Discard draft</Button></>} />
         <SuggestionPopup />
         <VarSuggestPopup />
       </div>
     </div>
   );
 });
+
+function DraftAttachment({ attachment }: { attachment: Attachment }) {
+  const [loading, setLoading] = useState(false);
+  const download = async () => {
+    setLoading(true);
+    try {
+      const blob = await draftApi.attachment(attachment.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = attachment.filename;
+      a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) { toast.error(e, "Could not download the attachment"); }
+    finally { setLoading(false); }
+  };
+  return <button type="button" disabled={loading} className="min-h-6 max-w-64 truncate underline" onClick={() => void download()}>{attachment.filename} ({bytes(attachment.size_bytes)})</button>;
+}
+
+function DraftReview({ preview }: { preview: DraftPreview }) {
+  return <div className="ph-no-capture space-y-3 text-sm" data-ph-mask>
+    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs"><dt>From</dt><dd>{preview.from.name} &lt;{preview.from.email}&gt;</dd><dt>To</dt><dd>{preview.to.join(", ")}</dd>{preview.cc.length > 0 && <><dt>Cc</dt><dd>{preview.cc.join(", ")}</dd></>}{preview.bcc.length > 0 && <><dt>Bcc</dt><dd>{preview.bcc.join(", ")}</dd></>}<dt>Subject</dt><dd>{preview.subject}</dd></dl>
+    <div className="prose-od border-t border-line pt-3" dangerouslySetInnerHTML={{ __html: sanitizeHtml(preview.body_html) }} />
+    <div className="prose-od" dangerouslySetInnerHTML={{ __html: sanitizeHtml(preview.signature_html) }} />
+    <div className="flex flex-wrap gap-2">{preview.attachments.map((a) => <DraftAttachment key={a.id} attachment={a} />)}</div>
+  </div>;
+}
 
 /**
  * Who the customer sees the reply from, and from which address: the address's From

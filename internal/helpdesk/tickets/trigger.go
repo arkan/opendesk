@@ -494,6 +494,10 @@ func (r *triggerRun) addMessage(ctx context.Context, act hd.Action, f facts) err
 	nm := domain.NewMessage{WorkspaceID: r.wid, TicketID: r.tid, Kind: kind, Direction: "outbound", AuthorType: "system",
 		BodyHTML: html, BodyText: text, Subject: replySubject(f.subject), Trigger: "none"}
 	if kind == "reply" && f.channel == domain.ChannelEmail {
+		guarded, err := domain.PreparationGuarded(ctx, r.tx, r.wid, r.tid)
+		if err != nil || guarded {
+			return err
+		}
 		if f.contactEmail == nil || *f.contactEmail == "" {
 			return nil
 		}

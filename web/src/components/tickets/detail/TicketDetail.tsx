@@ -420,7 +420,7 @@ export default function TicketDetail({
             contactName={t?.contact?.name}
             receivedAt={t && t.channel !== "email" ? null : t?.received_at}
           />
-          {t && canEdit && <Composer ref={composer} ticket={t} />}
+          {t && canEdit && <Composer key={t.id} ref={composer} ticket={t} />}
         </div>
         <AnimatePresence initial={false}>
           {panel && (
