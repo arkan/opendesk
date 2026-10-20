@@ -21,6 +21,7 @@ service (opendesk.sh) and as a self-host, and **the two are the same code**.
 | `contracts/` | **the contracts between parts**: API, events, realtime, tokens. Read before changing an interface | |
 | `migrations/` | SQL migrations, embedded in the binary, applied at boot | |
 | `brand/` | logo, icons, tokens | |
+| `qa/` | `pnpm qa`, recorded proof (Playwright on the mocks) and the gate every pull request is held to; `qa/README.md` | your machine; the gate in CI (`Proof`) |
 
 Data: Postgres. Hosted = **PlanetScale Postgres**, reached only over AWS PrivateLink
 (`DATABASE_URL` is PgBouncer on 6432 for request handlers; `DATABASE_URL_DIRECT` is the
@@ -44,8 +45,11 @@ Self-hosted = `opendesk` + `realtime` + `postgres` behind Caddy on one domain: `
   (mailboxes, inbound, outbound), `internal/helpdesk` (tickets, contacts, KB, widget,
   SLA, automations, reports), `internal/billing` (Stripe, plans; Cloud only),
   `internal/ai` (AI features, providers, embeddings) and `internal/integrations`
-  (connected products over MCP, ticket links; `contracts/integrations.md`), and `internal/admin`
-  (the instance admin API `/v1/admin/*`, its own sessions and audit log; `contracts/admin.md`). Plan limits and AI usage go
+  (connected products over MCP, ticket links; `contracts/integrations.md`), `internal/supportchannels`
+  (Slack, Discord and Telegram threads where agents work tickets; `contracts/support-channels.md`), `internal/admin`
+  (the instance admin API `/v1/admin/*`, its own sessions and audit log; `contracts/admin.md`),
+  and `internal/collab` (Collab: members' own mail accounts, private or shared, synced both ways
+  with Gmail, Microsoft Graph or IMAP; never tickets; `contracts/collab.md`). Plan limits and AI usage go
   through `d.Plan` (`internal/plan`, `contracts/billing.md`); AI through `internal/ai`
   (`contracts/ai.md`). Each exposes `Register`, `RegisterWorkers`, `Periodic`,
   `Background` (see `internal/app`). Shared ticket writes live in `internal/domain`:
@@ -82,7 +86,9 @@ Self-hosted = `opendesk` + `realtime` + `postgres` behind Caddy on one domain: `
 The cloud is the self-host plus configuration. Billing is on only when `STRIPE_SECRET_KEY`
 is set; without it every workspace is `self_hosted` with no limits. AI is on when a provider
 key is set (`ANTHROPIC_API_KEY`, or any OpenAI-compatible endpoint, including local models).
-Never gate a feature on plan: plans differ only in limits (`contracts/billing.md`).
+Never gate a feature on plan: plans differ only in limits (`contracts/billing.md`). The one
+exception is Collab, which is the collab plan's (`plan.Entitlements.Collab`, `d.Plan.RequireCollab`);
+a self-hosted instance has it for every workspace unless `COLLAB=false`.
 Customer replies go out through each mailbox's own Google, Microsoft or SMTP connection; the
 platform mailer (SES on the cloud) sends only platform mail. Sending replies through it is an
 instance option (`MAILBOX_SYSTEM_SEND`), off on the cloud.
@@ -100,7 +106,9 @@ an apply from a local copy alone is undone by the next deploy (`deploy/terraform
 
 opendesk Cloud connects Google mailboxes send-only (`gmail.send`); IMAP sync, which needs the
 restricted `https://mail.google.com/` scope, is an instance option (`MAILBOX_IMAP`) for
-self-hosters with their own Google client. The invariants below follow **ADA CASA Tier 1**
+self-hosters with their own Google client. Collab mail accounts (`gmail.modify`) connect through
+`COLLAB_GOOGLE_CLIENT_ID`, on opendesk Cloud a Google project of its own, so the mailbox
+client's consent stays `gmail.send`. The invariants below follow **ADA CASA Tier 1**
 (ASVS 4.0.3 Level 1) and hold for every change. The repo is public and self-hosted:
 **describe the invariant, never the gap** in comments, commits and docs.
 
@@ -149,6 +157,9 @@ Input and output
   stored HTML without that.
 - Inbound email renders in a sandboxed frame without scripts, and its images from other
   sites (including CSS `url()`) load only when the reader asks (`web/src/lib/sanitize.ts`).
+  Collab mail is inbound email: the same sanitizing before storage and the same frame.
+- A private Collab account and its mail are visible to the member who connected it alone,
+  admins included; Collab events go only to the people who see what changed (`events.Event.Users`).
 - Webhook and other outbound URLs are HTTPS and refuse private, loopback and link-local
   targets (SSRF), except on a development instance.
 
@@ -185,6 +196,36 @@ Errors, logging, data
 - Copy: sentence case, plain words, no em dashes.
 - The social card (`site/public/og.jpg`, also the docs' and GitHub's) is the hero's app window
   on its painting. After changing that window, run `pnpm og` in `site/` and commit the copies.
+
+## QA and proof on pull requests
+
+Every pull request carries a QA section, and every one that changes something people see
+carries recorded proof of it. This is not a judgment call: CI's `Proof` check (main's copy of
+`qa/lib/gate.ts`) fails without them, and the Claude Code hooks in `.claude/settings.json` hold
+an agent to the same rule before it opens a pull request and before it finishes.
+`qa/README.md` is the playbook; read it before the first recording.
+
+- **QA, always.** `pnpm qa` in `qa/` runs CI's checks for every area the branch changes, on the
+  committed HEAD. Fix what fails, commit, run it again. A run vouches for one commit: after a
+  follow-up commit, run it again.
+- **Stills for every visible change.** Anything under `web/src`, `web/widget/src`, `admin/src`,
+  `site/`, the docs chrome, `desktop/src`, `ios/` or `brand/` (`qa/lib/policy.ts` is the list)
+  needs stills of the screens it changes. Nothing is too small: a label, a colour or a spacing
+  nudge is what a still shows best. Shoot the changed screen in the state the change is about, not
+  a generic page.
+- **A walkthrough video where it behaves.** Every surface but the site and docs also needs a video,
+  and every recorded flow makes one: walk the changed interaction (open it, use it, show the result).
+- Write a flow in `qa/flows/` from the code you changed and run `pnpm proof <filter>`. Everything
+  records without a backend: the app, widget and desktop app on the web mock, the admin panel on
+  its mock, the iPhone app in demo mode on its own simulator. When the mock or demo lacks the state
+  the change is about, extend it (`web/src/mock/`, `admin/src/mock/`, `ios/Opendesk/Core/Demo/`)
+  in the same pull request.
+- Read every still once before sharing. It is what the reviewer sees; a still of the wrong screen
+  or a loading state is not proof.
+- Open the pull request with `pnpm share --title ... --body-file ...`, never `gh pr create`. After
+  every follow-up push: `pnpm qa`, record again if a surface changed, `pnpm share`.
+- Never apply the `qa-exempt` label, merge with `--admin` or change rulesets: those are the
+  maintainer's. Record from the main agent only; a machine-wide lock runs one recording at a time.
 
 ## Commits
 

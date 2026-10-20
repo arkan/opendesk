@@ -68,6 +68,31 @@ func TestNotificationSubjects(t *testing.T) {
 	}
 }
 
+// A web push reads like the notification's email: its heading, the ticket on one short
+// line, and the same link into its workspace.
+func TestWebPushText(t *testing.T) {
+	s := Site{AppURL: "https://app.example"}
+	wid, tid := uuid.New(), uuid.New()
+	title, body, link := WebPush(s, wid, Note{Type: "assigned", TicketID: &tid, TicketNumber: 1095,
+		TicketSubject: "SAML with\r\nOkta", Data: map[string]any{"actor": map[string]any{"name": "Maya"}}})
+	if title != "Maya assigned you a ticket" || body != "#1095 SAML with Okta" ||
+		link != "https://app.example/inbox/mine/"+tid.String()+"?ws="+wid.String() {
+		t.Errorf("assigned: %q %q %q", title, body, link)
+	}
+	_, body, _ = WebPush(s, wid, Note{Type: "mentioned", TicketID: &tid, TicketNumber: 1, TicketSubject: strings.Repeat("word ", 60)})
+	if len([]rune(body)) > 120 {
+		t.Errorf("long subject not clipped: %d runes", len([]rune(body)))
+	}
+	title, body, link = WebPush(s, wid, Note{Type: "ai_balance_out"})
+	if title != "Your AI balance is used up" || body != "" || link != "https://app.example/settings/billing?ws="+wid.String() {
+		t.Errorf("billing: %q %q %q", title, body, link)
+	}
+	_, body, _ = WebPush(s, wid, Note{Type: "collab_mention", TicketSubject: "Quarterly\nnumbers"})
+	if body != "Quarterly numbers" {
+		t.Errorf("collab: %q", body)
+	}
+}
+
 // A list email groups by ticket, collapses one person's bulk assignment, leads with what
 // is urgent, and its subject names the most pressing line and how many more there are.
 func TestListGroupsAndLeads(t *testing.T) {

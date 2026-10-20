@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCollab } from "@/lib/collab/hooks";
 import { Link } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "motion/react";
 import { BellOff, BellRing, CalendarClock, Check, ChevronDown, Clock, Gauge, Laptop, MailCheck, MailX, Moon, Play, Send, Smartphone, Zap } from "lucide-react";
@@ -42,6 +43,7 @@ import {
 } from "@/lib/notificationPrefs";
 import { q, qk } from "@/lib/queries";
 import { useWorkspace } from "@/lib/session";
+import { subscribeWebPush } from "@/lib/webPush";
 import { tone, type Tone } from "@/lib/tones";
 import { useNow } from "@/lib/useNow";
 
@@ -173,13 +175,14 @@ function HoldNotices({ prefs, onChange }: { prefs: NotificationPreferences; onCh
 }
 
 /**
- * In the desktop app, OS notifications need the system's permission: say when it is
- * blocked, and ask when it was never asked.
+ * OS notifications need permission, from the system in the desktop app and from the
+ * browser elsewhere: say when it is blocked, and ask when it was never asked.
  */
 function DesktopPermission() {
   const { t } = useTranslation("settings");
-  const supported = isDesktop && typeof window !== "undefined" && "Notification" in window;
+  const supported = typeof window !== "undefined" && "Notification" in window;
   const [perm, setPerm] = useState<NotificationPermission | null>(supported ? Notification.permission : null);
+  const { data: config } = useQuery(q.authConfig());
   useEffect(() => {
     if (!supported) return;
     const sync = () => setPerm(Notification.permission);
@@ -190,17 +193,22 @@ function DesktopPermission() {
   if (perm === "denied") {
     return (
       <Note icon={<BellOff />} strong>
-        {t("notifications.desktop.blocked")}
+        {t(isDesktop ? "notifications.desktop.blocked" : "notifications.desktop.blockedBrowser")}
       </Note>
     );
   }
   return (
     <Note icon={<BellRing />} strong>
-      {t("notifications.desktop.ask")}{" "}
+      {t(isDesktop ? "notifications.desktop.ask" : "notifications.desktop.askBrowser")}{" "}
       <button
         type="button"
         className="font-medium text-fg underline decoration-line-strong underline-offset-2 hover:decoration-fg"
-        onClick={() => void Notification.requestPermission().then(setPerm)}
+        onClick={() =>
+          void Notification.requestPermission().then((p) => {
+            setPerm(p);
+            if (p === "granted") void subscribeWebPush(config?.web_push_key).catch(() => undefined);
+          })
+        }
       >
         {t("notifications.desktop.allow")}
       </button>
@@ -453,7 +461,9 @@ const GRID = "grid grid-cols-[minmax(0,1fr)_repeat(4,64px)] items-center gap-x-1
 function TypesSection({ prefs, onChange }: { prefs: NotificationPreferences; onChange: (p: NotificationPreferencesPatch) => void }) {
   const { t } = useTranslation("settings");
   const workspace = useWorkspace();
-  const groups = groupTypes(prefs.types);
+  const collabOn = useCollab().enabled;
+  // Collab's mail notifications are listed only while the workspace has Collab.
+  const groups = groupTypes(prefs.types).filter((g) => g.group !== "mail" || collabOn);
   const emailOff = prefs.email_cadence === "off";
   const column = (c: NotificationChannel) => t(`notifications.channels.${c}`);
   const gap = useGapWords();

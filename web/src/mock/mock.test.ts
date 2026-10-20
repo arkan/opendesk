@@ -52,6 +52,22 @@ describe("mock backend", () => {
     expect((await call("PATCH", `/v1/kb/articles/${art.id}`, { brand_id: "nope" })).status).toBe(422);
   });
 
+  it("breaks each sidebar row's tickets down into awaiting, urgent and overdue", async () => {
+    const c = (await call("GET", "/v1/tickets/counts")).body;
+    const keys = ["ticket_folder:unassigned", "ticket_folder:mine", "ticket_folder:open", "ticket_folder:pending", "team:mine",
+      ...Object.keys(c.teams).map((id) => `team:${id}`), ...Object.keys(c.views).map((id) => `view:${id}`)];
+    expect(Object.keys(c.stats).sort()).toEqual(keys.sort());
+    const open = c.stats["ticket_folder:open"];
+    expect(open.urgent).toBeLessThanOrEqual(c.open);
+    expect(open.awaiting).toBeGreaterThan(0);
+    expect(open.urgent).toBeGreaterThan(0);
+    // A view's stats cover its own tickets.
+    for (const id of Object.keys(c.views)) {
+      const s = c.stats[`view:${id}`];
+      expect(Math.max(s.awaiting, s.urgent, s.overdue)).toBeLessThanOrEqual(c.views[id]);
+    }
+  });
+
   it("serves every list endpoint the app reads", async () => {
     for (const path of [
       "/v1/me", "/v1/tickets", "/v1/tickets/counts", "/v1/contacts", "/v1/companies", "/v1/tags", "/v1/views",
@@ -60,6 +76,7 @@ describe("mock backend", () => {
       "/v1/saved-replies", "/v1/me/sessions", "/v1/widget/settings", "/v1/workspace", "/v1/search?q=sso",
       "/v1/reports/overview?from=2026-09-12&to=2026-10-11", "/v1/public/help/margin", "/v1/public/csat/demo", "/v1/auth/config",
       "/v1/integrations", "/v1/integrations/catalog",
+      "/v1/support-channels/providers", "/v1/support-channels/connections", "/v1/support-channels/destinations",
     ]) {
       expect((await call("GET", path)).status, path).toBe(200);
     }
@@ -96,6 +113,20 @@ describe("mock backend", () => {
     expect(ev).toContain("activity.created");
     expect((await call("DELETE", `/v1/tickets/${t.id}/links/${link.body.id}`)).status).toBe(204);
     expect((await call("DELETE", `/v1/integrations/${created.body.integration.id}`)).status).toBe(204);
+  });
+
+  it("connects a support channel and routes a team to it", async () => {
+    const created = await call("POST", "/v1/support-channels/connections", { provider: "slack", credentials: { bot_token: "xoxb-example", signing_secret: "secret" } });
+    expect(created.status).toBe(201);
+    const plain = await call("POST", "/v1/support-channels/destinations", { connection_id: created.body.id, external_channel_id: "C1" });
+    expect(plain.status).toBe(201);
+    expect(plain.body.include_notes).toBe(false);
+    const team = (await call("GET", "/v1/teams")).body.data.find((x: { private: boolean }) => !x.private);
+    const notes = await call("POST", "/v1/support-channels/destinations", { connection_id: created.body.id, team_id: team.id, external_channel_id: "C2", include_notes: true });
+    expect(notes.body.include_notes).toBe(true);
+    expect((await call("DELETE", `/v1/support-channels/destinations/${plain.body.id}`)).status).toBe(204);
+    expect((await call("DELETE", `/v1/support-channels/connections/${created.body.id}`)).status).toBe(204);
+    expect((await call("GET", "/v1/support-channels/destinations")).body.data).toEqual([]);
   });
 
   it("sends presence_state when a ticket topic is joined", async () => {

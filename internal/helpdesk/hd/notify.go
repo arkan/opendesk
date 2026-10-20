@@ -17,11 +17,12 @@ import (
 )
 
 // pushJobs enqueues push deliveries in the notification's transaction. It is set at boot
-// on an instance that can push (internal/app); without it notifications stay in-app.
+// (internal/app); without it notifications stay in-app.
 var pushJobs atomic.Pointer[river.Client[pgx.Tx]]
 
 // ConfigurePush makes Notify enqueue a push for every notification of a user with a
-// registered phone (contracts/native.md "Push"). nil turns it off.
+// registered phone or a subscribed browser (contracts/native.md "Push", "Web Push"). nil
+// turns it off.
 func ConfigurePush(jc *river.Client[pgx.Tx]) { pushJobs.Store(jc) }
 
 // Notification types.
@@ -29,7 +30,9 @@ const (
 	NotifyAssigned        = "assigned"
 	NotifyMentioned       = "mentioned"
 	NotifyCustomerReplied = "customer_replied"
-	NotifySLABreached     = "sla_breached"
+	// NotifyThreadReplied: someone outside the team answered a third-party thread.
+	NotifyThreadReplied = "thread_replied"
+	NotifySLABreached   = "sla_breached"
 	// NotifyTeamJoined tells a team's leads that an admin joined it (contracts/teams.md).
 	NotifyTeamJoined = "team_joined"
 )
@@ -125,17 +128,19 @@ func Notify(ctx context.Context, tx pgx.Tx, wid, userID uuid.UUID, typ string, t
 	return enqueuePush(ctx, tx, wid, userID, n.ID)
 }
 
-// enqueuePush queues the push for a stored notification when the user has a phone.
+// enqueuePush queues the push for a stored notification when the user has a phone or a
+// subscribed browser.
 func enqueuePush(ctx context.Context, tx pgx.Tx, wid, userID, notificationID uuid.UUID) error {
 	jc := pushJobs.Load()
 	if jc == nil {
 		return nil
 	}
-	var phone bool
-	if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM push_devices WHERE user_id = $1)`, userID).Scan(&phone); err != nil {
+	var target bool
+	if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM push_devices WHERE user_id = $1)
+		OR EXISTS (SELECT 1 FROM web_push_subscriptions WHERE user_id = $1)`, userID).Scan(&target); err != nil {
 		return fmt.Errorf("notify push devices: %w", err)
 	}
-	if !phone {
+	if !target {
 		return nil
 	}
 	_, err := jc.InsertTx(ctx, tx, jobs.PushNotificationArgs{WorkspaceID: wid, UserID: userID, NotificationID: notificationID},

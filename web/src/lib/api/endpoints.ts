@@ -80,8 +80,22 @@ export type SendMessageBody = {
   mailbox_id?: string;
 };
 
+/** Starts a third-party thread (contracts/api.md "Threads"). */
+export type StartThreadBody = {
+  to: string[];
+  cc?: string[];
+  subject: string;
+  body_html: string;
+  attachment_ids?: string[];
+  mailbox_id?: string;
+  /** Quote the customer's conversation (its last 10 public replies) under the first message. */
+  include_history?: boolean;
+  /** Attachments of the customer's conversation to send along. */
+  forward_attachment_ids?: string[];
+};
+
 /** How a Google or Microsoft connection receives mail. */
-export type MailboxReceive = "forwarding" | "sync";
+export type MailboxReceive = "forwarding" | "sync" | "api";
 
 export type CreateMailboxBody = {
   name: string;
@@ -174,6 +188,8 @@ export const api = {
     /** PNG, JPEG, GIF or WebP, at most 5 MB. */
     uploadAvatar: (file: File | Blob) => http.put<T.User>("/v1/me/avatar", imageForm(file), { workspace: false }),
     removeAvatar: () => http.del<T.User>("/v1/me/avatar", undefined, { workspace: false }),
+    /** Subscribes this browser to web pushes for the current session (contracts/native.md "Web Push"). */
+    webPush: (s: PushSubscriptionJSON) => http.put<void>("/v1/me/web-push", s, { workspace: false }),
     /** Marks you as seen, for auto-away, in the active workspace (notification emails wait while you are active there). */
     heartbeat: () => http.post<void>("/v1/me/heartbeat"),
     password: (current_password: string, new_password: string) =>
@@ -331,6 +347,18 @@ export const api = {
       http.patch<T.Integration>(`/v1/integrations/${id}`, b),
     remove: (id: string) => http.del(`/v1/integrations/${id}`),
   },
+  supportChannels: {
+    providers: () => http.get<{ data: T.SupportChannelProvider[] }>("/v1/support-channels/providers"),
+    connections: () => http.get<{ data: T.SupportChannelConnection[] }>("/v1/support-channels/connections"),
+    connect: (b: { provider: string; name?: string; credentials: Record<string, string> }) =>
+      http.create<T.SupportChannelConnection>("/v1/support-channels/connections", b),
+    disconnect: (id: string) => http.del(`/v1/support-channels/connections/${id}`),
+    destinations: () => http.get<{ data: T.SupportChannelDestination[] }>("/v1/support-channels/destinations"),
+    addDestination: (b: { connection_id: string; team_id?: string; external_channel_id: string; external_channel_name?: string; include_notes?: boolean }) =>
+      http.create<T.SupportChannelDestination>("/v1/support-channels/destinations", b),
+    removeDestination: (id: string) => http.del(`/v1/support-channels/destinations/${id}`),
+    linkCode: () => http.create<{ code: string; expires_at: string }>("/v1/me/support-channel-link-code", {}),
+  },
   imports: {
     list: () => http.get<{ data: T.Import[] }>("/v1/imports"),
     get: (id: string) => http.get<T.Import>(`/v1/imports/${id}`),
@@ -380,11 +408,17 @@ export const api = {
     messages: (id: string) => http.get<T.Page<T.Message>>(`/v1/tickets/${id}/messages`),
     send: (id: string, b: SendMessageBody) => http.create<T.Message>(`/v1/tickets/${id}/messages`, b),
     activities: (id: string) => http.get<T.Page<T.Activity>>(`/v1/tickets/${id}/activities`),
+    threads: (id: string) => http.get<{ data: T.Thread[] }>(`/v1/tickets/${id}/threads`),
+    startThread: (id: string, b: StartThreadBody) => http.create<{ thread: T.Thread; message: T.Message }>(`/v1/tickets/${id}/threads`, b),
+    sendInThread: (id: string, threadId: string, b: { body_html: string; attachment_ids?: string[] }) =>
+      http.create<T.Message>(`/v1/tickets/${id}/threads/${threadId}/messages`, b),
+    updateThread: (id: string, threadId: string, b: { status: T.Thread["status"] }) => http.patch<T.Thread>(`/v1/tickets/${id}/threads/${threadId}`, b),
     /** The ticket's template values with me as the agent, and the signature my reply from `mailbox_id` carries. */
     variables: (id: string, mailboxId?: string | null) =>
       http.get<T.TicketVariables>(`/v1/tickets/${id}/variables`, { query: mailboxId ? { mailbox_id: mailboxId } : undefined }),
-    /** Fills a saved reply for this ticket. */
-    render: (id: string, body_html: string) => http.post<{ body_html: string }>(`/v1/tickets/${id}/render`, { body_html }),
+    /** Fills a saved reply for this ticket; `thread` fills it for a side conversation, without the customer's or the ticket's details. */
+    render: (id: string, body_html: string, thread?: boolean) =>
+      http.post<{ body_html: string }>(`/v1/tickets/${id}/render`, { body_html, thread: thread || undefined }),
     links: (id: string) => http.get<{ data: T.TicketLink[] }>(`/v1/tickets/${id}/links`),
     addLink: (id: string, b: { url: string; title?: string; integration_id?: string }) => http.create<T.TicketLink>(`/v1/tickets/${id}/links`, b),
     removeLink: (id: string, linkId: string) => http.del(`/v1/tickets/${id}/links/${linkId}`),
@@ -457,16 +491,18 @@ export const api = {
     test: (id: string) => http.post<T.MailboxTest>(`/v1/mailboxes/${id}/test`),
     /**
      * receive: forwarding (the default) connects to send only; sync also receives over
-     * IMAP, which is 422 imap_off on an instance with IMAP receiving off.
+     * IMAP, which is 422 imap_off on an instance with IMAP receiving off; api reads the
+     * inbox directly, which is 422 api_sync_unavailable without Collab.
      */
-    oauthStart: (provider: "google" | "microsoft", b: { mailbox_id?: string; name: string; email?: string; receive?: MailboxReceive }) =>
+    oauthStart: (provider: "google" | "microsoft", b: { mailbox_id?: string; name: string; email?: string; receive?: MailboxReceive; sync_start?: T.SyncStart }) =>
       http.post<{ url: string }>(`/v1/mailboxes/oauth/${provider}/start`, b),
     connectOptions: () => http.get<T.MailboxConnectOptions>("/v1/mailboxes/connect-options"),
     detect: (email: string) => http.get<T.MailDetection>("/v1/mailboxes/detect", { query: { email } }),
   },
   billing: {
     get: () => http.get<T.Billing>("/v1/billing"),
-    checkout: (interval: "month" | "year") => http.post<{ url: string }>("/v1/billing/checkout", { interval }),
+    checkout: (interval: "month" | "year", plan?: T.PaidPlan) => http.post<{ url: string }>("/v1/billing/checkout", plan ? { interval, plan } : { interval }),
+    changePlan: (plan: T.PaidPlan) => http.post<T.Billing>("/v1/billing/change-plan", { plan }),
     portal: () => http.post<{ url: string }>("/v1/billing/portal"),
     /** Stripe Checkout for `usd` of AI usage. */
     topUpCheckout: (usd: number) => http.post<{ url: string }>("/v1/billing/top-up/checkout", { amount_usd: usd }),
@@ -562,6 +598,65 @@ export const api = {
       removeDoc: (id: string, docId: string) => http.del(`/v1/ai/knowledge/${id}/docs/${docId}`),
     },
   },
+  // Collab: mail accounts members connect (contracts/collab.md). Every route needs a user session.
+  collab: {
+    status: () => http.get<T.CollabStatus>("/v1/collab"),
+    accounts: {
+      /** manage: an admin also gets the shared accounts of people who left (owner null). */
+      list: (q?: { manage?: boolean }) => http.get<T.MailAccount[] | T.Page<T.MailAccount>>("/v1/collab/accounts", { query: q }),
+      /** Sets the flow cookie; the response's url is the provider's sign-in. */
+      oauthStart: (provider: "google" | "microsoft", b: CollabOAuthStartBody) => http.post<{ url: string }>(`/v1/collab/accounts/oauth/${provider}/start`, b),
+      /** Both servers are tried first: 422 connection_failed with detail. */
+      createImap: (b: CollabImapBody) => http.create<T.MailAccount>("/v1/collab/accounts/imap", b),
+      update: (id: string, b: CollabAccountPatch) => http.patch<T.MailAccount>(`/v1/collab/accounts/${id}`, b),
+      /** Removes the account and its mail from opendesk; nothing is deleted at the provider. */
+      remove: (id: string) => http.del(`/v1/collab/accounts/${id}`),
+      sync: (id: string) => http.post<void>(`/v1/collab/accounts/${id}/sync`),
+      /** Gmail only: replaces the signature with Gmail's now. */
+      pullSignature: (id: string) => http.post<T.MailAccount>(`/v1/collab/accounts/${id}/signature/pull`),
+      /** Written to the provider first: 502 provider_error, nothing saved, when it refuses. */
+      setOutOfOffice: (id: string, b: T.MailOutOfOffice) => http.put<T.MailAccount>(`/v1/collab/accounts/${id}/out-of-office`, b),
+      folders: (id: string) => http.get<T.MailFolder[] | T.Page<T.MailFolder>>(`/v1/collab/accounts/${id}/folders`),
+      /** kind label on Microsoft makes an Outlook category; color is a tone, labels only. */
+      createFolder: (id: string, b: { name: string; parent_id?: string; kind?: "folder" | "label"; color?: string }) => http.create<T.MailFolder>(`/v1/collab/accounts/${id}/folders`, b),
+    },
+    folders: {
+      rename: (id: string, name: string) => http.patch<T.MailFolder>(`/v1/collab/folders/${id}`, { name }),
+      /** A Gmail label's or Outlook category's colour, as a tone; set at the provider first. */
+      color: (id: string, color: string) => http.patch<T.MailFolder>(`/v1/collab/folders/${id}`, { color }),
+      remove: (id: string) => http.del(`/v1/collab/folders/${id}`),
+    },
+    threads: {
+      list: (q: CollabThreadQuery) => http.get<T.Page<T.MailThread>>("/v1/collab/threads", { query: q }),
+      get: (id: string) => http.get<T.MailThreadDetail>(`/v1/collab/threads/${id}`),
+      /** All or nothing: a thread the caller cannot act on is 404. */
+      action: (b: { thread_ids: string[]; action: T.MailThreadAction; folder_id?: string }) =>
+        http.post<{ threads: T.MailThread[] }>("/v1/collab/threads/actions", b),
+      share: (id: string, shares: T.MailAudience) => http.put<T.MailThreadDetail>(`/v1/collab/threads/${id}/shares`, { shares }),
+      assign: (id: string, user_ids: string[]) => http.put<T.MailThreadDetail>(`/v1/collab/threads/${id}/assignees`, { user_ids }),
+      comment: (id: string, b: { body_html: string; mentions?: string[] }) => http.create<T.MailComment>(`/v1/collab/threads/${id}/comments`, b),
+    },
+    comments: {
+      update: (id: string, body_html: string) => http.patch<T.MailComment>(`/v1/collab/comments/${id}`, { body_html }),
+      remove: (id: string) => http.del(`/v1/collab/comments/${id}`),
+    },
+    counts: () => http.get<T.MailCounts>("/v1/collab/counts"),
+    /** Sent through the provider within the request (502 send_failed, nothing stored). */
+    send: (b: CollabSendBody) => http.create<T.MailMessage>("/v1/collab/messages", b),
+    /** Drafts, kept at the provider (contracts/collab.md "Drafts"). */
+    drafts: {
+      create: (b: CollabSendBody) => http.create<T.MailMessage>("/v1/collab/drafts", b),
+      /** Saves again under the same id; 404 when it is no longer a draft. */
+      update: (id: string, b: CollabDraftBody) => http.put<T.MailMessage>(`/v1/collab/drafts/${id}`, b),
+      remove: (id: string) => http.del(`/v1/collab/drafts/${id}`),
+      /** With a body the draft is saved with it first. */
+      send: (id: string, b?: CollabDraftBody) => http.post<T.MailMessage>(`/v1/collab/drafts/${id}/send`, b),
+    },
+    sidebar: {
+      get: () => http.get<T.SidebarPrefs>("/v1/collab/sidebar"),
+      put: (b: T.SidebarPrefs) => http.put<T.SidebarPrefs>("/v1/collab/sidebar", b),
+    },
+  },
   public: {
     csat: (token: string) =>
       http.get<T.CsatSurvey>(`/v1/public/csat/${token}`, pub),
@@ -585,3 +680,79 @@ export function rows<R>(r: R[] | T.Page<R> | { data: R[] } | undefined | null): 
   if (!r) return [];
   return Array.isArray(r) ? r : r.data;
 }
+
+// ─── Collab bodies (contracts/collab.md) ────────────────────────────────────
+
+export type CollabThreadQuery = {
+  box?: T.MailBox;
+  account_id?: string;
+  /** Replaces box. */
+  folder_id?: string;
+  q?: string;
+  limit?: number;
+  cursor?: string | null;
+};
+
+export type CollabOAuthStartBody = {
+  visibility: "private" | "shared";
+  shared_with?: T.MailAudience;
+  name?: string;
+  /** A login hint. */
+  email?: string;
+  /** Reconnect this account (manage). */
+  account_id?: string;
+};
+
+export type CollabImapBody = {
+  email: string;
+  name?: string;
+  display_name?: string;
+  imap_host: string;
+  imap_port: number;
+  imap_tls: T.MailTls;
+  imap_username?: string;
+  password: string;
+  smtp_host: string;
+  smtp_port: number;
+  smtp_tls: T.MailTls;
+  smtp_username?: string;
+  smtp_password?: string;
+  visibility: "private" | "shared";
+  shared_with?: T.MailAudience;
+};
+
+export type CollabAccountPatch = {
+  name?: string;
+  display_name?: string;
+  color?: string;
+  signature_html?: string;
+  visibility?: "private" | "shared";
+  shared_with?: T.MailAudience;
+  imap?: Partial<T.MailImapSettings> & { password?: string; smtp_password?: string };
+};
+
+export type CollabDraftBody = {
+  to: string[];
+  cc?: string[];
+  bcc?: string[];
+  subject: string;
+  body_html: string;
+  attachment_ids?: string[];
+  /** The draft's own files to keep (MailAttachment ids); left out keeps them all. */
+  keep_attachments?: string[];
+};
+
+export type CollabSendBody = {
+  account_id: string;
+  mode: "new" | "reply" | "reply_all" | "forward";
+  /** The message replied to or forwarded; required unless new. */
+  message_id?: string;
+  to: string[];
+  cc?: string[];
+  bcc?: string[];
+  subject: string;
+  body_html: string;
+  /** POST /v1/attachments uploads of the caller. */
+  attachment_ids?: string[];
+  forward_attachments?: boolean;
+};

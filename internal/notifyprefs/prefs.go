@@ -35,6 +35,8 @@ const (
 	GroupTeam      = "team"
 	GroupAIBilling = "ai_billing"
 	GroupWorkspace = "workspace"
+	// GroupMail is Collab's conversations (contracts/collab.md "Notifications").
+	GroupMail = "mail"
 )
 
 // Channels is where a notification goes besides the app.
@@ -64,9 +66,14 @@ var Types = []Type{
 	{Type: "assigned", Group: GroupTickets, Defaults: everywhere},
 	{Type: "mentioned", Group: GroupTickets, Defaults: everywhere},
 	{Type: "customer_replied", Group: GroupTickets, Defaults: everywhere},
+	// Someone outside the team answered a third-party thread on a ticket assigned to you.
+	{Type: "thread_replied", Group: GroupTickets, Defaults: everywhere},
 	{Type: "sla_breached", Group: GroupTickets, Defaults: everywhere},
 	{Type: "ai_handoff", Group: GroupTickets, Defaults: everywhere},
 	{Type: "team_joined", Group: GroupTeam, Defaults: quiet},
+	// Collab conversations assigned to the member or mentioning them (contracts/collab.md).
+	{Type: "collab_assigned", Group: GroupMail, Defaults: everywhere},
+	{Type: "collab_mention", Group: GroupMail, Defaults: everywhere},
 	{Type: "ai_cap_reached", Group: GroupAIBilling, Defaults: notPhone, Admins: true},
 	{Type: "ai_key_failed", Group: GroupAIBilling, Defaults: notPhone, Admins: true},
 	{Type: "ai_balance_low", Group: GroupAIBilling, Defaults: notPhone, Admins: true},

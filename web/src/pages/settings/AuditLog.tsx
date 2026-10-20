@@ -68,7 +68,7 @@ function glyph(action: string): { icon: ReactNode; tone: Tone } {
   if (head === "team") return { icon: <UsersRound />, tone: "teal" };
   if (head === "api_key") return { icon: <KeyRound />, tone: "violet" };
   if (head === "webhook") return { icon: <Webhook />, tone: "violet" };
-  if (head === "mailbox") return { icon: <Inbox />, tone: "indigo" };
+  if (head === "mailbox" || head === "collab") return { icon: <Inbox />, tone: "indigo" };
   if (head === "widget" || head === "widget_secret" || a === "workspace.widget_secret_rotated") return { icon: <MessageCircle />, tone: "cyan" };
   if (head === "billing") return { icon: <CreditCard />, tone: "green" };
   if (head === "ai") return { icon: <Sparkles />, tone: "violet" };
@@ -137,6 +137,19 @@ const verbs: Record<string, string> = {
   "billing.credits_recharged": "auto-recharged the AI balance",
   "billing.payment_failed": "had a payment fail",
   "billing.seats_synced": "synced billed seats",
+  "billing.plan_changed": "changed the plan",
+  "workspace.collab_changed": "changed Collab access",
+  "collab.account_connected": "connected a mail account",
+  "collab.account_updated": "updated a mail account",
+  "collab.account_disconnected": "disconnected a mail account",
+  "collab.thread_shared": "shared a conversation",
+  "collab.thread_assigned": "assigned a conversation",
+  "support_channel.connected": "connected a support channel",
+  "support_channel.disconnected": "disconnected a support channel",
+  "support_channel.destination_created": "added a support channel destination",
+  "support_channel.destination_deleted": "removed a support channel destination",
+  "support_channel.identity_linked": "linked a chat account",
+  "support_channel.identity_unlinked": "unlinked a chat account",
 };
 
 function str(v: unknown): string | null {

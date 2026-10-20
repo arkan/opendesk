@@ -100,7 +100,8 @@
     "confirmBody": "opendesk stops signing in to {{email}} to fetch mail and gives it an address to forward to. New mail arrives once the forward is set up. Replies still go out the way they do now.",
     "switched": "Switched to forwarding. Set up the forward below.",
     "title": "Receiving",
-    "imapHint": "opendesk signs in to the mailbox to fetch new mail. Forwarding works without signing in."
+    "imapHint": "opendesk signs in to the mailbox to fetch new mail. Forwarding works without signing in.",
+    "apiHint": "opendesk reads new mail through {{provider}}. Forwarding works without it."
   },
   "sendingOff": {
     "pill": "Not sending",
@@ -137,6 +138,10 @@
     "accountHint": "Connected with {{provider}}. Reconnect if access was revoked or the password changed.",
     "accountHintNoImap": "Connected with {{provider}}. Reconnecting connects it to send only, and its mail then arrives by forwarding.",
     "accountSendOnly": "Connected with {{provider}} to send only. opendesk can't read the mailbox. Reconnect if access was revoked.",
+    "accountDirect": "Reads the inbox directly through {{provider}}. New emails become tickets on their own. Reconnect if access was revoked.",
+    "directTitle": "Read the inbox directly",
+    "directHint": "New emails become tickets on their own. No forwarding to set up. You'll sign in with {{provider}} to allow it.",
+    "directButton": "Read the inbox directly",
     "reconnect": "Reconnect",
     "incoming": "Incoming (IMAP)",
     "outgoing": "Outgoing (SMTP)",
@@ -230,6 +235,11 @@
     "incoming": "Incoming mail (IMAP)",
     "outgoing": "Outgoing mail (SMTP)",
     "sameCredentials": "Use the same username and password as IMAP",
+    "syncStart": "Start with",
+    "syncStartRecent": "The last 7 days",
+    "syncStartNew": "Only new email",
+    "syncStartRecentHint": "Email from the last 7 days becomes tickets, up to 200, then new email as it arrives.",
+    "syncStartNewHint": "Only email that arrives from now on becomes a ticket. Choose this when your history came over with an import.",
     "server": "Server",
     "port": "Port",
     "security": "Security",
@@ -377,6 +387,10 @@
       "googleBody": "Sign in with Google. opendesk fetches new mail over IMAP and replies from your address.",
       "microsoft": "Receive by syncing the mailbox (IMAP)",
       "microsoftBody": "Sign in with Microsoft. opendesk fetches new mail over IMAP and replies from your address.",
+      "google_api": "Read the inbox directly",
+      "google_apiBody": "Sign in with Google. New emails become tickets on their own. No forwarding to set up.",
+      "microsoft_api": "Read the inbox directly",
+      "microsoft_apiBody": "Sign in with Microsoft. New emails become tickets on their own. No forwarding to set up.",
       "app_password": "App password",
       "app_passwordBody": "Create an app password in {{host}} and paste it here. The servers are set for you.",
       "password": "Email password",
@@ -502,8 +516,110 @@
       "app_password": "App password",
       "password": "Password",
       "forwarding": "Forwarding",
-      "sendsWith": "Sends with {{provider}}"
+      "sendsWith": "Sends with {{provider}}",
+      "direct": "Reads the inbox directly through {{provider}}"
     },
-    "forwardingIntro": "You get a private address to forward this mailbox's mail to. opendesk sees only the mail you forward."
+    "forwardingIntro": "You get a private address to forward this mailbox's mail to. opendesk sees only the mail you forward.",
+    "directNote": "opendesk reads new mail in the inbox through {{provider}} and replies from your address. New emails become tickets on their own. No forwarding to set up."
+  },
+  "provider": {
+    "title": "In {{app}}",
+    "replies": "Replies show up in the same {{app}} conversation as the customer's email, and in Sent.",
+    "markRead": "Mark emails as read in {{app}} once they become tickets",
+    "archive": "Archive in {{app}} when the ticket is solved",
+    "label": "Label emails \"opendesk\" in {{app}}",
+    "labelOutlook": "Outlook shows it as a category."
+  },
+  "supportChannels": {
+    "title": "Support channels",
+    "description": "Mirror email tickets into Slack, Discord and Telegram. Teammates can reply, add notes and work tickets from the ticket's thread.",
+    "linkAccount": "Link my account",
+    "linkError": "Couldn't create a link code.",
+    "link": {
+      "title": "Link your chat account",
+      "description": "Send this code to the bot from your chat account: /opendesk link {{code}} in Slack, or /link {{code}} in Discord and Telegram. It works once and expires in 10 minutes.",
+      "done": "Done"
+    },
+    "connections": {
+      "title": "Connections",
+      "description": "Bot credentials are stored encrypted. Point each bot's events at the address shown on its connection.",
+      "webhook": "Events address"
+    },
+    "empty": {
+      "title": "No support channels yet",
+      "body": "Connect a bot, then choose where each team's email tickets appear.",
+      "tipThreads": "Each ticket gets its own thread",
+      "tipOllie": "Ask Ollie about a ticket in its thread"
+    },
+    "status": {
+      "connected": "Connected",
+      "error": "Needs attention"
+    },
+    "allTeams": "All teams",
+    "withNotes": "with notes",
+    "addDestination": "Add destination",
+    "removeDestinationLabel": "Remove {{name}}",
+    "removeDestinationTitle": "Remove destination",
+    "removeDestinationBody": "Stop mirroring tickets to {{name}}? Threads already posted stay in the channel.",
+    "remove": "Remove",
+    "destinationRemoved": "Destination removed.",
+    "destinationRemoveError": "Couldn't remove the destination.",
+    "disconnect": "Disconnect",
+    "disconnectLabel": "Disconnect {{name}}",
+    "disconnectTitle": "Disconnect support channel",
+    "disconnectBody": "Disconnect {{name}}? Its destinations are removed and its ticket threads stop updating.",
+    "disconnected": "Support channel disconnected.",
+    "disconnectError": "Couldn't disconnect the support channel.",
+    "providers": {
+      "title": "Available providers",
+      "descriptionAdmin": "Connect a bot account for each chat product your team works in.",
+      "description": "An admin can connect provider accounts."
+    },
+    "provider": {
+      "slack": {
+        "description": "Mirror email tickets into Slack threads and work them by talking to Ollie.",
+        "setup": "Create a Slack app with a bot token that has chat:write and app_mentions:read, and subscribe it to app mentions."
+      },
+      "discord": {
+        "description": "Mirror email tickets into Discord threads and work them by talking to Ollie.",
+        "setup": "Create a Discord bot, turn on its Message Content intent and copy its token, public key and your server ID."
+      },
+      "telegram": {
+        "description": "Mirror email tickets into Telegram forum topics and work them by talking to Ollie.",
+        "setup": "Create a bot with BotFather, make it an admin of a forum group and turn off its privacy mode."
+      }
+    },
+    "field": {
+      "bot_token": "Bot token",
+      "signing_secret": "Signing secret",
+      "public_key": "Interactions public key",
+      "guild_id": "Server ID",
+      "webhook_secret": "Webhook secret"
+    },
+    "connect": {
+      "title": "Connect {{name}}",
+      "name": "Connection name",
+      "submit": "Connect",
+      "cancel": "Cancel",
+      "connected": "{{name}} connected.",
+      "error": "Couldn't connect {{name}}."
+    },
+    "destination": {
+      "title": "Add destination",
+      "description": "Choose a public team and the provider channel its email tickets go to. The all teams destination gets tickets of teams without their own.",
+      "team": "Team",
+      "teamPlaceholder": "Choose a team",
+      "allTeams": "All public teams",
+      "channel": "Provider channel ID",
+      "channelHint": "The channel, conversation or forum group ID shown by the provider.",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "support",
+      "notes": "Include internal notes",
+      "notesHint": "Off by default. When on, notes are posted to this channel and Ollie can use them in its answers there.",
+      "submit": "Add destination",
+      "cancel": "Cancel",
+      "added": "Destination added.",
+      "error": "Couldn't add the destination."
+    }
   }
 }

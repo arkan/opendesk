@@ -18,6 +18,7 @@ import (
 
 	"github.com/useopendesk/opendesk/internal/db"
 	"github.com/useopendesk/opendesk/internal/domain"
+	"github.com/useopendesk/opendesk/internal/emails"
 	"github.com/useopendesk/opendesk/internal/httpx"
 	"github.com/useopendesk/opendesk/internal/jobs"
 	"github.com/useopendesk/opendesk/internal/netsafe"
@@ -25,9 +26,10 @@ import (
 	"github.com/useopendesk/opendesk/internal/push"
 )
 
-// Push to the iPhone app (contracts/native.md "Push"): hd.Notify enqueues a
-// PushNotificationArgs in its transaction, reading notifications enqueues a badge
-// update, and these workers deliver them directly over APNs or through the relay.
+// Push to the iPhone app (contracts/native.md "Push") and to browsers ("Web Push"):
+// hd.Notify enqueues a PushNotificationArgs in its transaction, reading notifications
+// enqueues a badge update, and these workers deliver them directly over APNs, through the
+// relay, or over Web Push.
 
 const (
 	relayRegisterPerIP   = 30   // per hour
@@ -38,10 +40,11 @@ const (
 )
 
 // pushSender holds what this instance needs to push: the relay client in relay mode,
-// and, on a relay, the instance keys it has fetched.
+// on a relay the instance keys it has fetched, and the Web Push sender for browsers.
 type pushSender struct {
 	relay *push.RelayClient
 	keys  *instanceKeys
+	web   *push.WebPusher
 }
 
 func (s *svc) newPushSender() *pushSender {
@@ -49,6 +52,11 @@ func (s *svc) newPushSender() *pushSender {
 	if s.d.Cfg.PushMode() == "relay" {
 		ps.relay = &push.RelayClient{URL: s.d.Cfg.PushRelayURL, Instance: s.d.Cfg.APIURL, Key: s.instanceKey(),
 			HTTP: &http.Client{Timeout: 15 * time.Second}}
+	}
+	if keys, err := push.DeriveVAPIDKeys(s.d.Cfg.AuthSecret); err == nil {
+		// Push service endpoints are chosen by browsers, so they go through the SSRF guard.
+		ps.web = &push.WebPusher{Keys: keys, Subscriber: push.WebSubscriber(s.d.Cfg.APIURL, s.d.Cfg.MailFrom),
+			HTTP: netsafe.Client(s.devURL, 15*time.Second)}
 	}
 	return ps
 }
@@ -168,51 +176,78 @@ func (w *pushNotificationWorker) Work(ctx context.Context, job *river.Job[jobs.P
 	a := job.Args
 	q := w.s.d.DB.Pool
 	var typ string
+	var data map[string]any
 	var ticketID *uuid.UUID
 	var readAt *time.Time
 	var number *int64
 	var subject *string
-	err := q.QueryRow(ctx, `SELECT n.type, n.read_at, t.id, t.number, t.subject
+	// A notification without a ticket may name its own subject (a Collab conversation's).
+	err := q.QueryRow(ctx, `SELECT n.type, n.data, n.read_at, t.id, t.number,
+			COALESCE(t.subject, CASE WHEN n.ticket_id IS NULL THEN n.data->>'subject' END)
 		FROM notifications n JOIN members m ON m.workspace_id = n.workspace_id AND m.user_id = n.user_id
 		LEFT JOIN tickets t ON t.id = n.ticket_id AND t.workspace_id = n.workspace_id AND t.deleted_at IS NULL
 			AND `+domain.VisibleToUserSQL("t", 3)+`
 		WHERE n.id = $1 AND n.workspace_id = $2 AND n.user_id = $3`, a.NotificationID, a.WorkspaceID, a.UserID).
-		Scan(&typ, &readAt, &ticketID, &number, &subject)
+		Scan(&typ, &data, &readAt, &ticketID, &number, &subject)
 	if db.IsNotFound(err) || (err == nil && readAt != nil) {
 		return nil // gone, the member left, or already read
 	}
 	if err != nil {
 		return err
 	}
-	// The phone channel of the member's preferences, then each phone's own mutes.
+	// The member's preferences: the phone channel (then each phone's own mutes) and the
+	// desktop channel, which browsers follow.
 	ch, err := notifyprefs.Channel(ctx, q, a.WorkspaceID, a.UserID, typ)
-	if err != nil || !ch.Push {
+	if err != nil || (!ch.Push && !ch.Desktop) {
 		return err
 	}
 	set, err := notifyprefs.LoadSettings(ctx, q, a.UserID)
 	if err != nil || set.Paused(time.Now()) {
 		return err
 	}
-	devs, err := liveDevices(ctx, q, a.UserID)
-	if err != nil {
-		return err
+	var devs []pushDevice
+	if ch.Push {
+		if devs, err = liveDevices(ctx, q, a.UserID); err != nil {
+			return err
+		}
+		devs = slices.DeleteFunc(devs, func(d pushDevice) bool { return slices.Contains(d.muted, typ) })
 	}
-	devs = slices.DeleteFunc(devs, func(d pushDevice) bool { return slices.Contains(d.muted, typ) })
-	if len(devs) == 0 {
-		return nil
+	var subs []webSub
+	if ch.Desktop && w.s.push.web != nil {
+		if subs, err = liveWebSubs(ctx, q, a.UserID); err != nil {
+			return err
+		}
 	}
-	badge, err := unreadBadge(ctx, q, a.UserID)
-	if err != nil {
-		return err
-	}
-	nid, wid := a.NotificationID, a.WorkspaceID
-	p := push.Push{Kind: push.KindAlert, Type: typ, NotificationID: &nid, WorkspaceID: &wid, TicketID: ticketID,
-		TicketNumber: number, Badge: badge}
 	sub := ""
 	if subject != nil {
 		sub = *subject
 	}
-	return w.s.deliverAll(ctx, devs, p, sub)
+	// Sent pushes are not repeated on retry: the run fails only when nothing was reached.
+	var phoneErr, webErr error
+	if len(devs) > 0 {
+		badge, err := unreadBadge(ctx, q, a.UserID)
+		if err != nil {
+			return err
+		}
+		nid, wid := a.NotificationID, a.WorkspaceID
+		p := push.Push{Kind: push.KindAlert, Type: typ, NotificationID: &nid, WorkspaceID: &wid, TicketID: ticketID,
+			TicketNumber: number, Badge: badge}
+		phoneErr = w.s.deliverAll(ctx, devs, p, sub)
+	}
+	if len(subs) > 0 {
+		n := emails.Note{ID: a.NotificationID, Type: typ, Data: data, TicketID: ticketID, TicketSubject: sub}
+		if number != nil {
+			n.TicketNumber = *number
+		}
+		webErr = w.s.deliverWeb(ctx, subs, a.WorkspaceID, n)
+	}
+	switch {
+	case phoneErr != nil && (webErr != nil || len(subs) == 0):
+		return phoneErr
+	case webErr != nil && len(devs) == 0:
+		return webErr
+	}
+	return nil
 }
 
 type pushBadgeWorker struct {

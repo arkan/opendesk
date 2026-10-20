@@ -40,6 +40,7 @@ func Register(d *deps.Deps, api huma.API, r chi.Router) {
 	s.registerAppAttest(api)
 	s.registerDevices(api)
 	s.registerPush(api)
+	s.registerWebPush(api)
 	s.registerNotificationPrefs(api, r)
 }
 

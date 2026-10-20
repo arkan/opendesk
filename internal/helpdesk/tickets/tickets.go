@@ -230,7 +230,7 @@ func registerTickets(d *deps.Deps, api huma.API) {
 
 	huma.Register(api, huma.Operation{OperationID: "ticket-counts", Method: http.MethodGet, Path: "/v1/tickets/counts",
 		Summary: "Sidebar counts", Tags: tags,
-		Description: "unassigned and mine count open, pending and on_hold tickets; status counts exclude spam; spam counts spam that is not closed; views counts each visible view."},
+		Description: "unassigned and mine count open, pending and on_hold tickets; status counts exclude spam; spam counts spam that is not closed; views counts each visible view; stats breaks each sidebar row down into tickets awaiting a reply, urgent and overdue."},
 		func(ctx context.Context, _ *struct{}) (*struct{ Body TicketCounts }, error) {
 			p, err := auth.RequireWorkspace(ctx, auth.RoleViewer, auth.ScopeTicketsRead)
 			if err != nil {
@@ -792,6 +792,20 @@ func mergeTickets(ctx context.Context, tx pgx.Tx, d *deps.Deps, wid, src, dst uu
 	}
 	if _, err := tx.Exec(ctx, `UPDATE messages SET ticket_id = $3 WHERE workspace_id = $1 AND ticket_id = $2`, wid, src, dst); err != nil {
 		return err
+	}
+	// Third-party threads go with their messages, and show on the target for everyone.
+	rows, err := tx.Query(ctx, `UPDATE ticket_threads SET ticket_id = $3, updated_at = now() WHERE workspace_id = $1 AND ticket_id = $2 RETURNING id`, wid, src, dst)
+	if err != nil {
+		return err
+	}
+	moved, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+	if err != nil {
+		return err
+	}
+	for _, id := range moved {
+		if _, err := domain.PublishThread(ctx, tx, wid, dst, id, "thread.updated"); err != nil {
+			return err
+		}
 	}
 	if _, err := tx.Exec(ctx, `INSERT INTO ticket_tags (ticket_id, tag_id) SELECT $2, tag_id FROM ticket_tags WHERE ticket_id = $1
 		ON CONFLICT DO NOTHING`, src, dst); err != nil {

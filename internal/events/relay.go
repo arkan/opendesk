@@ -3,10 +3,10 @@ package events
 import (
 	"context"
 	"encoding/json"
-	"github.com/google/uuid"
 	"log/slog"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nats-io/nats.go"
@@ -93,6 +93,10 @@ func (r *Relay) flush(ctx context.Context) (int, error) {
 		if err != nil || len(batch) == 0 {
 			return err
 		}
+		mirrored, err := supportChannelWorkspaces(ctx, tx, batch)
+		if err != nil {
+			return err
+		}
 		params := make([]river.InsertManyParams, 0, len(batch))
 		for _, e := range batch {
 			payload, err := json.Marshal(e)
@@ -106,6 +110,11 @@ func (r *Relay) flush(ctx context.Context) (int, error) {
 				Args:       jobs.WebhookDispatchArgs{WorkspaceID: e.WorkspaceID, EventSeq: e.Seq},
 				InsertOpts: &river.InsertOpts{Queue: jobs.QueueWebhooks},
 			})
+			if supportChannelEvent(e.Type) && mirrored[e.WorkspaceID] {
+				params = append(params, river.InsertManyParams{Args: jobs.SupportChannelDispatchArgs{
+					WorkspaceID: e.WorkspaceID, EventSeq: e.Seq,
+				}})
+			}
 			if _, err := tx.Exec(ctx, `UPDATE events SET published_at = now() WHERE workspace_id = $1 AND seq = $2`, e.WorkspaceID, e.Seq); err != nil {
 				return err
 			}
@@ -120,6 +129,45 @@ func (r *Relay) flush(ctx context.Context) (int, error) {
 		return nil
 	})
 	return n, err
+}
+
+// supportChannelWorkspaces returns the workspaces in batch that mirror tickets to a
+// support channel (contracts/support-channels.md), so only they get dispatch jobs.
+// It runs one indexed query per batch, and none when the batch has no ticket events.
+func supportChannelWorkspaces(ctx context.Context, tx pgx.Tx, batch []Envelope) (map[uuid.UUID]bool, error) {
+	var wids []uuid.UUID
+	seen := map[uuid.UUID]bool{}
+	for _, e := range batch {
+		if supportChannelEvent(e.Type) && !seen[e.WorkspaceID] {
+			seen[e.WorkspaceID] = true
+			wids = append(wids, e.WorkspaceID)
+		}
+	}
+	out := map[uuid.UUID]bool{}
+	if len(wids) == 0 {
+		return out, nil
+	}
+	rows, err := tx.Query(ctx, `SELECT DISTINCT workspace_id FROM support_channel_destinations WHERE workspace_id = ANY($1) AND enabled`, wids)
+	if err != nil {
+		return nil, err
+	}
+	found, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+	if err != nil {
+		return nil, err
+	}
+	for _, wid := range found {
+		out[wid] = true
+	}
+	return out, nil
+}
+
+func supportChannelEvent(typ string) bool {
+	switch typ {
+	case "ticket.created", "ticket.updated", "message.created":
+		return true
+	default:
+		return false
+	}
 }
 
 // Disconnect asks the gateway to close a user's sockets (all, or one session's).

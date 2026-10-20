@@ -521,6 +521,12 @@ func applyPatch(ctx context.Context, tx pgx.Tx, d *deps.Deps, wid, tid uuid.UUID
 			return nil, err
 		}
 	}
+	if slices.Contains(changes, "status") && closing(next.Status) && !closing(cur.Status) {
+		// The mailbox's own copy leaves the Gmail or Outlook inbox too, when it asks for that.
+		if err := domain.QueueProviderArchive(ctx, tx, d.Jobs, wid, tid); err != nil {
+			return nil, err
+		}
+	}
 	if o.Enqueue {
 		if _, err := d.Jobs.InsertTx(ctx, tx, jobs.TicketTriggerArgs{WorkspaceID: wid, TicketID: tid, Trigger: jobs.TriggerTicketUpdated,
 			ActorUserID: actor.UserID, Changes: changes}, nil); err != nil {
@@ -528,6 +534,17 @@ func applyPatch(ctx context.Context, tx pgx.Tx, d *deps.Deps, wid, tid uuid.UUID
 		}
 	}
 	return changes, nil
+}
+
+// ApplyPatch applies a person-initiated ticket change. It runs the same
+// validation, events, notifications, CSAT and automation triggers as PATCH
+// /v1/tickets/{id}.
+func ApplyPatch(ctx context.Context, tx pgx.Tx, d *deps.Deps, principal *auth.Principal, tid uuid.UUID, patch Patch) ([]string, error) {
+	if err := patch.checkCaller(ctx, tx, principal, tid); err != nil {
+		return nil, err
+	}
+	return applyPatch(ctx, tx, d, principal.WorkspaceID, tid, actorOf(principal), patch,
+		applyOpts{Enqueue: true, RequireFields: true})
 }
 
 // closing reports a solved or closed status.

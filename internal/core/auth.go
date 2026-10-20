@@ -53,6 +53,7 @@ type coreAuthConfig struct {
 	Passkeys         bool               `json:"passkeys" doc:"Passkey sign-in is available"`
 	TurnstileSiteKey *string            `json:"turnstile_site_key"`
 	Native           coreNativeConfig   `json:"native" doc:"What the native apps need to sign in and receive pushes"`
+	WebPushKey       *string            `json:"web_push_key" doc:"The VAPID public key browsers subscribe to web pushes with; null when this server sends none"`
 }
 
 type coreNativeConfig struct {
@@ -99,6 +100,10 @@ func (s *svc) registerAuth(api huma.API) {
 				c.TurnstileSiteKey = &k
 			}
 			c.Native = coreNativeConfig{AppAttest: len(s.d.Cfg.AppAttestAppIDs) > 0, Push: s.d.Cfg.PushMode()}
+			if s.push.web != nil {
+				k := s.push.web.Keys.Public
+				c.WebPushKey = &k
+			}
 			if c.Native.Push == "relay" {
 				u := s.d.Cfg.PushRelayURL
 				c.Native.RelayURL = &u
@@ -257,7 +262,7 @@ func (s *svc) registerAuth(api huma.API) {
 					return errInvalidToken()
 				}
 				uid = *o.UserID
-				tag, err := tx.Exec(ctx, `UPDATE users SET password_hash = $2, updated_at = now(),
+				tag, err := tx.Exec(ctx, `UPDATE users SET password_hash = $2, password_expires_at = NULL, updated_at = now(),
 					email_verified_at = CASE WHEN email = $3 THEN COALESCE(email_verified_at, now()) ELSE email_verified_at END
 					WHERE id = $1`, uid, hash, o.Email)
 				if err != nil {
@@ -435,7 +440,7 @@ func (s *svc) handleLogin(ctx context.Context, in *coreLoginBody) (*authOut, err
 	var totp bool
 	found := false
 	if email != "" {
-		err := s.d.DB.Pool.QueryRow(ctx, `SELECT id, password_hash, totp_enabled FROM users WHERE email = $1`, email).Scan(&uid, &hash, &totp)
+		err := s.d.DB.Pool.QueryRow(ctx, `SELECT id, `+auth.PasswordHashSQL+`, totp_enabled FROM users WHERE email = $1`, email).Scan(&uid, &hash, &totp)
 		if err != nil && !db.IsNotFound(err) {
 			return nil, httpx.Wrap(err)
 		}

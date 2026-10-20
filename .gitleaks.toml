@@ -19,6 +19,8 @@ regexes = [
   '''sk-test-(abcd1234|12345678)''',
   # A wrong mailbox password in the connection check tests (internal/email/connect_test.go).
   '''Wrong-Passw0rd''',
+  # The Web Push content encoding named in a comment (internal/push/webpush_test.go).
+  '''aes128gcm-encrypted''',
 ]
 paths = [
   '''internal/auth/passwords/breached\.txt''',

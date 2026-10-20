@@ -236,6 +236,40 @@ So a leaked relay token is useless to anyone but the instance that registered it
 instance key is derived from `AUTH_SECRET` (HKDF-SHA256, info `opendesk-push-instance/v1`)
 and needs no storage.
 
+## Web Push (browsers)
+
+Browsers receive notifications over Web Push (RFC 8030, 8291, 8292) while no opendesk window is
+focused, the tab is closed included. Nothing needs configuring: the instance's P-256 VAPID key pair
+is derived from `AUTH_SECRET` (HKDF-SHA256, info `opendesk-web-push-vapid/v1`), so changing
+`AUTH_SECRET` ends every browser subscription, and browsers subscribe again on their next visit.
+`GET /v1/auth/config` serves the public key as `web_push_key`. The VAPID contact is the API URL
+when it is https, else the `MAIL_FROM` address.
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| PUT | `/v1/me/web-push` | `{endpoint, keys: {p256dh, auth}}` (a `PushSubscription.toJSON()`) → 204. User sessions only. An https endpoint and keys of RFC 8291's sizes, else `422`. Upserts by endpoint and binds the subscription to the calling session, replacing the session's earlier one. Rate limited per user |
+
+- Like a phone, a subscription lives exactly as long as its session: ending the session (logout,
+  revoke, password change, refresh token reuse) deletes it, and deleting the user or the session
+  row cascades. Endpoint and keys are sealed with `CREDENTIALS_KEY`; the endpoint is hashed for
+  lookup.
+- `hd.Notify` enqueues the push job for users with a phone or a subscribed browser. The worker
+  sends browsers the notifications whose type has the `desktop` channel on, unless notifications
+  are paused. The payload is encrypted for the browser (aes128gcm), so it carries text:
+  `{id, workspace_id, title, body, url}`, where `title` is the heading the notification's email has,
+  `body` is `#<number> <subject>` on one line of at most 120 characters (empty without a ticket),
+  and `url` is the email's link into the workspace. `TTL` is one day, `Urgency: high`.
+- A push service answering `404` or `410` deletes the subscription. Endpoints are reached through
+  the SSRF guard (`internal/netsafe`), like webhooks.
+- The web app (`web/src/lib/webPush.ts`) registers `/sw.js` and subscribes once the person has
+  allowed notifications (Allow notifications in the notification settings, or a permission given
+  before), then saves the subscription on every app start, so a new session gets it. A
+  subscription made with another key is replaced. The desktop app never subscribes.
+- `/sw.js` shows every push, tagged with the notification id, so the notification the open page
+  shows and the pushed one replace each other. When an opendesk window is focused (it shows its
+  toast), the push is closed as soon as it is shown: browsers expect each push to show one. A click focuses an open window and navigates it to `url`, or opens one.
+- `/manifest.webmanifest` lets browsers install the web app (standalone window, the app icons).
+
 ## Desktop shell
 
 - One `BrowserWindow` per instance origin, loading `<app origin>/`. Context isolation,
@@ -278,6 +312,9 @@ type UpdateState =
   runs OAuth sign-in through `oauth`, opens mailbox and integration connect flows with
   `openExternal`, and lays itself out for the window chrome (translucent sidebar, inset
   content panel, drag regions, room for the macOS traffic lights).
+- Without the shell, the web app shows the same notifications through the browser's
+  `Notification` once the person has allowed it (Allow notifications in the notification
+  settings), under the same rules; a click focuses the tab and opens the notification's path.
 - Window: macOS `titleBarStyle: "hiddenInset"`, `vibrancy: "sidebar"`, transparent page
   background behind the sidebar; Windows 11 `backgroundMaterial: "mica"`; Linux opaque.
 - Deep links: `opendesk://auth/callback?…` (OAuth), `opendesk://open?path=/inbox/mine/<ticket_id>`.

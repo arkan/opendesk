@@ -13,7 +13,7 @@ import { Field, TextInput } from "@/components/ui/input";
 import { Segmented } from "@/components/ui/tabs";
 import { api, type CreateMailboxBody, type MailboxReceive } from "@/lib/api/endpoints";
 import { errorMessage } from "@/lib/api/client";
-import type { MailDetection, MailHost, Mailbox, MailboxConnectOptions, MailboxTest, TlsMode } from "@/lib/api/types";
+import type { MailDetection, MailHost, Mailbox, MailboxConnectOptions, MailboxTest, SyncStart, TlsMode } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { isGoogleHost, isMicrosoftHost, looksLikeGoogleAppPassword, mailHostLabel, offersNoTls, stripAppPassword } from "@/lib/mailHost";
 import { qk, upsertInList } from "@/lib/queries";
@@ -22,6 +22,7 @@ import { useBrands, useTeams } from "@/components/settings2/teams";
 import { GoogleGlyph, MicrosoftGlyph, TestResults } from "./kinds";
 import { AliasesField, aliasTeamsFor, AliasTeamsField, DEFAULT_FROM, FromNameField, fromNameProblem, MailboxBrandField, MailboxTeamField } from "./addressing";
 import {
+  apiOn,
   AppPasswordGuide,
   CauseCallout,
   connectFailure,
@@ -35,6 +36,7 @@ import {
   sendProviders,
   ServerSummary,
   Steps,
+  syncOn,
   systemSendOn,
   useConnectOptions,
   useMailDetection,
@@ -44,7 +46,12 @@ import { ForwardingInstructions } from "./forwarding";
 import { PortInput, validPort } from "./PortInput";
 import { SmtpPresets } from "./smtpPresets";
 
-export type Method = "google" | "microsoft" | "app_password" | "password" | "forwarding" | "imap";
+/** google and microsoft sync the mailbox over IMAP; google_api and microsoft_api read the inbox directly through the provider's API. */
+export type Method = "google" | "microsoft" | "google_api" | "microsoft_api" | "app_password" | "password" | "forwarding" | "imap";
+
+type Provider = "google" | "microsoft";
+const apiMethod = (p: Provider): Method => (p === "google" ? "google_api" : "microsoft_api");
+const isApiMethod = (m: Method | null): m is "google_api" | "microsoft_api" => m === "google_api" || m === "microsoft_api";
 
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const hostRe = /^[a-z0-9.-]+\.[a-z]{2,}$/i;
@@ -73,6 +80,8 @@ type Form = {
   /** An alias to its own team; cleared when the mailbox's team is private. */
   alias_teams: Record<string, string>;
   from_name_format: string;
+  /** Ways that read the inbox: where the first sync starts. */
+  sync_start: SyncStart;
 };
 
 const empty: Form = {
@@ -97,6 +106,7 @@ const empty: Form = {
   aliases: [],
   alias_teams: {},
   from_name_format: DEFAULT_FROM,
+  sync_start: "recent",
 };
 
 type SendVia = "system" | "smtp" | "google" | "microsoft";
@@ -126,9 +136,11 @@ function validateAddress(f: Form, t: T): Errors {
   return e;
 }
 
-/** The provider the next step signs in to, if any: a sync, or a forwarding mailbox's send-only connection. */
+/** The provider the next step signs in to, if any: reading the inbox, or a forwarding mailbox's send-only connection. */
 function signInFor(method: Method | null, f: Form): "google" | "microsoft" | null {
   if (method === "google" || method === "microsoft") return method;
+  if (method === "google_api") return "google";
+  if (method === "microsoft_api") return "microsoft";
   if (method === "forwarding" && isProvider(f.send_via)) return f.send_via;
   return null;
 }
@@ -158,14 +170,21 @@ function validateConnect(method: Method, f: Form, t: T): Errors {
 
 type Way = { id: Method; recommended?: boolean; advanced?: boolean };
 
+/** Whether there is more than forwarding to choose from. */
+function choices(opts: MailboxConnectOptions | undefined): boolean {
+  return imapOn(opts) || apiOn(opts, "google") || apiOn(opts, "microsoft");
+}
+
 /**
- * The ways mail can reach opendesk for a detected host, best first: forwarding, then,
- * where the instance receives over IMAP, syncing the mailbox.
+ * The ways mail can reach opendesk for a detected host, best first: reading a Google or
+ * Microsoft inbox directly where the workspace can, forwarding, then, where the mailbox
+ * may receive over IMAP, signing in to it.
  */
 function suggestedWays(det: MailDetection | undefined, opts: MailboxConnectOptions | undefined): Way[] {
-  const out: Way[] = [{ id: "forwarding", recommended: true }];
+  const direct = det?.oauth && apiOn(opts, det.oauth) ? det.oauth : null;
+  const out: Way[] = direct ? [{ id: apiMethod(direct), recommended: true }, { id: "forwarding" }] : [{ id: "forwarding", recommended: true }];
   if (!imapOn(opts)) return out;
-  if (det?.oauth && oauthOffered(opts, det.oauth)) out.push({ id: det.oauth });
+  if (!direct && det?.oauth && syncOn(opts) && oauthOffered(opts, det.oauth)) out.push({ id: det.oauth });
   if (det?.settings && det.password_auth === "app_password") out.push({ id: "app_password" });
   if (det?.settings && det.password_auth === "password") out.push({ id: "password" });
   out.push({ id: "imap", advanced: true });
@@ -175,9 +194,9 @@ function suggestedWays(det: MailDetection | undefined, opts: MailboxConnectOptio
 /** Every way in, when the suggested ones don't fit. */
 function allWays(det: MailDetection | undefined, opts: MailboxConnectOptions | undefined): Way[] {
   const out: Way[] = [{ id: "forwarding" }];
+  for (const p of ["google", "microsoft"] as const) if (apiOn(opts, p)) out.push({ id: apiMethod(p) });
   if (!imapOn(opts)) return out;
-  if (oauthOffered(opts, "google")) out.push({ id: "google" });
-  if (oauthOffered(opts, "microsoft")) out.push({ id: "microsoft" });
+  for (const p of ["google", "microsoft"] as const) if (!apiOn(opts, p) && syncOn(opts) && oauthOffered(opts, p)) out.push({ id: p });
   if (det?.settings && det.password_auth === "app_password") out.push({ id: "app_password" });
   if (det?.settings && det.password_auth === "password") out.push({ id: "password" });
   out.push({ id: "imap" });
@@ -211,8 +230,10 @@ function radioKeys(e: React.KeyboardEvent<HTMLElement>) {
 function wayIcon(id: Method): ReactNode {
   switch (id) {
     case "google":
+    case "google_api":
       return <GoogleGlyph className="size-[18px]" />;
     case "microsoft":
+    case "microsoft_api":
       return <MicrosoftGlyph className="size-[18px]" />;
     case "app_password":
       return <KeyRound className="size-[18px]" />;
@@ -224,7 +245,16 @@ function wayIcon(id: Method): ReactNode {
   return <Server className="size-[18px]" />;
 }
 
-const wayTone: Record<Method, keyof typeof tone> = { google: "blue", microsoft: "cyan", app_password: "amber", password: "indigo", forwarding: "teal", imap: "gray" };
+const wayTone: Record<Method, keyof typeof tone> = {
+  google: "blue",
+  microsoft: "cyan",
+  google_api: "blue",
+  microsoft_api: "cyan",
+  app_password: "amber",
+  password: "indigo",
+  forwarding: "teal",
+  imap: "gray",
+};
 
 function sendIcon(v: SendVia): ReactNode {
   if (v === "google") return <GoogleGlyph className="size-[18px]" />;
@@ -344,7 +374,12 @@ export function AddMailboxWizard({
         openInBrowser(location.pathname);
         return null;
       }
-      return api.mailboxes.oauthStart(provider, { name: form.name.trim(), email: form.email.trim() || undefined, receive });
+      return api.mailboxes.oauthStart(provider, {
+        name: form.name.trim(),
+        email: form.email.trim() || undefined,
+        receive,
+        sync_start: receive === "forwarding" ? undefined : form.sync_start,
+      });
     },
     onSuccess: (r) => (r ? window.location.assign(r.url) : setOpenedInBrowser(true)),
     onError: (e) => setBlocked(errorMessage(e)),
@@ -373,7 +408,7 @@ export function AddMailboxWizard({
           ...base,
           inbound_kind: "imap",
           outbound_kind: "smtp",
-          config: { ...imapCfg, ...smtpCfg, smtp_username: (f.smtp_same ? f.imap_username : f.smtp_username).trim(), mail_host: f.mail_host },
+          config: { ...imapCfg, ...smtpCfg, smtp_username: (f.smtp_same ? f.imap_username : f.smtp_username).trim(), mail_host: f.mail_host, sync_start: f.sync_start },
           password: f.imap_password,
           smtp_password: f.smtp_same ? f.imap_password : f.smtp_password,
           verify: true,
@@ -384,7 +419,7 @@ export function AddMailboxWizard({
           ...base,
           inbound_kind: "imap",
           outbound_kind: "smtp",
-          config: { ...imapCfg, ...smtpCfg, imap_username: f.email.trim(), smtp_username: f.email.trim(), mail_host: f.mail_host },
+          config: { ...imapCfg, ...smtpCfg, imap_username: f.email.trim(), smtp_username: f.email.trim(), mail_host: f.mail_host, sync_start: f.sync_start },
           password: pw,
           smtp_password: pw,
           verify: true,
@@ -434,7 +469,7 @@ export function AddMailboxWizard({
       setBlocked(null);
       setFailure(null);
       const provider = signInFor(method, form);
-      if (provider) oauth.mutate({ provider, receive: method === "forwarding" ? "forwarding" : "sync" });
+      if (provider) oauth.mutate({ provider, receive: method === "forwarding" ? "forwarding" : isApiMethod(method) ? "api" : "sync" });
       else create.mutate();
     }
   };
@@ -519,8 +554,8 @@ export function AddMailboxWizard({
               {lookup && (
                 <div className="flex flex-col gap-3">
                   <DetectionCard domain={domain} detection={det} loading={detect.isLoading} failed={detect.isError} />
-                  {!detect.isLoading && !imapOn(opts.data) && <ForwardingWay email={form.email.trim()} />}
-                  {!detect.isLoading && imapOn(opts.data) && (
+                  {!detect.isLoading && !choices(opts.data) && <ForwardingWay email={form.email.trim()} />}
+                  {!detect.isLoading && choices(opts.data) && (
                     <WayPicker
                       ways={ways}
                       method={method}
@@ -687,7 +722,7 @@ function WayPicker({
   const { t } = useTranslation("settingsChannels");
   const hostLabel = det?.label || mailHostLabel(det?.host);
   const unconfigured = det?.oauth && oauthUnconfigured(opts, det.oauth) ? det.oauth : null;
-  const msNoPassword = isMicrosoftHost(det?.host) && !(det?.oauth && oauthOffered(opts, det.oauth));
+  const msNoPassword = isMicrosoftHost(det?.host) && !(det?.oauth && (oauthOffered(opts, det.oauth) || apiOn(opts, det.oauth)));
   return (
     <div className="flex flex-col gap-2.5">
       <div className="text-[12.5px] font-medium">{t("connect.howTitle")}</div>
@@ -873,10 +908,37 @@ function ConnectStep({
       <div className="flex flex-col gap-4">
         <Summary form={form} det={det} />
         {!isDesktop && <Note>{t("wizard.oauthNote", { provider: method === "google" ? "Google" : "Microsoft" })}</Note>}
+        <SyncStartField value={form.sync_start} onChange={(v) => set("sync_start", v)} />
       </div>
     );
 
-  if (method === "app_password" && isGoogleHost(form.mail_host)) return <GmailAppPassword sub={sub} form={form} set={set} errors={errors} servers={servers} />;
+  if (isApiMethod(method)) {
+    const provider = method === "google_api" ? "Google" : "Microsoft";
+    return (
+      <div className="flex flex-col gap-4">
+        <Summary form={form} det={det} />
+        <Note>{t("connect.directNote", { provider })}</Note>
+        {!isDesktop && <Note>{t("wizard.oauthNote", { provider })}</Note>}
+        <SyncStartField value={form.sync_start} onChange={(v) => set("sync_start", v)} />
+      </div>
+    );
+  }
+
+  if (method === "app_password" && isGoogleHost(form.mail_host))
+    return (
+      <GmailAppPassword
+        sub={sub}
+        form={form}
+        set={set}
+        errors={errors}
+        servers={
+          <>
+            {servers}
+            <SyncStartField value={form.sync_start} onChange={(v) => set("sync_start", v)} />
+          </>
+        }
+      />
+    );
 
   if (method === "app_password" || method === "password") {
     const guideHost = form.mail_host;
@@ -902,6 +964,7 @@ function ConnectStep({
           )}
         </Field>
         {servers}
+        <SyncStartField value={form.sync_start} onChange={(v) => set("sync_start", v)} />
         <AddressingFields form={form} set={set} errors={errors} compact={compact} />
       </div>
     );
@@ -1014,7 +1077,28 @@ function ConnectStep({
           </label>
         }
       />
+      <SyncStartField value={form.sync_start} onChange={(v) => set("sync_start", v)} />
       <AddressingFields form={form} set={set} errors={errors} compact={compact} />
+    </div>
+  );
+}
+
+/** Where reading the inbox starts: the last 7 days, or only new mail when the history came over by import. */
+function SyncStartField({ value, onChange }: { value: SyncStart; onChange: (v: SyncStart) => void }) {
+  const { t } = useTranslation("settingsChannels");
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[12.5px] font-medium">{t("wizard.syncStart")}</span>
+      <Segmented
+        value={value}
+        onChange={onChange}
+        options={[
+          { value: "recent", label: t("wizard.syncStartRecent") },
+          { value: "new", label: t("wizard.syncStartNew") },
+        ]}
+        className="self-start"
+      />
+      <p className="text-xs leading-[18px] text-fg-3">{value === "new" ? t("wizard.syncStartNewHint") : t("wizard.syncStartRecentHint")}</p>
     </div>
   );
 }

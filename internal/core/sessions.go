@@ -231,8 +231,9 @@ func (s *svc) disconnect(uid, sid uuid.UUID) {
 }
 
 // Every path that ends a session goes through endSession or revokeOtherSessions, which
-// delete the session's push devices in the same transaction: a signed-out phone stops
-// receiving pushes at once. (Deleting a user or a session row cascades to its devices.)
+// delete the session's push devices and browser subscriptions in the same transaction: a
+// signed-out phone or browser stops receiving pushes at once. (Deleting a user or a
+// session row cascades to both.)
 
 // endSession revokes one live session of uid and deletes its push devices. It reports
 // whether a live session was ended.
@@ -242,6 +243,9 @@ func endSession(ctx context.Context, q db.Querier, uid, sid uuid.UUID) (bool, er
 		return false, err
 	}
 	if _, err := q.Exec(ctx, `DELETE FROM push_devices WHERE session_id = $1`, sid); err != nil {
+		return false, err
+	}
+	if _, err := q.Exec(ctx, `DELETE FROM web_push_subscriptions WHERE session_id = $1`, sid); err != nil {
 		return false, err
 	}
 	return tag.RowsAffected() > 0, nil
@@ -257,7 +261,10 @@ func revokeOtherSessions(ctx context.Context, q db.Querier, uid, keep uuid.UUID)
 	if _, err := q.Exec(ctx, `UPDATE admin_sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL`, uid); err != nil {
 		return err
 	}
-	_, err := q.Exec(ctx, `DELETE FROM push_devices WHERE user_id = $1 AND session_id <> $2`, uid, keep)
+	if _, err := q.Exec(ctx, `DELETE FROM push_devices WHERE user_id = $1 AND session_id <> $2`, uid, keep); err != nil {
+		return err
+	}
+	_, err := q.Exec(ctx, `DELETE FROM web_push_subscriptions WHERE user_id = $1 AND session_id <> $2`, uid, keep)
 	return err
 }
 

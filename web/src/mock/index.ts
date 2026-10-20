@@ -16,6 +16,7 @@ import { registerEmailAnswers } from "./handlers/emailAnswers";
 import { registerAuth, setSignedIn } from "./handlers/auth";
 import { registerBilling } from "./handlers/billing";
 import { registerBots } from "./handlers/bots";
+import { registerCollab } from "./handlers/collab";
 import { registerKnowledge } from "./handlers/knowledge";
 import { registerImports } from "./handlers/imports";
 import { registerIntegrations } from "./handlers/integrations";
@@ -23,6 +24,8 @@ import { registerLabels } from "./handlers/labels";
 import { applyMockImap, syncReceiving } from "./handlers/mailhost";
 import { registerMcp } from "./handlers/mcp";
 import { registerNotificationPrefs } from "./handlers/notificationPrefs";
+import { registerSupportChannels } from "./handlers/supportChannels";
+import { registerTemplates } from "./handlers/templates";
 import { registerResources } from "./handlers/resources";
 import { registerTickets } from "./handlers/tickets";
 import { registerWorkspace } from "./handlers/workspace";
@@ -79,11 +82,17 @@ export function installMock(): void {
   registerAiClients();
   registerBots();
   registerNotificationPrefs();
+  registerSupportChannels();
+  registerTemplates();
+  registerCollab();
 
   setTransport((input, init) => dispatch(input, init));
   setSocketFactory(socketFactory);
 
-  if (params.get("mock_quiet") !== "1") startLive();
+  // The simulated activity stays off with ?mock_quiet=1, or for a whole dev server with
+  // VITE_MOCK_QUIET=1 (the QA harness, so stills hold still); ?mock_live=1 turns it back on.
+  const quiet = params.get("mock_quiet") === "1" || import.meta.env.VITE_MOCK_QUIET === "1";
+  if (!quiet || params.get("mock_live") === "1") startLive();
 
   window.__odMock = {
     db,

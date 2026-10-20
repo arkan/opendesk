@@ -16,6 +16,7 @@ import type {
   Page,
   SuggestedReply,
   Team,
+  Thread,
   Ticket,
   TicketLink,
   Workspace,
@@ -25,6 +26,7 @@ import { applyAgentQualityEvent } from "../agentTests";
 import { updateWorkspace, useSession } from "../session";
 import { cachedTicket, forgetTicket, patchTicketEverywhere, removeTicketEverywhere, teamsOf } from "../ticketCache";
 import { markHidden, unmarkHidden } from "./store";
+import { applyCollabEvent } from "../collab/cache";
 
 // Events that can tick off a setup checklist step (contracts/api.md "Onboarding").
 const onboardingResources = new Set(["mailbox", "member", "tag", "kb_article", "workspace"]);
@@ -67,6 +69,8 @@ const simpleLists: Record<string, { key: readonly unknown[]; field: string }> = 
   routing_rule: { key: qk.routingRules, field: "routing_rule" },
   webhook: { key: qk.webhooks, field: "webhook" },
   integration: { key: qk.integrations, field: "integration" },
+  support_channel_connection: { key: qk.supportChannelConnections, field: "support_channel_connection" },
+  support_channel_destination: { key: qk.supportChannelDestinations, field: "support_channel_destination" },
 };
 
 /** What an import has written so far, to tell whether lists have news. */
@@ -123,7 +127,14 @@ function mergeMessage(qc: QueryClient, ticketId: string, m: Message) {
   const partial = !Array.isArray(m.to) || !Array.isArray(m.attachments) || !m.author;
   const full = { ...m, to: m.to ?? [], cc: m.cc ?? [], bcc: m.bcc ?? [], attachments: m.attachments ?? [] };
   // Our own send can arrive here before its POST answers: take the optimistic copy's place.
-  const temp = old.findIndex((x) => x.id.startsWith("tmp-") && x.kind === m.kind && x.author?.user?.id === m.author?.user?.id && x.delivery_status !== "failed");
+  const temp = old.findIndex(
+    (x) =>
+      x.id.startsWith("tmp-") &&
+      x.kind === m.kind &&
+      (x.thread_id ?? null) === (m.thread_id ?? null) &&
+      x.author?.user?.id === m.author?.user?.id &&
+      x.delivery_status !== "failed",
+  );
   if (temp >= 0 && m.author?.type === "user") {
     qc.setQueryData<Message[]>(key, old.map((x, j) => (j === temp ? full : x)));
     if (partial) void qc.invalidateQueries({ queryKey: key, exact: true });
@@ -163,8 +174,15 @@ export function applyEnvelope(qc: QueryClient, env: Envelope, ctx: ApplyContext)
     return;
   }
 
+  // Collab mail (contracts/collab.md "Events"): ids only, for the people who see them; lists refetch.
+  if (resource === "collab") {
+    applyCollabEvent(qc, env.type, d);
+    return;
+  }
+
   switch (env.type) {
-    // A stand-in for an event of a private team's ticket: it only keeps seq contiguous.
+    // A stand-in for an event of a private team's ticket, or of one scoped to people
+    // (Collab mail): it only keeps seq contiguous.
     case "event.hidden":
       return;
     case "ticket.hidden": {
@@ -218,6 +236,13 @@ export function applyEnvelope(qc: QueryClient, env: Envelope, ctx: ApplyContext)
         if (s.status === "pending") return s;
         return old && old.id !== s.id ? old : null;
       });
+      return;
+    }
+    case "thread.created":
+    case "thread.updated": {
+      const th = d.thread as Thread | undefined;
+      const tid = (d.ticket_id as string) ?? th?.ticket_id;
+      if (th && tid) upsertInList(qc, qk.threads(tid), th);
       return;
     }
     case "activity.created": {
@@ -395,6 +420,10 @@ export function applyEnvelope(qc: QueryClient, env: Envelope, ctx: ApplyContext)
     else {
       const row = d[simple.field] as { id: string } | undefined;
       if (row) upsertInList(qc, simple.key, row);
+    }
+    if (resource === "support_channel_connection" && verb === "deleted") {
+      const id = d.support_channel_connection_id as string;
+      qc.setQueryData<{ connection_id: string }[]>(qk.supportChannelDestinations, (old) => old?.filter((x) => x.connection_id !== id));
     }
     if (resource === "view") refreshCounts(qc);
     // Tickets name their brand and widget; a removed one leaves lists to refetch.

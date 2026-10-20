@@ -256,9 +256,12 @@ var summaryLabels = map[string][2]string{
 	"assigned":         {"assigned", "assigned"},
 	"mentioned":        {"mention", "mentions"},
 	"customer_replied": {"reply", "replies"},
+	"thread_replied":   {"side conversation answer", "side conversation answers"},
 	"sla_breached":     {"missed target", "missed targets"},
 	"ai_handoff":       {"handoff", "handoffs"},
 	"team_joined":      {"team change", "team changes"},
+	"collab_assigned":  {"conversation assigned", "conversations assigned"},
+	"collab_mention":   {"comment mention", "comment mentions"},
 	"import_finished":  {"import", "imports"},
 	"ai_billing":       {"AI or billing notice", "AI or billing notices"},
 }
@@ -284,7 +287,7 @@ func summary(notes []Note, now time.Time, loc *time.Location) string {
 		count[k]++
 	}
 	var parts []string
-	for _, k := range []string{"assigned", "mentioned", "customer_replied", "sla_breached", "ai_handoff", "team_joined", "import_finished", "ai_billing", "other"} {
+	for _, k := range []string{"assigned", "mentioned", "customer_replied", "thread_replied", "sla_breached", "ai_handoff", "collab_assigned", "collab_mention", "team_joined", "import_finished", "ai_billing", "other"} {
 		n := count[k]
 		if n == 0 {
 			continue
@@ -453,6 +456,17 @@ func describe(n Note) copyOf {
 	case "customer_replied":
 		who := or(contact, "The customer")
 		return copyOf{title: who + " replied", subject: who + " replied on", heading: who + " replied", meta: "On a ticket assigned to you"}
+	case "thread_replied":
+		who := nameIn(n.Data, "from")
+		if f, ok := n.Data["from"].(map[string]any); ok && who == "" {
+			who, _ = f["email"].(string)
+		}
+		who = or(clip(who, 60), "Someone outside the team")
+		meta := "In a side conversation on a ticket assigned to you"
+		if subj := str(n.Data, "subject"); subj != "" {
+			meta = "In the side conversation " + subj
+		}
+		return copyOf{title: who + " answered your side conversation", subject: who + " answered your side conversation on", heading: who + " answered your side conversation", meta: meta}
 	case "sla_breached":
 		what := "The first response target"
 		if str(n.Data, "kind") == "resolution" {
@@ -521,6 +535,8 @@ func describe(n Note) copyOf {
 			intro: []string{rechargeReason(str(n.Data, "reason")) + " Auto-recharge is now off, so nothing else will be charged.",
 				"Update the payment method or add AI usage, then turn auto-recharge back on."},
 			cta: "Open billing", subjectTail: true}
+	case "collab_assigned", "collab_mention":
+		return collabCopy(n, actor)
 	case "import_finished":
 		return importCopy(n.Data)
 	}
@@ -532,9 +548,12 @@ var TypeLabels = map[string]string{
 	"assigned":             "assignments",
 	"mentioned":            "mentions",
 	"customer_replied":     "customer replies",
+	"thread_replied":       "answers in your side conversations",
 	"sla_breached":         "SLA breaches",
 	"ai_handoff":           "handoffs to a person",
 	"team_joined":          "team changes",
+	"collab_assigned":      "conversations assigned to you",
+	"collab_mention":       "mentions in conversation comments",
 	"ai_cap_reached":       "the chat agent's monthly cap",
 	"ai_key_failed":        "AI key problems",
 	"ai_balance_low":       "a low AI balance",
@@ -548,6 +567,20 @@ func typeLabel(t string) string {
 		return l
 	}
 	return "this kind of notification"
+}
+
+// WebPush is what a browser shows for one notification (contracts/native.md "Web
+// Push"): the heading its email would have, the ticket's number and subject on one
+// short line, and the link a click opens.
+func WebPush(s Site, wid uuid.UUID, n Note) (title, body, link string) {
+	subject := strings.Join(strings.Fields(n.TicketSubject), " ")
+	switch {
+	case n.TicketID != nil:
+		body = clip(fmt.Sprintf("#%d %s", n.TicketNumber, subject), 120)
+	case subject != "":
+		body = clip(subject, 120) // a Collab conversation's subject
+	}
+	return describe(n).heading, body, noteURL(s, wid, n)
 }
 
 // noteURL is where a notification leads in the app, in its workspace.
@@ -565,6 +598,15 @@ func noteURL(s Site, wid uuid.UUID, n Note) string {
 			return s.App("/settings/teams/"+url.PathEscape(id), "ws", ws)
 		}
 		return s.App("/settings/teams", "ws", ws)
+	case "collab_assigned", "collab_mention":
+		box := "all"
+		if n.Type == "collab_assigned" {
+			box = "assigned"
+		}
+		if id, err := uuid.Parse(str(n.Data, "thread_id")); err == nil {
+			return s.App("/mail/"+box+"/"+id.String(), "ws", ws)
+		}
+		return s.App("/mail/"+box, "ws", ws)
 	case "import_finished":
 		id := ""
 		if u, err := uuid.Parse(str(n.Data, "import_id")); err == nil {
@@ -592,8 +634,12 @@ func toneOf(n Note) string {
 		return "#8B5CF6"
 	case "ai_balance_low":
 		return "#F59E0B"
-	case "team_joined":
+	case "team_joined", "thread_replied":
 		return "#06B6D4"
+	case "collab_assigned":
+		return "#3B82F6"
+	case "collab_mention":
+		return "#6366F1"
 	case "import_finished":
 		switch str(n.Data, "status") {
 		case "completed":
@@ -604,6 +650,25 @@ func toneOf(n Note) string {
 		return "#EF4444"
 	}
 	return "#8A8A8A"
+}
+
+// collabCopy names who assigned or mentioned the member and the conversation's subject
+// (contracts/collab.md "Notifications").
+func collabCopy(n Note, actor string) copyOf {
+	who, subject := or(actor, "A teammate"), clip(str(n.Data, "subject"), 80)
+	on := ""
+	if subject != "" {
+		on = ": " + subject
+	}
+	if n.Type == "collab_assigned" {
+		return copyOf{title: who + " assigned you a conversation", heading: who + " assigned you a conversation" + on,
+			intro: []string{"It now shows in your mail under Assigned to me."}, cta: "Open conversation"}
+	}
+	intro := []string{who + " mentioned you in a comment on a conversation."}
+	if sn := snippet(n); sn != "" {
+		intro = append(intro, "“"+sn+"”")
+	}
+	return copyOf{title: who + " mentioned you in a comment", heading: who + " mentioned you" + on, intro: intro, cta: "Open conversation"}
 }
 
 // importCopy says how a history import ended (contracts/imports.md): done, waiting for new
@@ -696,7 +761,7 @@ func providerName(p string) string {
 // snippet is the notification's short plain-text excerpt, when it has one.
 func snippet(n Note) string {
 	switch n.Type {
-	case "mentioned", "customer_replied":
+	case "mentioned", "customer_replied", "collab_mention", "thread_replied":
 		return clip(str(n.Data, "preview"), SnippetRunes)
 	}
 	return ""

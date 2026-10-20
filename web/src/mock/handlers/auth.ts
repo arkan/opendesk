@@ -132,6 +132,7 @@ export function registerAuth() {
     password_login: true,
     signup_enabled: true,
     turnstile_site_key: null,
+    web_push_key: null,
   }));
 
   post("/v1/auth/login", (ctx) => {
