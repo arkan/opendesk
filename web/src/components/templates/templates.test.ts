@@ -1,8 +1,18 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { i18n } from "@/i18n";
 import { localNames, tagState } from "./catalog";
 import { matchSnippets, SNIPPETS } from "./snippets";
 
 describe("snippets", () => {
+  afterEach(async () => { await i18n.changeLanguage("en"); });
+
+  it("finds French labels while keeping the inserted template code unchanged", async () => {
+    await i18n.changeLanguage("en");
+    const english = matchSnippets("");
+    await i18n.changeLanguage("fr");
+    expect(matchSnippets("énumérer").map((s) => s.id)).toContain("for");
+    expect(matchSnippets("").map(({ id, code, select }) => ({ id, code, select }))).toEqual(english.map(({ id, code, select }) => ({ id, code, select })));
+  });
   it("finds logic by words people use", () => {
     expect(matchSnippets("loop").map((s) => s.id)).toContain("for");
     expect(matchSnippets("else").map((s) => s.id)).toContain("ifelse");

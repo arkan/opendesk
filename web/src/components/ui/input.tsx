@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { forwardRef, useEffect, useId, useRef, useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
 import { Search, X } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -82,7 +83,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
 export function SearchInput({
   value,
   onChange,
-  placeholder = "Search",
+  placeholder,
   className,
   autoFocus,
   inputSize = "sm",
@@ -98,6 +99,7 @@ export function SearchInput({
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
   inputRef?: React.Ref<HTMLInputElement>;
 }) {
+  const { t: ui } = useTranslation("ui");
   return (
     <TextInput
       ref={inputRef}
@@ -114,15 +116,15 @@ export function SearchInput({
         onKeyDown?.(e);
       }}
       onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      aria-label={placeholder}
+      placeholder={placeholder ?? ui("search")}
+      aria-label={placeholder ?? ui("search")}
       className={className}
       leading={<Search />}
       trailing={
         value ? (
           <button
             type="button"
-            aria-label="Clear search"
+            aria-label={ui("clearSearch")}
             onClick={() => onChange("")}
             className="flex size-5 items-center justify-center rounded text-fg-3 hover:bg-hover hover:text-fg"
           >
@@ -135,10 +137,11 @@ export function SearchInput({
 }
 
 export function Label({ children, htmlFor, className, optional }: { children: ReactNode; htmlFor?: string; className?: string; optional?: boolean }) {
+  const { t: ui } = useTranslation("ui");
   return (
     <label htmlFor={htmlFor} className={cn("flex items-center gap-1.5 text-[12.5px] font-medium text-fg", className)}>
       {children}
-      {optional && <span className="font-normal text-fg-4">Optional</span>}
+      {optional && <span className="font-normal text-fg-4">{ui("optional")}</span>}
     </label>
   );
 }

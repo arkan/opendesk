@@ -15,12 +15,13 @@ import { desktop } from "@/lib/desktop";
  * of a shared inbox filling in live.
  */
 export function AuthLayout() {
+  const { t: a } = useTranslation("auth");
   if (desktop) return <DesktopAuthLayout />;
   return (
     <div className="relative flex min-h-dvh flex-col bg-frame">
       {/* In the desktop app this strip is the title bar: it drags the window and clears its controls. */}
       <header className="window-drag relative flex h-14 items-center px-6 desktop-glass:h-12 desktop-mac:pl-(--window-inset-left) desktop-win:pr-[max(1.5rem,var(--window-inset-right))]">
-        <Link to="/" aria-label="opendesk home" className="text-fg">
+        <Link to="/" aria-label={a("opendeskHome")} className="text-fg">
           <Lockup className="h-[18px]" />
         </Link>
       </header>
@@ -36,8 +37,8 @@ export function AuthLayout() {
       </main>
       <footer className="relative flex h-12 items-center justify-center gap-4 text-xs text-fg-4">
         <a href="https://opendesk.sh" className="hover:text-fg-2">opendesk.sh</a>
-        <a href="https://docs.opendesk.sh" className="hover:text-fg-2">Docs</a>
-        <a href="https://opendesk.sh/privacy" className="hover:text-fg-2">Privacy</a>
+        <a href="https://docs.opendesk.sh" className="hover:text-fg-2">{a("docs")}</a>
+        <a href="https://opendesk.sh/privacy" className="hover:text-fg-2">{a("privacy")}</a>
       </footer>
     </div>
   );
@@ -96,6 +97,7 @@ const ROWS: Row[] = [
 
 /** Decorative: a few tickets arriving and getting solved. Hidden from assistive tech. */
 function InboxPreview() {
+  const { t: a } = useTranslation("auth");
   const reduce = useReducedMotion();
   const [n, setN] = useState(4);
   useEffect(() => {
@@ -111,8 +113,8 @@ function InboxPreview() {
     <div aria-hidden className="relative hidden flex-col border-l border-line bg-sunken lg:flex">
       <div className="flex items-center justify-between px-7 pb-4 pt-9">
         <div>
-          <p className="label-caps">Shared inbox</p>
-          <p className="mt-1 text-[15px] font-semibold tracking-[-0.02em] text-fg">Every conversation, one calm queue</p>
+          <p className="label-caps">{a("sharedInbox")}</p>
+          <p className="mt-1 text-[15px] font-semibold tracking-[-0.02em] text-fg">{a("everyConversationOneCalmQueue")}</p>
         </div>
       </div>
       <div className="mx-7 overflow-hidden rounded-lg border border-line bg-surface shadow-xs">
@@ -149,9 +151,9 @@ function InboxPreview() {
       </div>
       <div className="mt-auto grid grid-cols-3 gap-px border-t border-line bg-line">
         {[
-          ["Live", "Updates land for everyone at once"],
-          ["Email and chat", "One queue for every channel"],
-          ["Open source", "Hosted or on your own servers"],
+          [a("live"), a("updatesLandForEveryoneAtOnce")],
+          [a("emailAndChat"), a("oneQueueForEveryChannel")],
+          [a("openSource"), a("hostedOrOnYourOwnServers")],
         ].map(([k, v]) => (
           <div key={k} className="bg-sunken px-5 py-4">
             <p className="text-[12px] font-medium text-fg">{k}</p>

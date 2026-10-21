@@ -1,3 +1,4 @@
+import { fr } from "date-fns/locale";
 import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 import { differenceInCalendarDays, format, parseISO, subDays } from "date-fns";
@@ -290,6 +291,7 @@ function Figure({ label, value, sub }: { label: string; value: ReactNode; sub?: 
 
 function VolumeCard({ d, className }: { d: ReportsOverview; className?: string }) {
   const { t } = useTranslation("reports");
+  const { i18n } = useTranslation("indicators");
   const [view, setView] = useState<"chart" | "table">("chart");
   const avg = d.by_day.length ? d.created / d.by_day.length : 0;
   const busiest = d.by_day.reduce<ReportsOverview["by_day"][number] | null>((m, x) => (!m || x.created > m.created ? x : m), null);
@@ -319,7 +321,7 @@ function VolumeCard({ d, className }: { d: ReportsOverview; className?: string }
         <Figure
           label={t("volume.busiest")}
           value={busiest && busiest.created ? <AnimatedNumber value={busiest.created} /> : "–"}
-          sub={busiest && busiest.created ? format(parseISO(busiest.date), "EEE, MMM d") : undefined}
+          sub={busiest && busiest.created ? format(parseISO(busiest.date), (i18n.language.startsWith("fr") ? "EEE d MMM" : "EEE, MMM d"), { locale: i18n.language.startsWith("fr") ? fr : undefined }) : undefined}
         />
         <Figure label={t("volume.solveRate")} value={rate === null ? "–" : <AnimatedNumber value={rate} format={(n) => `${Math.round(n)}%`} />} sub={t("volume.solvedOfCreated")} />
       </div>
@@ -334,6 +336,7 @@ function VolumeCard({ d, className }: { d: ReportsOverview; className?: string }
  */
 function BacklogCard({ filter, openNow }: { filter: ReportsQuery; openNow: number }) {
   const { t } = useTranslation("reports");
+  useTranslation("indicators");
   const narrowed = !!(filter.team_id || filter.brand_id);
   const counts = useQuery({ ...q.counts(), enabled: !narrowed });
   const list = useInfiniteQuery({ ...q.tickets(openWork(filter)), enabled: narrowed });
@@ -350,8 +353,8 @@ function BacklogCard({ filter, openNow }: { filter: ReportsQuery; openNow: numbe
   const rows: BarRow[] = c
     ? (["open", "pending", "on_hold"] as const).map((s) => ({
         id: s,
-        label: statusLabel[s],
-        text: statusLabel[s],
+        label: statusLabel(s),
+        text: statusLabel(s),
         value: c[s],
         tone: statusTone[s],
         icon: <StatusIcon status={s} />,
@@ -414,14 +417,15 @@ function BrandCard({ rows }: { rows: GroupRow[] }) {
 /** Priority and label mix of the open work, from the loaded open tickets. */
 function OpenWorkCards({ filter }: { filter: ReportsQuery }) {
   const { t } = useTranslation("reports");
+  useTranslation("indicators");
   const list = useInfiniteQuery(q.tickets(openWork(filter)));
   const tickets = list.data?.pages.flatMap((pg) => pg.data) ?? [];
   const sample = list.hasNextPage ? t("open.sample", { count: tickets.length }) : t("open.subtitle");
 
   const priorities: BarRow[] = priorityOrder.map((pr) => ({
     id: pr,
-    label: priorityLabel[pr],
-    text: priorityLabel[pr],
+    label: priorityLabel(pr),
+    text: priorityLabel(pr),
     value: tickets.filter((x) => x.priority === pr).length,
     tone: priorityTone[pr],
     icon: <PriorityIcon priority={pr} />,

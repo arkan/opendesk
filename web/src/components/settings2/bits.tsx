@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
@@ -49,8 +50,9 @@ export function MonoChip({ children, className }: { children: React.ReactNode; c
 }
 
 export function ListSkeleton({ rows = 4 }: { rows?: number }) {
+  const { t: ui } = useTranslation("ui");
   return (
-    <div aria-busy="true" aria-label="Loading">
+    <div aria-busy="true" aria-label={ui("loading")}>
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="flex h-12 items-center gap-3 border-b border-line-soft px-4 last:border-0">
           <div className="skeleton h-2.5" style={{ width: `${28 + ((i * 13) % 25)}%` }} />
@@ -64,13 +66,14 @@ export function ListSkeleton({ rows = 4 }: { rows?: number }) {
 // Colour for meaning in settings lists: roles, states, summary figures.
 
 const roleTone = { owner: "indigo", admin: "blue", agent: "teal", viewer: "gray" } as const satisfies Record<Role, Tone>;
-const roleText: Record<Role, string> = { owner: "Owner", admin: "Admin", agent: "Agent", viewer: "Viewer" };
+const roleText = { owner: "roles.owner", admin: "roles.admin", agent: "roles.agent", viewer: "roles.viewer" } as const satisfies Record<Role, string>;
 
 /** A workspace role in its tone. */
 export function RolePill({ role, className }: { role: Role; className?: string }) {
+  const { t: ui } = useTranslation("ui");
   return (
     <Badge tone={roleTone[role]} className={className}>
-      {roleText[role]}
+      {ui(roleText[role])}
     </Badge>
   );
 }

@@ -7,11 +7,12 @@ import { BreakdownBars, ShareBar, type BarRow } from "./Bars";
 /** Tickets created in the period by severity, worst first, unset last. */
 export function SeverityBars({ data }: { data: NonNullable<ReportsOverview["by_severity"]> }) {
   const { t } = useTranslation("reports");
+  useTranslation("indicators");
   const rows: BarRow[] = [
     ...severityOrder.map((s: Severity) => ({
       id: s,
-      label: severityLabel[s],
-      text: severityLabel[s],
+      label: severityLabel(s),
+      text: severityLabel(s),
       value: data[s] ?? 0,
       tone: severityTone[s],
       icon: <SeverityChip severity={s} />,

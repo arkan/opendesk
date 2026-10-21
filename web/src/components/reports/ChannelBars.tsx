@@ -9,8 +9,9 @@ const order: Channel[] = ["email", "chat", "portal", "api"];
 /** Each channel in its own tone: a share strip on top, ranked bars under it. */
 export function ChannelBars({ data }: { data: ReportsOverview["by_channel"] }) {
   const { t } = useTranslation("reports");
+  useTranslation("indicators");
   const rows: BarRow[] = order
-    .map((c) => ({ id: c, label: channelLabel[c], text: channelLabel[c], value: data[c] ?? 0, tone: channelTone[c], icon: <ChannelIcon channel={c} /> }))
+    .map((c) => ({ id: c, label: channelLabel(c), text: channelLabel(c), value: data[c] ?? 0, tone: channelTone[c], icon: <ChannelIcon channel={c} /> }))
     .sort((a, b) => b.value - a.value);
   return (
     <div className="flex flex-col gap-5">

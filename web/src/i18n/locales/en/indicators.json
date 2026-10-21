@@ -1,0 +1,88 @@
+{
+  "status": {
+    "open": "Open",
+    "pending": "Pending",
+    "on_hold": "On hold",
+    "solved": "Solved",
+    "closed": "Closed"
+  },
+  "priority": {
+    "urgent": "Urgent",
+    "high": "High",
+    "normal": "Normal",
+    "low": "Low"
+  },
+  "severity": {
+    "sev1": "Sev 1",
+    "sev2": "Sev 2",
+    "sev3": "Sev 3",
+    "sev4": "Sev 4"
+  },
+  "severityHint": {
+    "sev1": "Critical outage",
+    "sev2": "Major impact",
+    "sev3": "Minor impact",
+    "sev4": "Low impact"
+  },
+  "channel": {
+    "email": "Email",
+    "chat": "Chat",
+    "api": "API",
+    "portal": "Portal"
+  },
+  "sentiment": {
+    "positive": "Positive",
+    "neutral": "Neutral",
+    "negative": "Negative",
+    "frustrated": "Frustrated"
+  },
+  "spam": "Spam",
+  "noPriority": "No priority",
+  "sla": {
+    "over": "{{duration}} over",
+    "firstResponse": {
+      "on_track": "First response due",
+      "due_soon": "First response due soon",
+      "breached": "First response overdue"
+    },
+    "resolution": {
+      "on_track": "Resolution due",
+      "due_soon": "Resolution due soon",
+      "breached": "Resolution overdue"
+    }
+  },
+  "reports": {
+    "created": "Created",
+    "solved": "Solved",
+    "day": "Day",
+    "tableCaption": "Tickets created and solved per day",
+    "chartLabel_one": "Tickets created and solved per day, {{count}} days. Use the arrow keys to read each day.",
+    "chartLabel_other": "Tickets created and solved per day, {{count}} days. Use the arrow keys to read each day.",
+    "range": {
+      "last7": "Last 7 days",
+      "last30": "Last 30 days",
+      "last90": "Last 90 days",
+      "thisMonth": "This month",
+      "lastMonth": "Last month",
+      "label": "Date range",
+      "custom": "Custom range",
+      "from": "From",
+      "to": "To",
+      "apply": "Apply range"
+    }
+  },
+  "tickets": {
+    "bulkActions": "Bulk actions",
+    "addLabels": "Add labels",
+    "closeTicket": "Close ticket",
+    "previousTicket": "Previous ticket",
+    "nextTicket": "Next ticket",
+    "moreActions": "More actions",
+    "toggleDetails": "Toggle details",
+    "ticketDetails": "Ticket details",
+    "conversation": "Conversation",
+    "mentionTeammate": "Mention a teammate",
+    "mergeSearch": "Search by subject, customer or #number",
+    "remove": "Remove {{name}}"
+  }
+}

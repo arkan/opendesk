@@ -27,6 +27,7 @@ const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function NewTicketDialog() {
   const { t: tr } = useTranslation("inbox");
+  useTranslation("indicators");
   const qc = useQueryClient();
   const navigate = useNavigate();
   const confirm = useConfirm();
@@ -220,13 +221,13 @@ export default function NewTicketDialog() {
         </div>
         <div className="flex items-center gap-2">
           <Picker
-            items={priorityOrder.map((p) => ({ value: p, label: priorityLabel[p], icon: <PriorityIcon priority={p} /> }))}
+            items={priorityOrder.map((p) => ({ value: p, label: priorityLabel(p), icon: <PriorityIcon priority={p} /> }))}
             value={priority}
             onSelect={(v) => setPriority(v as Priority)}
             placeholder={tr("props.setPriority")}
             trigger={
               <Button size="sm" icon={<PriorityIcon priority={priority} />} iconRight={<ChevronDown className="size-3 text-fg-4" />}>
-                {priorityLabel[priority]}
+                {priorityLabel(priority)}
               </Button>
             }
           />

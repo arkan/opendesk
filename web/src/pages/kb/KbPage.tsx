@@ -337,8 +337,9 @@ export default function KbPage() {
 }
 
 function ArticleSkeleton() {
+  const { t: ui } = useTranslation("ui");
   return (
-    <div aria-busy="true" aria-label="Loading">
+    <div aria-busy="true" aria-label={ui("loading")}>
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className={`${cols} min-h-14 border-b border-line-soft px-4 py-2.5 md:px-5`} style={{ opacity: 1 - i * 0.09 }}>
           <span className="flex flex-col gap-2">

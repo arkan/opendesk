@@ -315,6 +315,7 @@ const NONE: ReadonlySet<string> = new Set();
 const CLASSIC: SidebarSectionId[] = ["inbox", "teams", "views", "workspace"];
 
 export function Sidebar({ drawer }: { drawer?: boolean }) {
+  const { t: tNav } = useTranslation("navigation");
   const { data: counts } = useQuery(q.counts());
   const { data: views } = useQuery(q.views());
   const role = useRole();
@@ -346,7 +347,7 @@ export function Sidebar({ drawer }: { drawer?: boolean }) {
               const nums = ticketRowNumbers(counts, key);
               const n = counted ? shown(key, "inbox", nums) : undefined;
               return (
-              <NavTip key={f.id} rail={rail} label={f.label}>
+              <NavTip key={f.id} rail={rail} label={tNav(f.labelKey)}>
                 <RowMenu
                   enabled={collab.enabled}
                   prefs={prefs}
@@ -354,17 +355,17 @@ export function Sidebar({ drawer }: { drawer?: boolean }) {
                   pin={{ kind: "ticket_folder", id: f.id }}
                   hideId={key}
                   rail={rail}
-                  label={f.label}
+                  label={tNav(f.labelKey)}
                 >
                 <Link
                   to="/inbox/$folder/{-$ticketId}"
                   params={{ folder: f.id, ticketId: undefined }}
                   className={cn(rowBase, rowShape(rail), rowIdle)}
                   activeProps={{ className: rowActive, "data-status": "active" } as Record<string, string>}
-                  aria-label={rail ? f.label : undefined}
+                  aria-label={rail ? tNav(f.labelKey) : undefined}
                 >{withPill(<>
                   {folderIcons[f.id]}
-                  <Label rail={rail}>{f.label}</Label>
+                  <Label rail={rail}>{tNav(f.labelKey)}</Label>
                   <WaitingBadge n={waitingFor({ kind: "ticket_folder", id: f.id })} rail={rail} />
                   <Count n={n} rail={rail} />
                   {rail && f.id === "unassigned" && (n ?? 0) > 0 && (

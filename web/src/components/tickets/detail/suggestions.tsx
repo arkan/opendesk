@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 // Composer suggestions: "@" mentions (notes) and "/" saved replies. TipTap's
 // Suggestion utility drives the matching; a tiny store feeds one React popup.
 
@@ -119,6 +120,7 @@ export function savedReplyExtension(getReplies: () => SavedReply[], pick: (html:
 
 /** The floating list; mount once next to the editor. */
 export function SuggestionPopup() {
+  const { t } = useTranslation(["indicators", "inbox"]);
   const { open, items, index, getRect, anchorEl, pick, kind } = useSuggest();
   const ref = useRef<HTMLDivElement>(null);
   const rect = useCaretAnchor({ open, getRect, anchorEl, popupRef: ref, onDismiss: dismiss });
@@ -130,7 +132,7 @@ export function SuggestionPopup() {
     <div
       ref={ref}
       role="listbox"
-      aria-label={kind === "mention" ? "Mention a teammate" : "Saved replies"}
+      aria-label={kind === "mention" ? t("tickets.mentionTeammate") : t("inbox:composer.savedReplies")}
       data-floating
       style={placeBelowOrAbove(rect, 280, 240)}
       className="z-[80] max-h-[240px] w-[280px] overflow-y-auto rounded-lg border border-line bg-raised p-1 shadow-pop animate-pop-in"

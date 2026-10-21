@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWaitingAlerts } from "@/components/tickets/useWaitingAlerts";
 import { Outlet, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
@@ -194,6 +195,7 @@ function useWebPushSubscription() {
 }
 
 export function AppLayout() {
+  const { t: tNav } = useTranslation("navigation");
   // The top-level area (inbox, views, contacts, settings/...) keys the route transition.
   const section = useRouterState({ select: (s) => { const p = s.location.pathname.split("/").filter(Boolean); return p[0] ?? ""; } });
   useRealtimeConnection();
@@ -255,7 +257,7 @@ export function AppLayout() {
               className="fixed inset-y-0 left-0 z-40 flex w-[272px] flex-col bg-chrome pt-2 shadow-float outline-none data-[state=open]:animate-fade-in md:hidden"
               onClick={(e) => (e.target as HTMLElement).closest("a") && shell.sidebar(false)}
             >
-              <D.Title className="sr-only">Navigation</D.Title>
+              <D.Title className="sr-only">{tNav("navigation")}</D.Title>
               <Sidebar drawer />
             </D.Content>
           </D.Portal>

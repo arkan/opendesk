@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { errorMessage, isApiError } from "@/lib/api/client";
@@ -9,6 +10,7 @@ export function isReauthError(e: unknown) {
 }
 
 export function ReauthNotice({ error }: { error: unknown }) {
+  const { t: ui } = useTranslation("ui");
   const navigate = useNavigate();
   if (!error) return null;
   if (!isReauthError(error)) return <p className="text-xs text-danger-fg">{errorMessage(error)}</p>;
@@ -29,7 +31,7 @@ export function ReauthNotice({ error }: { error: unknown }) {
           void navigate({ to: "/login", search: { next, email, add: "1" } });
         }}
       >
-        Sign in again
+        {ui("signInAgain")}
       </Button>
     </div>
   );

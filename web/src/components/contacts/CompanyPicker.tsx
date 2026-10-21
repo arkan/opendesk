@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, ChevronDown } from "lucide-react";
 import { useState } from "react";
@@ -10,6 +11,7 @@ import { useDebounced } from "./hooks";
 
 /** Pick a company with server-side search. `null` clears it. */
 export function CompanyPicker({ value, onChange, id }: { value: CompanyRef | null; onChange: (c: CompanyRef | null) => void; id?: string }) {
+  const { t: ui } = useTranslation("ui");
   const [query, setQuery] = useState("");
   const term = useDebounced(query, 200);
   const { data } = useQuery({
@@ -25,7 +27,7 @@ export function CompanyPicker({ value, onChange, id }: { value: CompanyRef | nul
       ]}
       value={value?.id ?? "__none"}
       width={300}
-      placeholder="Search companies"
+      placeholder={ui("searchCompanies")}
       onQueryChange={setQuery}
       onSelect={(v) => {
         if (v === "__none") return onChange(null);

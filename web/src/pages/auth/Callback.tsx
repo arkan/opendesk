@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "react-i18next";
 import { getRouteApi, Link, useRouter } from "@tanstack/react-router";
 import { Link2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -18,7 +19,7 @@ const route = getRouteApi("/auth/auth/callback");
 
 type State =
   | { kind: "working" }
-  | { kind: "error"; message: string }
+  | { kind: "error"; message?: string; code?: string }
   | { kind: "mfa"; token: string; redirect?: string }
   | { kind: "link"; link: LinkRequired };
 
@@ -31,10 +32,11 @@ function linkFromError(e: unknown): LinkRequired | null {
 }
 
 export default function Callback() {
+  const { t: a } = useTranslation("auth");
   const search = route.useSearch();
   const router = useRouter();
   const [state, setState] = useState<State>(() =>
-    search.error ? { kind: "error", message: oauthErrorMessage(search.error)! } : search.code ? { kind: "working" } : { kind: "error", message: "This sign-in link is incomplete. Start again." },
+    search.error ? { kind: "error", code: search.error } : search.code ? { kind: "working" } : { kind: "error" },
   );
   const provider = search.code?.startsWith("mock-") ? search.code.slice(5) : undefined;
   const ran = useRef(false);
@@ -59,7 +61,7 @@ export default function Callback() {
       .catch((e) => {
         const link = linkFromError(e);
         if (link) setState({ kind: "link", link });
-        else setState({ kind: "error", message: errorMessage(e, "This sign-in link expired. Start again.") });
+        else setState({ kind: "error", message: errorMessage(e, a("thisSigninLinkExpiredStartAgain")) });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search.code]);
@@ -68,7 +70,7 @@ export default function Callback() {
     return (
       <div className="flex flex-col items-center gap-3 py-12 text-[13px] text-fg-3" aria-live="polite">
         <Spinner />
-        Signing you in
+        {a("signingYouIn")}
       </div>
     );
 
@@ -78,24 +80,25 @@ export default function Callback() {
 
   return (
     <div>
-      <AuthHeading title="Couldn't sign you in" />
-      <Notice className="mb-5">{state.message}</Notice>
+      <AuthHeading title={a("couldntSignYouIn")} />
+      <Notice className="mb-5">{state.message ?? (state.code ? oauthErrorMessage(state.code) : a("thisSigninLinkIsIncompleteStartAgain"))}</Notice>
       <Button variant="secondary" size="lg" className="w-full" asChild>
-        <Link to="/login">Back to log in</Link>
+        <Link to="/login">{a("backToLogIn")}</Link>
       </Button>
     </div>
   );
 }
 
 function LinkAccount({ link, provider, onResult }: { link: LinkRequired; provider?: string; onResult: (r: ExchangeResponse) => Promise<void> }) {
+  const { t: a } = useTranslation("auth");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const name = { google: "Google", microsoft: "Microsoft", github: "GitHub", oidc: "SSO" }[provider ?? ""] ?? "this sign-in method";
+  const name = { google: "Google", microsoft: "Microsoft", github: "GitHub", oidc: "SSO" }[provider ?? ""] ?? a("thisSigninMethod");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!password) return setError("Enter your password.");
+    if (!password) return setError(a("enterYourPassword"));
     setBusy(true);
     setError(null);
     try {
@@ -103,8 +106,8 @@ function LinkAccount({ link, provider, onResult }: { link: LinkRequired; provide
     } catch (err) {
       setBusy(false);
       setPassword("");
-      if (isApiError(err, "invalid_credentials") || (isApiError(err) && err.status === 401)) setError("That password isn't right.");
-      else if (isApiError(err) && (err.code === "invalid_token" || err.status === 410)) setError("This link expired. Start the sign-in again.");
+      if (isApiError(err, "invalid_credentials") || (isApiError(err) && err.status === 401)) setError(a("thatPasswordIsntRight"));
+      else if (isApiError(err) && (err.code === "invalid_token" || err.status === 410)) setError(a("thisLinkExpiredStartTheSigninAgain"));
       else setError(errorMessage(err));
     }
   };
@@ -115,32 +118,30 @@ function LinkAccount({ link, provider, onResult }: { link: LinkRequired; provide
         <Link2 className="size-[18px]" />
       </span>
       <AuthHeading
-        title="Link your account"
+        title={a("linkYourAccount")}
         subtitle={
-          <>
-            An opendesk account already uses {link.email ? <span className="font-medium text-fg">{link.email}</span> : "this email"}. Enter its password to link {name}. Next time you can sign in with either.
-          </>
+          <Trans ns="auth" i18nKey="linkAccountBody" values={{ email: link.email || a("thisEmail"), name }} components={{ email: <span className="font-medium text-fg" /> }} />
         }
       />
       {error && <Notice className="mb-4">{error}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
         <AuthField
-          label="Password"
+          label={a("password")}
           aside={
             <Link to="/forgot" className="text-xs text-fg-3 hover:text-fg">
-              Forgot password?
+              {a("forgotPassword")}
             </Link>
           }
         >
           {(id) => <PasswordInput id={id} autoFocus autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />}
         </AuthField>
         <Button type="submit" variant="primary" size="lg" className="w-full" loading={busy}>
-          Link and continue
+          {a("linkAndContinue")}
         </Button>
       </form>
       <p className="mt-6 text-center text-[12.5px] text-fg-3">
         <Link to="/login" className="hover:text-fg">
-          Cancel
+          {a("cancel")}
         </Link>
       </p>
     </div>

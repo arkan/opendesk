@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
@@ -13,13 +14,14 @@ export async function copyText(text: string) {
   }
 }
 
-export function CopyButton({ value, label = "Copy", className }: { value: string; label?: string; className?: string }) {
+export function CopyButton({ value, label, className }: { value: string; label?: string; className?: string }) {
+  const { t } = useTranslation("ui");
   const [done, setDone] = useState(false);
   return (
-    <Tooltip content={done ? "Copied" : label}>
+    <Tooltip content={done ? t("copied") : (label ?? t("copy"))}>
       <button
         type="button"
-        aria-label={label}
+        aria-label={label ?? t("copy")}
         onClick={async (e) => {
           e.stopPropagation();
           if (await copyText(value)) {

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import type navigation from "@/i18n/locales/en/navigation.json";
 import { atLeast, useRole } from "@/lib/session";
 import { useQuery } from "@tanstack/react-query";
 import { q } from "@/lib/queries";
@@ -85,75 +87,75 @@ type NavPath =
   | "/settings/integrations"
   | "/settings/import";
 
-const AGENT_GROUP = "AI agent";
+const AGENT_GROUP = "aiAgent";
 
-const groups: { title: string; items: { to: NavPath; label: string; icon: ReactNode }[] }[] = [
+const groups: { title: keyof typeof navigation.groups; items: { to: NavPath; label: keyof typeof navigation.settings; icon: ReactNode }[] }[] = [
   {
-    title: "Account",
+    title: "account",
     items: [
-      { to: "/settings/profile", label: "Profile", icon: <User /> },
-      { to: "/settings/security", label: "Security", icon: <Shield /> },
-      { to: "/settings/notifications", label: "Notifications", icon: <Bell /> },
+      { to: "/settings/profile", label: "profile", icon: <User /> },
+      { to: "/settings/security", label: "security", icon: <Shield /> },
+      { to: "/settings/notifications", label: "notifications", icon: <Bell /> },
     ],
   },
   {
-    title: "Workspace",
+    title: "workspace",
     items: [
-      { to: "/settings/workspace", label: "General", icon: <Building2 /> },
-      { to: "/settings/members", label: "Members", icon: <Users /> },
-      { to: "/settings/teams", label: "Teams", icon: <UsersRound /> },
-      { to: "/settings/billing", label: "Plan and billing", icon: <CreditCard /> },
-      { to: "/settings/ai", label: "AI", icon: <Bot /> },
-      { to: "/settings/integrations", label: "Integrations", icon: <Plug /> },
-      { to: "/settings/import", label: "Import", icon: <ImportIcon /> },
+      { to: "/settings/workspace", label: "general", icon: <Building2 /> },
+      { to: "/settings/members", label: "members", icon: <Users /> },
+      { to: "/settings/teams", label: "teams", icon: <UsersRound /> },
+      { to: "/settings/billing", label: "planAndBilling", icon: <CreditCard /> },
+      { to: "/settings/ai", label: "ai", icon: <Bot /> },
+      { to: "/settings/integrations", label: "integrations", icon: <Plug /> },
+      { to: "/settings/import", label: "import", icon: <ImportIcon /> },
     ],
   },
   {
-    title: "Inbox",
+    title: "inbox",
     items: [
-      { to: "/settings/tags", label: "Labels", icon: <Tag /> },
-      { to: "/settings/custom-fields", label: "Custom fields", icon: <SlidersHorizontal /> },
-      { to: "/settings/assignment", label: "Assignment", icon: <Shuffle /> },
-      { to: "/settings/triage", label: "Triage", icon: <Sparkles /> },
-      { to: "/settings/business-hours", label: "Business hours", icon: <Clock /> },
-      { to: "/settings/saved-replies", label: "Saved replies", icon: <MessageSquareText /> },
-      { to: "/settings/views", label: "Views", icon: <Layers /> },
-      { to: "/settings/sla", label: "SLA policies", icon: <Gauge /> },
-      { to: "/settings/automations", label: "Automations", icon: <Workflow /> },
+      { to: "/settings/tags", label: "labels", icon: <Tag /> },
+      { to: "/settings/custom-fields", label: "customFields", icon: <SlidersHorizontal /> },
+      { to: "/settings/assignment", label: "assignment", icon: <Shuffle /> },
+      { to: "/settings/triage", label: "triage", icon: <Sparkles /> },
+      { to: "/settings/business-hours", label: "businessHours", icon: <Clock /> },
+      { to: "/settings/saved-replies", label: "savedReplies", icon: <MessageSquareText /> },
+      { to: "/settings/views", label: "views", icon: <Layers /> },
+      { to: "/settings/sla", label: "slaPolicies", icon: <Gauge /> },
+      { to: "/settings/automations", label: "automations", icon: <Workflow /> },
     ],
   },
   {
-    title: "Channels",
+    title: "channels",
     items: [
-      { to: "/settings/mailboxes", label: "Mailboxes", icon: <Inbox /> },
-      { to: "/settings/support-channels", label: "Support channels", icon: <MessageSquareShare /> },
-      { to: "/settings/mail-accounts", label: "Mail accounts", icon: <AtSign /> },
-      { to: "/settings/routing", label: "Routing", icon: <Route /> },
-      { to: "/settings/brands", label: "Brands and widgets", icon: <MessageCircle /> },
-      { to: "/settings/email-design", label: "Email design", icon: <Palette /> },
+      { to: "/settings/mailboxes", label: "mailboxes", icon: <Inbox /> },
+      { to: "/settings/support-channels", label: "supportChannels", icon: <MessageSquareShare /> },
+      { to: "/settings/mail-accounts", label: "mailAccounts", icon: <AtSign /> },
+      { to: "/settings/routing", label: "routing", icon: <Route /> },
+      { to: "/settings/brands", label: "brandsAndWidgets", icon: <MessageCircle /> },
+      { to: "/settings/email-design", label: "emailDesign", icon: <Palette /> },
     ],
   },
   {
     title: AGENT_GROUP,
     items: [
-      { to: "/settings/ai/agent", label: "Overview", icon: <LayoutDashboard /> },
-      { to: "/settings/ai/bots", label: "Bots", icon: <Smile /> },
-      { to: "/settings/ai/behaviour", label: "Behaviour", icon: <SlidersHorizontal /> },
-      { to: "/settings/ai/knowledge", label: "Knowledge", icon: <BookOpen /> },
-      { to: "/settings/ai/tools", label: "Tools", icon: <Wrench /> },
-      { to: "/settings/ai/playground", label: "Playground", icon: <FlaskConical /> },
-      { to: "/settings/ai/tests", label: "Tests", icon: <ClipboardCheck /> },
+      { to: "/settings/ai/agent", label: "overview", icon: <LayoutDashboard /> },
+      { to: "/settings/ai/bots", label: "bots", icon: <Smile /> },
+      { to: "/settings/ai/behaviour", label: "behaviour", icon: <SlidersHorizontal /> },
+      { to: "/settings/ai/knowledge", label: "knowledge", icon: <BookOpen /> },
+      { to: "/settings/ai/tools", label: "tools", icon: <Wrench /> },
+      { to: "/settings/ai/playground", label: "playground", icon: <FlaskConical /> },
+      { to: "/settings/ai/tests", label: "tests", icon: <ClipboardCheck /> },
     ],
   },
   {
-    title: "Developers",
+    title: "developers",
     items: [
-      { to: "/settings/api-keys", label: "API keys", icon: <KeyRound /> },
-      { to: "/settings/ai-clients", label: "AI clients", icon: <Cable /> },
-      { to: "/settings/webhooks", label: "Webhooks", icon: <Webhook /> },
+      { to: "/settings/api-keys", label: "apiKeys", icon: <KeyRound /> },
+      { to: "/settings/ai-clients", label: "aiClients", icon: <Cable /> },
+      { to: "/settings/webhooks", label: "webhooks", icon: <Webhook /> },
     ],
   },
-  { title: "Admin", items: [{ to: "/settings/audit-log", label: "Audit log", icon: <ListChecks /> }] },
+  { title: "admin", items: [{ to: "/settings/audit-log", label: "auditLog", icon: <ListChecks /> }] },
 ];
 
 /**
@@ -183,6 +185,7 @@ function useBrandItems() {
 }
 
 export default function SettingsLayout() {
+  const { t } = useTranslation("navigation");
   const groups = useVisibleGroups();
   const brands = useBrandItems();
   const all = groups.flatMap((g) => g.items);
@@ -196,10 +199,10 @@ export default function SettingsLayout() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-      <nav aria-label="Settings" className="hidden w-[232px] shrink-0 overflow-y-auto border-r border-line px-2.5 pb-6 pt-4 md:block">
+      <nav aria-label={t("titles.settings")} className="hidden w-[232px] shrink-0 overflow-y-auto border-r border-line px-2.5 pb-6 pt-4 md:block">
         {groups.map((g, gi) => (
           <div key={g.title} className={gi ? "mt-4" : undefined}>
-            <div className="label-caps px-2 pb-1">{g.title}</div>
+            <div className="label-caps px-2 pb-1">{t(`groups.${g.title}`)}</div>
             <div className="flex flex-col gap-px">
               {g.items.map((i) => {
                 const active = current === i.to && !(i.to === "/settings/brands" && activeBrand);
@@ -222,7 +225,7 @@ export default function SettingsLayout() {
                       />
                     )}
                     {i.icon}
-                    <span className="relative z-10 truncate">{i.label}</span>
+                    <span className="relative z-10 truncate">{t(`settings.${i.label}`)}</span>
                   </Link>
                   {i.to === "/settings/brands" &&
                     brands.map((b) => {
@@ -261,10 +264,10 @@ export default function SettingsLayout() {
 
       <div className="border-b border-line px-4 py-2 md:hidden">
         <Select
-          aria-label="Settings page"
+          aria-label={t("settingsPage")}
           value={current}
           onChange={(v) => void navigate({ to: v })}
-          options={all.map((i) => ({ value: i.to, label: i.label }))}
+          options={all.map((i) => ({ value: i.to, label: t(`settings.${i.label}`) }))}
         />
       </div>
 

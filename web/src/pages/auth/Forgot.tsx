@@ -1,3 +1,5 @@
+import type { TFunction } from "i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { MailCheck } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,10 +16,12 @@ import { errorMessage, isApiError } from "@/lib/api/client";
 import { cn } from "@/lib/cn";
 import { tone } from "@/lib/tones";
 
-const schema = z.object({ email: z.string().trim().min(1, "Enter your email.").email("Enter a valid email address.") });
-type Values = z.infer<typeof schema>;
+const createSchema = (a: TFunction<"auth">) => z.object({ email: z.string().trim().min(1, a("enterYourEmail")).email(a("enterAValidEmailAddress")) });
+type Values = z.infer<ReturnType<typeof createSchema>>;
 
 export default function Forgot() {
+  const { t: a } = useTranslation("auth");
+  const schema = createSchema(a);
   const [token, setToken] = useState<string | null>(null);
   const {
     register,
@@ -48,22 +52,22 @@ export default function Forgot() {
         <span className={cn("mb-5 flex size-10 animate-indicator-in items-center justify-center rounded-lg", tone.blue.chip)}>
           <MailCheck className="size-[18px]" />
         </span>
-        <AuthHeading title="Check your email" subtitle={<>If an account exists for <span className="font-medium text-fg">{getValues("email").trim()}</span>, we sent a link to reset its password. It expires in an hour.</>} />
+        <AuthHeading title={a("checkYourEmail")} subtitle={<Trans ns="auth" i18nKey="resetEmailSent" values={{ email: getValues("email").trim() }} components={{ email: <span className="font-medium text-fg" /> }} />} />
         <Button variant="secondary" size="lg" className="w-full" asChild>
-          <Link to="/login">Back to log in</Link>
+          <Link to="/login">{a("backToLogIn")}</Link>
         </Button>
         <button type="button" onClick={() => setSent(false)} className="mt-4 w-full text-center text-[12.5px] text-fg-3 hover:text-fg">
-          Use a different email
+          {a("useADifferentEmail")}
         </button>
       </div>
     );
 
   return (
     <div>
-      <AuthHeading title="Reset your password" subtitle="Enter the email you use for opendesk and we'll send you a reset link." />
+      <AuthHeading title={a("resetYourPassword")} subtitle={a("enterTheEmailYouUseForOpendeskAnd")} />
       {error && <Notice className="mb-4">{error}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-        <AuthField label="Email">
+        <AuthField label={a("email")}>
           {(id) => (
             <div className="flex flex-col gap-1.5">
               <TextInput id={id} inputSize="lg" type="email" autoComplete="email" autoFocus placeholder="you@company.com" invalid={!!errors.email} {...register("email")} />
@@ -73,13 +77,13 @@ export default function Forgot() {
         </AuthField>
         <Turnstile ref={turnstile} onToken={setToken} action="password_reset" />
         <Button type="submit" variant="primary" size="lg" className="w-full" loading={isSubmitting}>
-          Send reset link
+          {a("sendResetLink")}
         </Button>
       </form>
       <p className="mt-7 text-center text-[12.5px] text-fg-3">
-        Remembered it?{" "}
+         {a("rememberedIt")}{" "}
         <Link to="/login" className="font-medium text-fg hover:underline">
-          Log in
+          {a("logIn")}
         </Link>
       </p>
     </div>

@@ -1,3 +1,5 @@
+import { i18n } from "@/i18n";
+import type { ParseKeys } from "i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -14,21 +16,21 @@ import type { Webhook } from "@/lib/api/types";
 import { qk, upsertInList } from "@/lib/queries";
 
 /** The events catalog (contracts/events.md), grouped by resource. */
-export const eventGroups: { label: string; events: string[] }[] = [
-  { label: "Tickets", events: ["ticket.created", "ticket.updated", "ticket.deleted"] },
-  { label: "Messages", events: ["message.created", "message.updated", "message.deleted"] },
-  { label: "Activity", events: ["activity.created"] },
-  { label: "Contacts", events: ["contact.created", "contact.updated", "contact.deleted"] },
-  { label: "Companies", events: ["company.created", "company.updated", "company.deleted"] },
-  { label: "Labels", events: ["tag.created", "tag.updated", "tag.deleted"] },
-  { label: "Mailboxes", events: ["mailbox.created", "mailbox.updated", "mailbox.deleted"] },
-  { label: "Members", events: ["member.added", "member.updated", "member.removed"] },
-  { label: "Knowledge base", events: ["kb_article.created", "kb_article.updated", "kb_article.deleted", "kb_collection.created", "kb_collection.updated", "kb_collection.deleted"] },
-  { label: "Saved replies", events: ["saved_reply.created", "saved_reply.updated", "saved_reply.deleted"] },
-  { label: "Views", events: ["view.created", "view.updated", "view.deleted"] },
-  { label: "Automations", events: ["automation.created", "automation.updated", "automation.deleted"] },
-  { label: "SLA policies", events: ["sla_policy.created", "sla_policy.updated", "sla_policy.deleted"] },
-  { label: "Teams", events: ["team.created", "team.updated", "team.deleted"] },
+export const eventGroups: { label: ParseKeys<"ui">; events: string[] }[] = [
+  { label: "webhookGroups.tickets", events: ["ticket.created", "ticket.updated", "ticket.deleted"] },
+  { label: "webhookGroups.messages", events: ["message.created", "message.updated", "message.deleted"] },
+  { label: "webhookGroups.activity", events: ["activity.created"] },
+  { label: "webhookGroups.contacts", events: ["contact.created", "contact.updated", "contact.deleted"] },
+  { label: "webhookGroups.companies", events: ["company.created", "company.updated", "company.deleted"] },
+  { label: "webhookGroups.labels", events: ["tag.created", "tag.updated", "tag.deleted"] },
+  { label: "webhookGroups.mailboxes", events: ["mailbox.created", "mailbox.updated", "mailbox.deleted"] },
+  { label: "webhookGroups.members", events: ["member.added", "member.updated", "member.removed"] },
+  { label: "webhookGroups.knowledgeBase", events: ["kb_article.created", "kb_article.updated", "kb_article.deleted", "kb_collection.created", "kb_collection.updated", "kb_collection.deleted"] },
+  { label: "webhookGroups.savedReplies", events: ["saved_reply.created", "saved_reply.updated", "saved_reply.deleted"] },
+  { label: "webhookGroups.views", events: ["view.created", "view.updated", "view.deleted"] },
+  { label: "webhookGroups.automations", events: ["automation.created", "automation.updated", "automation.deleted"] },
+  { label: "webhookGroups.slaPolicies", events: ["sla_policy.created", "sla_policy.updated", "sla_policy.deleted"] },
+  { label: "webhookGroups.teams", events: ["team.created", "team.updated", "team.deleted"] },
 ];
 export const allEvents = eventGroups.flatMap((g) => g.events);
 
@@ -42,8 +44,8 @@ function expandEvents(events: string[]) {
 }
 
 export function eventSummary(events: string[]) {
-  if (isAllEvents(events)) return "All events";
-  return events.length === 1 ? events[0] : `${events.length} events`;
+  if (isAllEvents(events)) return i18n.t("allEvents", { ns: "ui" });
+  return events.length === 1 ? events[0] : i18n.t("eventCount", { ns: "ui", count: events.length });
 }
 
 function validUrl(v: string): string | null {
@@ -51,14 +53,15 @@ function validUrl(v: string): string | null {
     const u = new URL(v.trim());
     // http is accepted only for a local receiver; the server allows it on development instances only.
     const local = u.hostname === "localhost" || u.hostname === "[::1]" || /^127\.\d+\.\d+\.\d+$/.test(u.hostname);
-    if (u.protocol !== "https:" && !(u.protocol === "http:" && local)) return "Use an https:// URL.";
+    if (u.protocol !== "https:" && !(u.protocol === "http:" && local)) return i18n.t("httpsUrl", { ns: "ui" });
     return null;
   } catch {
-    return "Enter a full URL, like https://example.com/hooks/opendesk.";
+    return i18n.t("fullUrl", { ns: "ui" });
   }
 }
 
 export function WebhookDialog({ hook, onClose, onCreated }: { hook: Webhook | null; onClose: () => void; onCreated?: (w: Webhook & { secret: string }) => void }) {
+  const { t: ui } = useTranslation("ui");
   const { t } = useTranslation("settingsDev");
   const qc = useQueryClient();
   const [url, setUrl] = useState(hook?.url ?? "");
@@ -150,7 +153,7 @@ export function WebhookDialog({ hook, onClose, onCreated }: { hook: Webhook | nu
               {t("webhookForm.events")} <span className="mono ml-1 text-[11px] font-normal tabular-nums text-fg-4">{all ? allEvents.length : events.length}/{allEvents.length}</span>
             </span>
             <label className="flex items-center gap-2 text-[12px] text-fg-2">
-              <Checkbox checked={all ? true : events.length ? "indeterminate" : false} onCheckedChange={(on) => setEvents(on ? allEvents : [])} aria-label="All events" />
+              <Checkbox checked={all ? true : events.length ? "indeterminate" : false} onCheckedChange={(on) => setEvents(on ? allEvents : [])} aria-label={ui("allEvents")} />
               {t("webhooks.allEvents")}
             </label>
           </div>
@@ -163,9 +166,9 @@ export function WebhookDialog({ hook, onClose, onCreated }: { hook: Webhook | nu
                     <Checkbox
                       checked={on === g.events.length ? true : on ? "indeterminate" : false}
                       onCheckedChange={(v) => toggleGroup(g.events, v)}
-                      aria-label={`All ${g.label.toLowerCase()} events`}
+                      aria-label={ui("allGroupEvents", { group: ui(g.label).toLowerCase() })}
                     />
-                    {g.label}
+                    {ui(g.label)}
                   </label>
                   <div className="flex flex-col gap-1 pl-6">
                     {g.events.map((e) => (
@@ -185,7 +188,7 @@ export function WebhookDialog({ hook, onClose, onCreated }: { hook: Webhook | nu
             <div className="text-[13px] font-medium">{t("webhookForm.active")}</div>
             <div className="text-[12px] text-fg-3">{t("webhookForm.activeHint")}</div>
           </div>
-          <Switch checked={enabled} onCheckedChange={setEnabled} aria-label="Webhook active" />
+          <Switch checked={enabled} onCheckedChange={setEnabled} aria-label={ui("webhookActive")} />
         </div>
         <PrivateTeamsField value={privateTeams} onChange={setPrivateTeams} grants={hook?.private_teams} />
         <button type="submit" className="hidden" />
@@ -195,6 +198,7 @@ export function WebhookDialog({ hook, onClose, onCreated }: { hook: Webhook | nu
 }
 
 export function SecretDialog({ secret, onClose }: { secret: string | null; onClose: () => void }) {
+  const { t: ui } = useTranslation("ui");
   const { t } = useTranslation("settingsDev");
   const verify = `const [t, v1] = header.split(",").map((p) => p.split("=")[1]);
 const expected = hmacSha256Hex(secret, \`\${t}.\${rawBody}\`);
@@ -219,7 +223,7 @@ const ok = timingSafeEqual(expected, v1) && Math.abs(Date.now() / 1000 - Number(
           <CopyField multiline value={`OD-Signature: t=<unix>,v1=<hex hmac_sha256(secret, "<t>.<body>")>`} />
           <CopyField multiline value={verify} />
           <p className="text-[12px] text-fg-3">
-            Deliveries also include <span className="mono text-fg-2">OD-Event-Id</span> and <span className="mono text-fg-2">OD-Event-Type</span>. Use the event id to ignore retries you've already handled.
+            {ui("deliveriesAlsoInclude")} <span className="mono text-fg-2">OD-Event-Id</span> {ui("and")} <span className="mono text-fg-2">OD-Event-Type</span>{ui("useTheEventIdToIgnoreRetriesYouVe")}
           </p>
         </div>
       </div>

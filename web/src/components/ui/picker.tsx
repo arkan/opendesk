@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Command } from "cmdk";
 import { Popover as P } from "radix-ui";
 import { Check, Plus } from "lucide-react";
@@ -51,7 +52,8 @@ type Multi = Common & { multi: true; values: string[]; onChange: (v: string[]) =
  * Assignee, team, status, priority, tags, mailboxes, saved replies all use it.
  */
 export function Picker(props: Single | Multi) {
-  const { trigger, items, placeholder = "Search", emptyText = "No matches", align = "start", side = "bottom", width = 240 } = props;
+  const { t } = useTranslation("ui");
+  const { trigger, items, placeholder = t("search"), emptyText = t("noMatches"), align = "start", side = "bottom", width = 240 } = props;
   const [innerOpen, setInnerOpen] = useState(false);
   const open = props.open ?? innerOpen;
   const setOpen = (o: boolean) => {

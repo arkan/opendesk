@@ -17,6 +17,7 @@ export const Composer = forwardRef<ComposerHandle, { running: boolean; onSend: (
   { running, onSend, onStop, disabled },
   ref,
 ) {
+  const { t: ui } = useTranslation("ui");
   const { t } = useTranslation("assistant");
   const name = useAssistantName();
   const [text, setText] = useState("");
@@ -52,7 +53,7 @@ export const Composer = forwardRef<ComposerHandle, { running: boolean; onSend: (
   return (
     <div className="relative">
       {open && (
-        <div role="listbox" aria-label="Quick asks" className="absolute inset-x-0 bottom-full mb-1.5 overflow-hidden rounded-lg border border-line bg-raised p-1 shadow-pop">
+        <div role="listbox" aria-label={ui("quickAsks")} className="absolute inset-x-0 bottom-full mb-1.5 overflow-hidden rounded-lg border border-line bg-raised p-1 shadow-pop">
           {slash.map((k, i) => (
             <button
               key={k}

@@ -92,6 +92,7 @@ const Row = forwardRef<HTMLDivElement, RowProps>(function TicketRow(
   ref,
 ) {
   const { t: tr } = useTranslation("inbox");
+  useTranslation("indicators");
   const reduced = useReducedMotion();
   const display = useDisplay();
   const note = useOllieNote();
@@ -164,7 +165,7 @@ const Row = forwardRef<HTMLDivElement, RowProps>(function TicketRow(
 
   // Severity is optional: a compact chip before the subject, only when set.
   const severity = t.severity && (
-    <Tooltip content={aiSeverity ? `${severityLabel[t.severity]} · ${note(t, "severity")}` : severityLabel[t.severity]}>
+    <Tooltip content={aiSeverity ? `${severityLabel(t.severity)} · ${note(t, "severity")}` : severityLabel(t.severity)}>
       <span className="flex shrink-0">
         <SeverityChip severity={t.severity} />
       </span>
@@ -182,7 +183,7 @@ const Row = forwardRef<HTMLDivElement, RowProps>(function TicketRow(
   const channel = t.channel === "chat" ? (
     <LiveChatBadge urgent={urgent} handedOff={wait?.handedOff} bot={bot} />
   ) : t.channel !== "email" && (
-    <Tooltip content={channelLabel[t.channel]}>
+    <Tooltip content={channelLabel(t.channel)}>
       <span className="flex shrink-0">
         <ChannelIcon channel={t.channel} plain className="size-3" />
       </span>

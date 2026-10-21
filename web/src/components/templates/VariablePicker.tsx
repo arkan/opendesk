@@ -1,9 +1,11 @@
+import { i18n } from "@/i18n";
+import { useTranslation } from "react-i18next";
 // A searchable list of the template variables, grouped, with what each reads.
 // Used as the "Variables" button of template editors and as the reference tab.
 
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Braces, Check, Copy, GitBranch, Wand2 } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Popover } from "@/components/ui/popover";
 import { SearchInput } from "@/components/ui/input";
 import { Segmented } from "@/components/ui/tabs";
@@ -12,7 +14,7 @@ import { copyText } from "@/components/ui/copy-button";
 import type { TemplateKind, TemplateVariable } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { q } from "@/lib/queries";
-import { GROUP_LABELS, GROUP_ORDER, tagFor, useCatalog } from "./catalog";
+import { templateGroupLabel, GROUP_ORDER, tagFor, useCatalog } from "./catalog";
 import { matchVars } from "./extension";
 import { matchSnippets } from "./snippets";
 
@@ -25,7 +27,7 @@ function rowsOf(variables: TemplateVariable[], slots: { key: string; label: stri
   ];
 }
 
-const groupLabel = (g: string) => (g === "slot" ? "Places" : (GROUP_LABELS[g as keyof typeof GROUP_LABELS] ?? g));
+const groupLabel = (g: string) => (g === "slot" ? i18n.t("places", { ns: "ui" }) : templateGroupLabel(g));
 
 /** The grouped list itself. */
 export function VariableList({
@@ -45,14 +47,12 @@ export function VariableList({
   /** Rows copy their tag on click (the reference). */
   copy?: boolean;
 }) {
+  const { t: ui } = useTranslation("ui");
   const { variables, slots, loading } = useCatalog(kind);
   const [query, setQuery] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
-  const groups = useMemo(() => {
-    const rows = matchVars(rowsOf(variables, slots), query.trim(), groupLabel);
-    const order = ["slot", ...GROUP_ORDER];
-    return order.map((g) => ({ group: g, rows: rows.filter((r) => r.group === g) })).filter((g) => g.rows.length > 0);
-  }, [variables, slots, query]);
+  const rows = matchVars(rowsOf(variables, slots), query.trim(), groupLabel);
+  const groups = ["slot", ...GROUP_ORDER].map((g) => ({ group: g, rows: rows.filter((r) => r.group === g) })).filter((g) => g.rows.length > 0);
 
   const pick = (key: string) => {
     if (copy) {
@@ -66,11 +66,11 @@ export function VariableList({
   return (
     <div className={cn("flex min-h-0 flex-col", className)}>
       <div className="p-2 pb-1.5">
-        <SearchInput value={query} onChange={setQuery} placeholder="Search variables" autoFocus={autoFocus} />
+        <SearchInput value={query} onChange={setQuery} placeholder={ui("searchVariables")} autoFocus={autoFocus} />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-1">
-        {loading && <div className="px-2 py-3 text-xs text-fg-3">Loading variables…</div>}
-        {!loading && groups.length === 0 && <div className="px-2 py-3 text-xs text-fg-3">No variables match “{query}”</div>}
+        {loading && <div className="px-2 py-3 text-xs text-fg-3">{ui("loadingVariables")}</div>}
+        {!loading && groups.length === 0 && <div className="px-2 py-3 text-xs text-fg-3">{ui("noVariablesMatchQuery")}{query}”</div>}
         {groups.map((g) => (
           <div key={g.group} className="pb-1">
             <div className="label-caps px-2 pb-1 pt-2">{groupLabel(g.group)}</div>
@@ -86,8 +86,8 @@ export function VariableList({
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1.5 text-[12.5px] text-fg">
                       {r.label}
-                      {r.html && <span className="rounded-sm bg-hover px-1 text-[10px] text-fg-3">HTML</span>}
-                      {r.list && <span className="rounded-sm bg-hover px-1 text-[10px] text-fg-3">List</span>}
+                      {r.html && <span className="rounded-sm bg-hover px-1 text-[10px] text-fg-3">{ui("html")}</span>}
+                      {r.list && <span className="rounded-sm bg-hover px-1 text-[10px] text-fg-3">{ui("list")}</span>}
                     </span>
                     <span className="mono block truncate text-[11px] text-fg-3">{tagFor(r.key)}</span>
                     <span className="block text-[11.5px] leading-4 text-fg-4">{r.description}</span>
@@ -114,16 +114,17 @@ export function VariableList({
 
 /** Ready-made logic: if, case, loops… */
 function LogicList({ onInsert }: { onInsert: (code: string, select?: string) => void }) {
+  const { t: ui } = useTranslation("ui");
   const [query, setQuery] = useState("");
   const [hover, setHover] = useState<string | null>(null);
   const list = matchSnippets(query);
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="p-2 pb-1.5">
-        <SearchInput value={query} onChange={setQuery} placeholder="Search logic" autoFocus />
+        <SearchInput value={query} onChange={setQuery} placeholder={ui("searchLogic")} autoFocus />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-1">
-        {list.length === 0 && <div className="px-2 py-3 text-xs text-fg-3">Nothing matches “{query}”</div>}
+        {list.length === 0 && <div className="px-2 py-3 text-xs text-fg-3">{ui("nothingMatchesQuery")}{query}”</div>}
         {list.map((sn) => (
           <button
             key={sn.id}
@@ -146,10 +147,11 @@ function LogicList({ onInsert }: { onInsert: (code: string, select?: string) => 
   );
 }
 
-const FILTER_GROUP_LABELS: Record<string, string> = { text: "Text", list: "Lists", number: "Numbers", date: "Dates" };
+const FILTER_GROUP_LABELS = { text: "text", list: "lists", number: "numbers", date: "dates" } as const;
 
 /** The helpers (filters), each inserting its example. */
 function HelperList({ onInsert }: { onInsert: (code: string, select?: string) => void }) {
+  const { t: ui } = useTranslation("ui");
   const { data } = useQuery(q.templateVariables());
   const [query, setQuery] = useState("");
   const ql = query.toLowerCase().trim();
@@ -157,16 +159,16 @@ function HelperList({ onInsert }: { onInsert: (code: string, select?: string) =>
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="p-2 pb-1.5">
-        <SearchInput value={query} onChange={setQuery} placeholder="Search helpers" autoFocus />
+        <SearchInput value={query} onChange={setQuery} placeholder={ui("searchHelpers")} autoFocus />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-1">
-        {filters.length === 0 && <div className="px-2 py-3 text-xs text-fg-3">Nothing matches “{query}”</div>}
+        {filters.length === 0 && <div className="px-2 py-3 text-xs text-fg-3">{ui("nothingMatchesQuery")}{query}”</div>}
         {(["text", "list", "number", "date"] as const).map((g) => {
           const rows = filters.filter((f) => f.group === g);
           if (!rows.length) return null;
           return (
             <div key={g} className="pb-1">
-              <div className="label-caps px-2 pb-1 pt-2">{FILTER_GROUP_LABELS[g]}</div>
+              <div className="label-caps px-2 pb-1 pt-2">{ui(FILTER_GROUP_LABELS[g])}</div>
               {rows.map((f) => {
                 const arg = f.args && f.example.includes(f.args) ? f.args : undefined;
                 return (
@@ -214,6 +216,7 @@ export function VariablePicker({
   trigger?: ReactNode;
   side?: "top" | "bottom";
 }) {
+  const { t: ui } = useTranslation("ui");
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"variables" | "logic" | "helpers">("variables");
   const done = (fn: () => void) => {
@@ -232,15 +235,15 @@ export function VariablePicker({
       className="flex h-[400px] w-[360px] flex-col p-0"
       trigger={
         trigger ?? (
-          <Tooltip content={onInsert ? "Insert a variable, logic or a helper. Or type {{ or {%" : "Insert a variable, or type {{"}>
+          <Tooltip content={onInsert ? ui("insertAVariableLogicOrAHelperOrType") : ui("insertAVariableOrType")}>
             <button
               type="button"
-              aria-label={onInsert ? "Insert" : "Insert a variable"}
+              aria-label={onInsert ? ui("insert") : ui("insertAVariable")}
               onMouseDown={(e) => e.preventDefault()}
               className="flex h-7 items-center gap-1 rounded-md px-1.5 text-[12px] text-fg-3 transition-colors hover:bg-hover hover:text-fg data-[state=open]:bg-hover [&_svg]:size-[15px]"
             >
               <Braces />
-              {onInsert ? "Insert" : "Variables"}
+              {onInsert ? ui("insert") : ui("variables")}
             </button>
           </Tooltip>
         )
@@ -254,9 +257,9 @@ export function VariablePicker({
             onChange={setTab}
             className="w-full [&>button]:flex-1 [&>button]:justify-center"
             options={[
-              { value: "variables", label: "Variables" },
-              { value: "logic", label: "Logic" },
-              { value: "helpers", label: "Helpers" },
+              { value: "variables", label: ui("variables") },
+              { value: "logic", label: ui("logic") },
+              { value: "helpers", label: ui("helpers") },
             ]}
           />
         </div>
@@ -275,7 +278,7 @@ export function VariablePicker({
         className="flex shrink-0 items-center gap-1.5 border-t border-line px-3 py-2 text-[12px] text-fg-3 transition-colors hover:text-fg"
       >
         <BookOpen className="size-3.5" />
-        Template guide: conditions, loops and every variable
+        {ui("templateGuideConditionsLoopsAndEveryVariable")}
       </a>
     </Popover>
   );

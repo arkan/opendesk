@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 // Settings > Security > Passkeys: list, add, rename and remove.
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -34,6 +35,7 @@ function guessName() {
 }
 
 export function PasskeysSection() {
+  const { t: a } = useTranslation("auth");
   const qc = useQueryClient();
   const confirm = useConfirm();
   const reduce = useReducedMotion();
@@ -54,7 +56,7 @@ export function PasskeysSection() {
       if (ctx?.prev) qc.setQueryData(key, ctx.prev);
       toast.error(e);
     },
-    onSuccess: () => toast.success("Passkey removed"),
+    onSuccess: () => toast.success(a("passkeyRemoved")),
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });
 
@@ -62,13 +64,13 @@ export function PasskeysSection() {
 
   return (
     <Section
-      title="Passkeys"
-      description="Sign in with your fingerprint, face or device PIN instead of a password. A passkey counts as two-factor."
+      title={a("passkeys")}
+      description={a("signInWithYourFingerprintFaceOrDevice")}
       flush
       actions={
         supported ? (
           <Button size="sm" icon={<Plus />} onClick={() => setAdding(true)}>
-            Add a passkey
+            {a("addAPasskey")}
           </Button>
         ) : undefined
       }
@@ -76,7 +78,7 @@ export function PasskeysSection() {
       {isLoading ? (
         <SkeletonRows rows={2} />
       ) : isError ? (
-        <EmptyState compact lit={3} title="Passkeys couldn't load" action={<Button onClick={() => void refetch()}>Retry</Button>} />
+        <EmptyState compact lit={3} title={a("passkeysCouldntLoad")} action={<Button onClick={() => void refetch()}>{a("retry")}</Button>} />
       ) : !list.length ? (
         <EmptyState
           compact
@@ -86,12 +88,12 @@ export function PasskeysSection() {
               <KeyRound className="size-[18px]" />
             </span>
           }
-          title="No passkeys yet"
-          description={supported ? "Add one to sign in faster and safer on this device." : mock ? "Passkeys aren't available in the demo." : "This browser doesn't support passkeys."}
+          title={a("noPasskeysYet")}
+          description={supported ? a("addOneToSignInFasterAndSafer") : mock ? a("passkeysArentAvailableInTheDemo") : a("thisBrowserDoesntSupportPasskeys")}
           action={
             supported ? (
               <Button variant="primary" icon={<Plus />} onClick={() => setAdding(true)}>
-                Add a passkey
+                {a("addAPasskey")}
               </Button>
             ) : undefined
           }
@@ -115,33 +117,33 @@ export function PasskeysSection() {
                   <div className="flex items-center gap-2 text-[13px] font-medium">
                     <span className="truncate">{p.name}</span>
                     {p.backed_up && (
-                      <Tooltip content="Synced with your password manager or cloud keychain">
+                      <Tooltip content={a("syncedWithYourPasswordManagerOrCloudKeychain")}>
                         <span>
                           <Badge tone="blue">
                             <Cloud className="size-3" />
-                            Synced
+                            {a("synced")}
                           </Badge>
                         </span>
                       </Tooltip>
                     )}
                   </div>
                   <div className="mt-0.5 flex items-center gap-2 text-xs text-fg-3">
-                    <span>Added {shortDate(p.created_at)}</span>
+                    <span>{a("addedOn", { date: shortDate(p.created_at) })}</span>
                     <span aria-hidden>·</span>
-                    <span>{p.last_used_at ? `Last used ${relLong(p.last_used_at)}` : "Never used"}</span>
+                    <span>{p.last_used_at ? a("lastUsed", { date: relLong(p.last_used_at) }) : a("neverUsed")}</span>
                   </div>
                 </div>
-                <Button size="sm" variant="ghost" square aria-label={`Rename ${p.name}`} icon={<Pencil />} onClick={() => setRenaming(p)} />
+                <Button size="sm" variant="ghost" square aria-label={a("renameNamed", { name: p.name })} icon={<Pencil />} onClick={() => setRenaming(p)} />
                 <Button
                   size="sm"
                   variant="ghost"
                   square
-                  aria-label={`Remove ${p.name}`}
+                  aria-label={a("removeNamed", { name: p.name })}
                   icon={<Trash2 />}
                   onClick={() =>
-                    confirm.show(`You won't be able to sign in with "${p.name}" anymore.`, () => remove.mutateAsync(p.id), {
-                      title: "Remove this passkey?",
-                      confirmLabel: "Remove",
+                    confirm.show(a("removePasskeyBody", { name: p.name }), () => remove.mutateAsync(p.id), {
+                      title: a("removeThisPasskey"),
+                      confirmLabel: a("remove"),
                       danger: true,
                     })
                   }
@@ -158,13 +160,14 @@ export function PasskeysSection() {
 }
 
 function AddDialog({ onClose }: { onClose: () => void }) {
+  const { t: a } = useTranslation("auth");
   const qc = useQueryClient();
   const [name, setName] = useState(guessName);
   const add = useMutation({
     mutationFn: () => addPasskey(name.trim()),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: key });
-      toast.success("Passkey added", { description: "Use it next time you sign in." });
+      toast.success(a("passkeyAdded"), { description: a("useItNextTimeYouSignIn") });
       onClose();
     },
   });
@@ -172,25 +175,25 @@ function AddDialog({ onClose }: { onClose: () => void }) {
   const message = !err || isPasskeyCancel(err) || isReauthError(err)
     ? null
     : isApiError(err, "passkey_exists")
-      ? "This device already has a passkey for your account."
+      ? a("thisDeviceAlreadyHasAPasskeyForYour")
       : isApiError(err, "passkey_limit")
-        ? "You have the most passkeys an account can hold. Remove one first."
+        ? a("youHaveTheMostPasskeysAnAccountCan")
         : isApiError(err, "invalid_passkey")
-          ? "That passkey couldn't be verified. Try again."
+          ? a("thatPasskeyCouldntBeVerifiedTryAgain")
           : errorMessage(err);
   return (
     <Dialog
       open
       onOpenChange={(o) => !o && onClose()}
-      title="Add a passkey"
-      description="Your browser will ask you to confirm with your fingerprint, face, device PIN or security key."
+      title={a("addAPasskey")}
+      description={a("yourBrowserWillAskYouToConfirmWith")}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {a("cancel")}
           </Button>
           <Button variant="primary" loading={add.isPending} onClick={() => add.mutate()} disabled={name.trim().length > 64}>
-            Continue
+            {a("continue")}
           </Button>
         </>
       }
@@ -202,7 +205,7 @@ function AddDialog({ onClose }: { onClose: () => void }) {
           add.mutate();
         }}
       >
-        <Field label="Name" hint="So you can tell your passkeys apart.">
+        <Field label={a("name")} hint={a("soYouCanTellYourPasskeysApart")}>
           {({ id }) => <TextInput id={id} autoFocus value={name} maxLength={64} onChange={(e) => setName(e.target.value)} placeholder="Chrome on Mac" />}
         </Field>
         {isReauthError(err) && <ReauthNotice error={err} />}
@@ -217,13 +220,14 @@ function AddDialog({ onClose }: { onClose: () => void }) {
 }
 
 function RenameDialog({ passkey, onClose }: { passkey: Passkey; onClose: () => void }) {
+  const { t: a } = useTranslation("auth");
   const qc = useQueryClient();
   const [name, setName] = useState(passkey.name);
   const save = useMutation({
     mutationFn: () => passkeyApi.rename(passkey.id, name.trim()),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: key });
-      toast.success("Passkey renamed");
+      toast.success(a("passkeyRenamed"));
       onClose();
     },
   });
@@ -232,14 +236,14 @@ function RenameDialog({ passkey, onClose }: { passkey: Passkey; onClose: () => v
     <Dialog
       open
       onOpenChange={(o) => !o && onClose()}
-      title="Rename passkey"
+      title={a("renamePasskey")}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {a("cancel")}
           </Button>
           <Button variant="primary" loading={save.isPending} disabled={invalid} onClick={() => save.mutate()}>
-            Save
+            {a("save")}
           </Button>
         </>
       }
@@ -250,12 +254,12 @@ function RenameDialog({ passkey, onClose }: { passkey: Passkey; onClose: () => v
           if (!invalid) save.mutate();
         }}
       >
-        <Field label="Name">
+        <Field label={a("name")}>
           {({ id }) => <TextInput id={id} autoFocus value={name} maxLength={64} onChange={(e) => setName(e.target.value)} />}
         </Field>
         {save.isError && (
           <p role="alert" className="mt-2 text-xs text-danger-fg">
-            {isApiError(save.error, "invalid_name") ? "Use 1 to 64 characters." : errorMessage(save.error)}
+            {isApiError(save.error, "invalid_name") ? a("use1To64Characters") : errorMessage(save.error)}
           </p>
         )}
       </form>

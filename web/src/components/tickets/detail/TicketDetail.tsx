@@ -147,6 +147,7 @@ export default function TicketDetail({
   const aiOn = useAI().enabled;
   const { t: tAi } = useTranslation("aiTicket");
   const { t: tr } = useTranslation("inbox");
+  const { t: indicatorText } = useTranslation("indicators");
   const [picker, setPicker] = useState<PropPicker>(null);
   const [snoozeOpen, setSnoozeOpen] = useState(false);
   const [burst, setBurst] = useState(0);
@@ -277,7 +278,7 @@ export default function TicketDetail({
           .filter((s) => s !== t.severity)
           .map((s) => ({
             id: `severity-${s}`,
-            label: tr("commands.setSeverity", { severity: severityLabel[s] }),
+            label: tr("commands.setSeverity", { severity: severityLabel(s) }),
             keywords: ["severity", "sev", s, `s${s.slice(3)}`],
             icon: <SeverityChip severity={s} />,
             run: () => update.mutate({ id: t.id, patch: { severity: s } }),
@@ -290,7 +291,7 @@ export default function TicketDetail({
     });
     return () => usePageCommands.setState({ commands: [] });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t?.id, t?.status, t?.spam, t?.severity, canEdit, aiOn, teamsCtx.hasTeams]);
+  }, [t?.id, t?.status, t?.spam, t?.severity, canEdit, aiOn, teamsCtx.hasTeams, tr, tAi, indicatorText]);
 
   if (ticket.isError) {
     return (
@@ -316,14 +317,14 @@ export default function TicketDetail({
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line px-3">
         <Tooltip content={tr("detail.close")} shortcut="esc">
-          <Button variant="ghost" size="sm" square aria-label="Close ticket" icon={<X className="size-4" />} onClick={onClose} />
+          <Button variant="ghost" size="sm" square aria-label={indicatorText("tickets.closeTicket")} icon={<X className="size-4" />} onClick={onClose} />
         </Tooltip>
         <div className="hidden items-center sm:flex">
           <Tooltip content={tr("detail.previous")} shortcut="k">
-            <Button variant="ghost" size="sm" square aria-label="Previous ticket" disabled={!onPrev} onClick={onPrev} icon={<ChevronUp className="size-4" />} />
+            <Button variant="ghost" size="sm" square aria-label={indicatorText("tickets.previousTicket")} disabled={!onPrev} onClick={onPrev} icon={<ChevronUp className="size-4" />} />
           </Tooltip>
           <Tooltip content={tr("detail.next")} shortcut="j">
-            <Button variant="ghost" size="sm" square aria-label="Next ticket" disabled={!onNext} onClick={onNext} icon={<ChevronDown className="size-4" />} />
+            <Button variant="ghost" size="sm" square aria-label={indicatorText("tickets.nextTicket")} disabled={!onNext} onClick={onNext} icon={<ChevronDown className="size-4" />} />
           </Tooltip>
           {position && (
             <span className="mono ml-1 hidden text-[11px] text-fg-4 tabular-nums sm:inline">
@@ -336,7 +337,7 @@ export default function TicketDetail({
           {t ? (
             <>
               {t.channel !== "email" && (
-                <Tooltip content={channelLabel[t.channel]}>
+                <Tooltip content={channelLabel(t.channel)}>
                   <span className="hidden shrink-0 sm:flex">
                     <ChannelIcon channel={t.channel} plain />
                   </span>
@@ -398,7 +399,7 @@ export default function TicketDetail({
             <Menu>
               <Tooltip content={tr("detail.more")}>
                 <MenuTrigger asChild>
-                  <Button variant="ghost" size="sm" square aria-label="More actions" icon={<MoreHorizontal className="size-4" />} />
+                  <Button variant="ghost" size="sm" square aria-label={indicatorText("tickets.moreActions")} icon={<MoreHorizontal className="size-4" />} />
                 </MenuTrigger>
               </Tooltip>
               <MenuContent align="end" className="w-[210px]">
@@ -428,7 +429,7 @@ export default function TicketDetail({
           </div>
         )}
         <Tooltip content={panel ? tr("detail.hideDetails") : tr("detail.showDetails")} shortcut="]">
-          <Button variant="ghost" size="sm" square aria-label="Toggle details" aria-pressed={panel} onClick={togglePanel} icon={<PanelRight className="size-4" />} className={cn("hidden lg:inline-flex", panel && "text-fg")} />
+          <Button variant="ghost" size="sm" square aria-label={indicatorText("tickets.toggleDetails")} aria-pressed={panel} onClick={togglePanel} icon={<PanelRight className="size-4" />} className={cn("hidden lg:inline-flex", panel && "text-fg")} />
         </Tooltip>
       </header>
 
@@ -451,7 +452,7 @@ export default function TicketDetail({
           {panel && (
             <motion.aside
               key="panel"
-              aria-label="Ticket details"
+              aria-label={indicatorText("tickets.ticketDetails")}
               initial={reduced ? { opacity: 0 } : { width: 0, opacity: 0 }}
               animate={reduced ? { opacity: 1 } : { width: 300, opacity: 1 }}
               exit={reduced ? { opacity: 0 } : { width: 0, opacity: 0 }}
@@ -483,12 +484,13 @@ export default function TicketDetail({
 
 /** The header's severity chip; its tooltip says when Ollie set it and how sure Jev was. */
 function HeaderSeverity({ t }: { t: Ticket }) {
+  useTranslation("indicators");
   const note = useOllieNote();
   if (!t.severity) return null;
   const d = aiDecisions(t)?.fields.severity;
   const byAi = !!d?.applied && d.value === t.severity;
   return (
-    <Tooltip content={byAi ? `${severityLabel[t.severity]} · ${note(t, "severity")}` : severityLabel[t.severity]}>
+    <Tooltip content={byAi ? `${severityLabel(t.severity)} · ${note(t, "severity")}` : severityLabel(t.severity)}>
       <span className="flex">
         <SeverityChip severity={t.severity} className="h-[19px] min-w-[26px] text-[10.5px]" />
       </span>

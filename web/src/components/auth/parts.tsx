@@ -6,6 +6,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { forwardRef, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { AuthProvider, TokenResponse } from "@/lib/api/types";
+import { i18n } from "@/i18n";
 import { config } from "@/lib/config";
 import { desktop, setOAuthHandoff } from "@/lib/desktop";
 import { newPopupId, openSignInPopup, waitForPopup } from "@/lib/oauthPopup";
@@ -64,11 +65,12 @@ export function Notice({ children, tone: kind = "danger", className }: { childre
   );
 }
 
-export function OrDivider({ label = "or" }: { label?: string }) {
+export function OrDivider({ label }: { label?: string }) {
+  const { t: a } = useTranslation("auth");
   return (
     <div className="my-5 flex items-center gap-3" role="separator">
       <span className="h-px flex-1 bg-line" />
-      <span className="text-[11.5px] text-fg-4">{label}</span>
+      <span className="text-[11.5px] text-fg-4">{label ?? a("or")}</span>
       <span className="h-px flex-1 bg-line" />
     </div>
   );
@@ -78,6 +80,7 @@ type PasswordInputProps = React.InputHTMLAttributes<HTMLInputElement> & { invali
 
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
   function PasswordInput({ className, inputSize = "lg", ...rest }, ref) {
+    const { t: a } = useTranslation("auth");
     const [show, setShow] = useState(false);
     return (
       <TextInput
@@ -89,7 +92,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           <button
             type="button"
             onClick={() => setShow((s) => !s)}
-            aria-label={show ? "Hide password" : "Show password"}
+            aria-label={show ? a("hidePassword") : a("showPassword")}
             className="flex size-7 items-center justify-center rounded-sm text-fg-4 transition-colors hover:bg-hover hover:text-fg"
           >
             {show ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
@@ -101,15 +104,36 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
   },
 );
 
-const strengthWords = ["Too weak", "Weak", "Fair", "Good", "Strong"] as const;
+const strengthWarnings = {
+  "Straight rows of keys on your keyboard are easy to guess.": "passwordWarningStraightRow",
+  "Short keyboard patterns are easy to guess.": "passwordWarningKeyPattern",
+  "Repeated characters like \"aaa\" are easy to guess.": "passwordWarningSimpleRepeat",
+  "Repeated character patterns like \"abcabcabc\" are easy to guess.": "passwordWarningExtendedRepeat",
+  "Common character sequences like \"abc\" are easy to guess.": "passwordWarningSequences",
+  "Recent years are easy to guess.": "passwordWarningRecentYears",
+  "Dates are easy to guess.": "passwordWarningDates",
+  "This is a heavily used password.": "passwordWarningTopTen",
+  "This is a frequently used password.": "passwordWarningTopHundred",
+  "This is a commonly used password.": "passwordWarningCommon",
+  "This is similar to a commonly used password.": "passwordWarningSimilarToCommon",
+  "Single words are easy to guess.": "passwordWarningWordByItself",
+  "Single names or surnames are easy to guess.": "passwordWarningNamesByThemselves",
+  "Common names and surnames are easy to guess.": "passwordWarningCommonNames",
+  "There should not be any personal or page related data.": "passwordWarningUserInputs",
+  "Your password was exposed by a data breach on the Internet.": "passwordWarningPwned",
+} as const;
+
 const strengthBar = [tone.red.solid, tone.red.solid, tone.amber.solid, tone.green.solid, tone.green.solid] as const;
 
 /** Four segments that warm up as the password gets harder to guess (zxcvbn), plus its one warning. */
 export function StrengthMeter({ password, userInputs }: { password: string; userInputs?: string[] }) {
+  const { t: a } = useTranslation("auth");
+  const strengthWords = [a("tooWeak"), a("weak"), a("fair"), a("good"), a("strong")] as const;
   const { score, warning } = usePasswordStrength(password, userInputs);
+  const warningKey = warning ? strengthWarnings[warning as keyof typeof strengthWarnings] : undefined;
   const length = [...password].length;
   const short = length > 0 && length < 12;
-  const label = !password ? "12 characters minimum" : short ? `${12 - length} more characters` : strengthWords[score];
+  const label = !password ? a("12CharactersMinimum") : short ? a("moreCharacters", { count: 12 - length }) : strengthWords[score];
   const filled = !password ? 0 : Math.max(1, score);
   return (
     <div className="flex flex-col gap-1.5" aria-live="polite">
@@ -129,7 +153,7 @@ export function StrengthMeter({ password, userInputs }: { password: string; user
         </div>
         <span className="mono shrink-0 whitespace-nowrap text-right text-[11px] text-fg-3">{label}</span>
       </div>
-      {warning && !short && score < 3 && <p className="text-[11.5px] leading-4 text-fg-3">{warning}</p>}
+      {warning && !short && score < 3 && <p className="text-[11.5px] leading-4 text-fg-3">{warningKey ? a(warningKey) : warning}</p>}
     </div>
   );
 }
@@ -215,7 +239,8 @@ async function desktopOAuth(provider: AuthProvider["id"], next: string | null | 
   return { code: r.code };
 }
 
-export function ProviderButtons({ next, verb = "Continue" }: { next?: string | null; verb?: string }) {
+export function ProviderButtons({ next, verb }: { next?: string | null; verb?: "Sign up" }) {
+  const { t: a } = useTranslation("auth");
   const { data, isLoading } = useQuery(q.authConfig());
   const { t } = useTranslation("shell");
   const router = useRouter();
@@ -325,7 +350,7 @@ export function ProviderButtons({ next, verb = "Continue" }: { next?: string | n
           icon={<ProviderGlyph id={p.id} />}
           onClick={() => void start(p.id)}
         >
-          {verb} with {p.id === "oidc" ? p.name || "SSO" : p.name}
+          {a(verb ? "providerSignup" : "providerContinue", { name: p.id === "oidc" ? p.name || "SSO" : p.name })}
         </Button>
       ))}
       {popup && (
@@ -357,24 +382,24 @@ export function ProviderButtons({ next, verb = "Continue" }: { next?: string | n
 }
 
 export function providerName(id: string | undefined): string {
-  return { google: "Google", microsoft: "Microsoft", github: "GitHub", oidc: "SSO" }[id ?? ""] ?? "your provider";
+  return { google: "Google", microsoft: "Microsoft", github: "GitHub", oidc: "SSO" }[id ?? ""] ?? i18n.t("auth:yourProvider");
 }
 
-export const oauthErrors: Record<string, string> = {
-  access_denied: "Sign-in was cancelled.",
-  invalid_state: "That sign-in link expired. Start again.",
-  invalid_request: "The sign-in request was not valid. Start again.",
-  provider_error: "The provider returned an error. Try again.",
-  provider_unavailable: "The provider is not reachable right now. Try again in a moment.",
-  email_unverified: "Your email is not verified with that provider. Verify it there, then try again.",
-  signup_disabled: "New sign-ups are turned off on this instance. Ask an admin for an invitation.",
-  server_error: "Something went wrong on our side. Try again.",
-  invalid_code: "That sign-in link expired. Start again.",
-};
+const oauthErrors = {
+  access_denied: "signinWasCancelled",
+  invalid_state: "thatSigninLinkExpiredStartAgain",
+  invalid_request: "theSigninRequestWasNotValidStartAgain",
+  provider_error: "theProviderReturnedAnErrorTryAgain",
+  provider_unavailable: "theProviderIsNotReachableRightNowTry",
+  email_unverified: "yourEmailIsNotVerifiedWithThatProvider",
+  signup_disabled: "newSignupsAreTurnedOffOnThisInstance",
+  server_error: "somethingWentWrongOnOurSideTryAgain",
+  invalid_code: "thatSigninLinkExpiredStartAgain",
+} as const;
 
 export function oauthErrorMessage(code: string | undefined): string | null {
   if (!code) return null;
-  return oauthErrors[code] ?? "Sign-in failed. Try again.";
+  return i18n.t(`auth:${oauthErrors[code as keyof typeof oauthErrors] ?? "signinFailedTryAgain"}`);
 }
 
 /** A labelled field used across the auth screens. */

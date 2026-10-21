@@ -148,6 +148,7 @@ export function TicketProperties({
   onSideConversation?: () => void;
 }) {
   const { t: tr } = useTranslation("inbox");
+  useTranslation("indicators");
   const update = useUpdateTicket();
   const role = useRole();
   const canEdit = atLeast(role, "agent");
@@ -240,14 +241,14 @@ export function TicketProperties({
             value={t.severity ?? "__none"}
             placeholder={tr("props.setSeverity")}
             items={[
-              ...severityOrder.map((s) => ({ value: s, label: severityLabel[s], hint: severityHint[s], icon: <SeverityChip severity={s} /> })),
+              ...severityOrder.map((s) => ({ value: s, label: severityLabel(s), hint: severityHint(s), icon: <SeverityChip severity={s} /> })),
               { value: "__none", label: tr("props.noSeverity"), icon: <span className="h-[16px] w-[22px] rounded-[4px] border border-dashed border-line-strong" /> },
             ]}
             onSelect={(v) => patch({ severity: v === "__none" ? null : (v as Severity) })}
             trigger={
               <PropButton disabled={!canEdit} placeholder={!t.severity}>
                 {t.severity ? <SeverityChip severity={t.severity} /> : <span className="h-[16px] w-[22px] shrink-0 rounded-[4px] border border-dashed border-line-strong" />}
-                {t.severity ? severityLabel[t.severity] : tr("props.noSeverity")}
+                {t.severity ? severityLabel(t.severity) : tr("props.noSeverity")}
                 {aiSet.severity && <SetByOllie note={decided?.severity?.applied ? note(t, "severity") : undefined} />}
               </PropButton>
             }
@@ -451,7 +452,7 @@ export function TicketProperties({
         <div className="flex items-center gap-2 text-fg-3">
           <ChannelIcon channel={t.channel} />
           <span className="flex-1">{tr("props.channel")}</span>
-          <span className="text-fg-2">{channelLabel[t.channel]}</span>
+          <span className="text-fg-2">{channelLabel(t.channel)}</span>
         </div>
         {receivedAt ? (
           <div className="flex items-center gap-2 text-fg-3">

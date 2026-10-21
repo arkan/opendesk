@@ -88,6 +88,7 @@ export default function ArticleEditor() {
 }
 
 function EditorScreen({ article }: { article: KbArticle | null }) {
+  const { t: ui } = useTranslation("ui");
   const { t } = useTranslation("kb");
   const wide = useWide();
   const search = route.useSearch();
@@ -408,7 +409,7 @@ function EditorScreen({ article }: { article: KbArticle | null }) {
             readOnly={!canEdit}
             rows={1}
             placeholder={t("editor.titlePlaceholder")}
-            aria-label="Title"
+            aria-label={ui("title")}
             autoFocus={!current}
             className="field-sizing-content w-full resize-none bg-transparent text-[28px] font-semibold leading-[34px] tracking-[-0.03em] text-fg outline-none placeholder:text-fg-4 focus-visible:shadow-none"
           />
@@ -417,7 +418,7 @@ function EditorScreen({ article }: { article: KbArticle | null }) {
             onChange={(e) => set({ excerpt: e.target.value })}
             readOnly={!canEdit}
             placeholder={t("editor.excerptPlaceholder")}
-            aria-label="Excerpt"
+            aria-label={ui("excerpt")}
             className="mt-2 w-full bg-transparent text-[15px] text-fg-2 outline-none placeholder:text-fg-4 focus-visible:shadow-none"
           />
 

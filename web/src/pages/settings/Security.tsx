@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { Download, Laptop, ShieldCheck, Smartphone } from "lucide-react";
@@ -26,8 +27,9 @@ import { q, qk } from "@/lib/queries";
 import { updateUser, useSession } from "@/lib/session";
 
 export default function Security() {
+  const { t: a } = useTranslation("auth");
   return (
-    <SettingsPage title="Security" description="Your password, passkeys, two-factor authentication and signed-in devices.">
+    <SettingsPage title={a("security")} description={a("yourPasswordPasskeysTwofactorAuthenticationAndSignedinDevices")}>
       <PasswordSection />
       <PasskeysSection />
       <TwoFactorSection />
@@ -40,6 +42,7 @@ export default function Security() {
 // ─── Password ──────────────────────────────────────────────────────────────
 
 function PasswordSection() {
+  const { t: a } = useTranslation("auth");
   const user = useSession((s) => s.user)!;
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -51,30 +54,30 @@ function PasswordSection() {
       setCurrent("");
       setNext("");
       setConfirmPw("");
-      toast.success("Password changed", { description: "Other devices were signed out." });
+      toast.success(a("passwordChanged"), { description: a("otherDevicesWereSignedOut") });
     },
     onError: (e) =>
-      setError(isApiError(e, "invalid_credentials") ? "Your current password is not right." : errorMessage(e)),
+      setError(isApiError(e, "invalid_credentials") ? a("yourCurrentPasswordIsNotRight") : errorMessage(e)),
   });
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     // Counted in characters (code points), as the server counts them.
     const length = [...next].length;
-    if (length < 12) return setError("Use at least 12 characters.");
-    if (length > 128) return setError("Use at most 128 characters.");
-    if (next !== confirmPw) return setError("The new passwords don't match.");
+    if (length < 12) return setError(a("useAtLeast12Characters"));
+    if (length > 128) return setError(a("useAtMost128Characters"));
+    if (next !== confirmPw) return setError(a("theNewPasswordsDontMatch"));
     change.mutate();
   };
   return (
-    <Section title="Password" description="Changing it signs out every other device.">
+    <Section title={a("password")} description={a("changingItSignsOutEveryOtherDevice")}>
       <form onSubmit={submit} className="grid gap-3 py-3.5 sm:grid-cols-3">
-        <Field label="Current password">
+        <Field label={a("currentPassword")}>
           {({ id }) => (
             <PasswordInput id={id} inputSize="md" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} />
           )}
         </Field>
-        <Field label="New password">
+        <Field label={a("newPassword")}>
           {({ id }) => (
             <div className="flex flex-col gap-1.5">
               <PasswordInput id={id} inputSize="md" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} />
@@ -82,15 +85,15 @@ function PasswordSection() {
             </div>
           )}
         </Field>
-        <Field label="Confirm new password">
+        <Field label={a("confirmNewPassword")}>
           {({ id }) => (
             <PasswordInput id={id} inputSize="md" autoComplete="new-password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
           )}
         </Field>
         <div className="flex items-center justify-between gap-3 sm:col-span-3">
-          <p className={error ? "text-xs text-danger-fg" : "text-xs text-fg-3"}>{error ?? "12 to 128 characters. Long passphrases work well."}</p>
+          <p className={error ? "text-xs text-danger-fg" : "text-xs text-fg-3"}>{error ?? a("12To128CharactersLongPassphrasesWorkWell")}</p>
           <Button type="submit" variant="primary" loading={change.isPending} disabled={!current || !next || !confirmPw}>
-            Change password
+            {a("changePassword")}
           </Button>
         </div>
       </form>
@@ -101,29 +104,29 @@ function PasswordSection() {
 // ─── Two-factor ────────────────────────────────────────────────────────────
 
 function TwoFactorSection() {
+  const { t: a } = useTranslation("auth");
   const user = useSession((s) => s.user)!;
   const [setupOpen, setSetupOpen] = useState(false);
   const [disableOpen, setDisableOpen] = useState(false);
   return (
-    <Section title="Two-factor authentication" description="A code from an authenticator app, asked for at every sign-in.">
+    <Section title={a("twofactorAuthentication")} description={a("aCodeFromAnAuthenticatorAppAskedFor")}>
       <Row
         label={
           <span className="flex items-center gap-2">
-            Authenticator app
-            {user.totp_enabled ? <Badge tone="ok">On</Badge> : <Badge tone="outline">Off</Badge>}
+             {a("authenticatorApp")} {user.totp_enabled ? <Badge tone="ok">{a("on")}</Badge> : <Badge tone="outline">{a("off")}</Badge>}
           </span>
         }
         description={
           user.totp_enabled
-            ? "Required for owner actions like deleting or transferring a workspace."
-            : "Works with 1Password, Google Authenticator, Authy and any TOTP app."
+            ? a("requiredForOwnerActionsLikeDeletingOrTransferring")
+            : a("worksWith1PasswordGoogleAuthenticatorAuthyAndAny")
         }
       >
         {user.totp_enabled ? (
-          <Button onClick={() => setDisableOpen(true)}>Turn off</Button>
+          <Button onClick={() => setDisableOpen(true)}>{a("turnOff")}</Button>
         ) : (
           <Button variant="primary" icon={<ShieldCheck className="size-3.5" />} onClick={() => setSetupOpen(true)}>
-            Set up
+            {a("setUp")}
           </Button>
         )}
       </Row>
@@ -140,6 +143,7 @@ const slide = {
 };
 
 function SetupDialog({ onClose }: { onClose: () => void }) {
+  const { t: a } = useTranslation("auth");
   const user = useSession((s) => s.user)!;
   const confirm = useConfirm();
   const [step, setStep] = useState<0 | 1 | 2>(0);
@@ -158,15 +162,15 @@ function SetupDialog({ onClose }: { onClose: () => void }) {
 
   const finish = () => {
     updateUser({ ...user, totp_enabled: true });
-    toast.success("Two-factor authentication is on");
+    toast.success(a("twofactorAuthenticationIsOn"));
     onClose();
   };
   const requestClose = () => {
     if (step === 2) {
       if (saved) return finish();
-      confirm.show("Recovery codes are shown only once. Without them, losing your phone locks you out.", finish, {
-        title: "Close without saving codes?",
-        confirmLabel: "Close anyway",
+      confirm.show(a("recoveryCodesAreShownOnlyOnceWithoutThem"), finish, {
+        title: a("closeWithoutSavingCodes"),
+        confirmLabel: a("closeAnyway"),
       });
       return;
     }
@@ -174,12 +178,12 @@ function SetupDialog({ onClose }: { onClose: () => void }) {
   };
 
   const download = () => {
-    const text = `opendesk recovery codes for ${user.email}\nEach code works once.\n\n${codes.join("\n")}\n`;
+    const text = a("recoveryDownload", { email: user.email, codes: codes.join("\n") });
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "opendesk-recovery-codes.txt";
-    a.click();
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "opendesk-recovery-codes.txt";
+    link.click();
     URL.revokeObjectURL(url);
   };
 
@@ -196,26 +200,26 @@ function SetupDialog({ onClose }: { onClose: () => void }) {
         }
       }}
       onInteractOutside={(e) => e.preventDefault()}
-      title={["Scan the code", "Enter a code", "Save your recovery codes"][step]}
+      title={[a("scanTheCode"), a("enterACode"), a("saveYourRecoveryCodes")][step]}
       description={
         [
-          "Open your authenticator app and scan this QR code.",
-          "Type the 6-digit code your app shows for opendesk.",
-          "Use one of these if you lose access to your app. Each works once.",
+          a("openYourAuthenticatorAppAndScanThisQR"),
+          a("typeThe6digitCodeYourAppShowsFor"),
+          a("useOneOfTheseIfYouLoseAccess"),
         ][step]
       }
       footer={
         <>
-          <span className="mr-auto mono text-[11px] text-fg-4">Step {step + 1} of 3</span>
+          <span className="mr-auto mono text-[11px] text-fg-4">{a("stepOfThree", { step: step + 1 })}</span>
           {step === 0 && (
             <Button variant="primary" disabled={!setup.data} onClick={() => setStep(1)}>
-              Continue
+              {a("continue")}
             </Button>
           )}
           {step === 1 && (
             <>
               <Button variant="ghost" onClick={() => setStep(0)}>
-                Back
+                {a("back")}
               </Button>
               <Button
                 variant="primary"
@@ -223,13 +227,13 @@ function SetupDialog({ onClose }: { onClose: () => void }) {
                 disabled={code.replace(/\s/g, "").length !== 6}
                 onClick={() => enable.mutate()}
               >
-                Verify
+                {a("verify")}
               </Button>
             </>
           )}
           {step === 2 && (
             <Button variant="primary" disabled={!saved} onClick={finish}>
-              Done
+              {a("done")}
             </Button>
           )}
         </>
@@ -251,12 +255,12 @@ function SetupDialog({ onClose }: { onClose: () => void }) {
                 {setup.isError ? (
                   <p className="py-16 text-xs text-danger-fg">{errorMessage(setup.error)}</p>
                 ) : setup.data ? (
-                  <QrCode value={setup.data.otpauth_url} label="Authenticator setup QR code" />
+                  <QrCode value={setup.data.otpauth_url} label={a("authenticatorSetupQRCode")} />
                 ) : (
                   <div className="skeleton size-44 rounded-md" />
                 )}
                 <div className="w-full">
-                  <p className="mb-1.5 text-xs text-fg-3">Can't scan? Enter this key instead:</p>
+                  <p className="mb-1.5 text-xs text-fg-3">{a("cantScanEnterThisKeyInstead")}</p>
                   <CopyField value={secretGroups ?? "…"} />
                 </div>
               </div>
@@ -271,7 +275,7 @@ function SetupDialog({ onClose }: { onClose: () => void }) {
               >
                 <TextInput
                   autoFocus
-                  aria-label="6-digit code"
+                  aria-label={a("6digitCode")}
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   maxLength={7}
@@ -282,7 +286,7 @@ function SetupDialog({ onClose }: { onClose: () => void }) {
                   invalid={enable.isError}
                 />
                 <p className="h-4 text-xs text-danger-fg">
-                  {enable.isError && (isApiError(enable.error, "validation_failed") || isApiError(enable.error, "invalid_code") ? "That code didn't work. Try the next one." : errorMessage(enable.error))}
+                  {enable.isError && (isApiError(enable.error, "validation_failed") || isApiError(enable.error, "invalid_code") ? a("thatCodeDidntWorkTryTheNextOne") : errorMessage(enable.error))}
                 </p>
               </form>
             )}
@@ -299,18 +303,17 @@ function SetupDialog({ onClose }: { onClose: () => void }) {
                   <Button
                     size="sm"
                     onClick={async () => {
-                      if (await copyText(codes.join("\n"))) toast.success("Recovery codes copied");
+                      if (await copyText(codes.join("\n"))) toast.success(a("recoveryCodesCopied"));
                     }}
                   >
-                    Copy all
+                    {a("copyAll")}
                   </Button>
                   <Button size="sm" icon={<Download className="size-3.5" />} onClick={download}>
-                    Download .txt
+                    {a("downloadTxt")}
                   </Button>
                 </div>
                 <label className="flex items-center gap-2 text-[12.5px] text-fg-2">
-                  <Checkbox checked={saved} onCheckedChange={setSaved} />I saved these codes somewhere safe
-                </label>
+                  <Checkbox checked={saved} onCheckedChange={setSaved} />{a("iSavedTheseCodesSomewhereSafe")} </label>
               </div>
             )}
           </motion.div>
@@ -321,13 +324,14 @@ function SetupDialog({ onClose }: { onClose: () => void }) {
 }
 
 function DisableDialog({ onClose }: { onClose: () => void }) {
+  const { t: a } = useTranslation("auth");
   const user = useSession((s) => s.user)!;
   const [code, setCode] = useState("");
   const disable = useMutation({
     mutationFn: () => api.auth.totpDisable(code.trim()),
     onSuccess: () => {
       updateUser({ ...user, totp_enabled: false });
-      toast.success("Two-factor authentication is off");
+      toast.success(a("twofactorAuthenticationIsOff"));
       onClose();
     },
   });
@@ -336,15 +340,15 @@ function DisableDialog({ onClose }: { onClose: () => void }) {
       open
       onOpenChange={(o) => !o && onClose()}
       size="sm"
-      title="Turn off two-factor?"
-      description="Enter a code from your authenticator app, or a recovery code."
+      title={a("turnOffTwofactor")}
+      description={a("enterACodeFromYourAuthenticatorAppOr")}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {a("cancel")}
           </Button>
           <Button variant="danger-solid" loading={disable.isPending} disabled={code.trim().length < 6} onClick={() => disable.mutate()}>
-            Turn off
+            {a("turnOff")}
           </Button>
         </>
       }
@@ -352,7 +356,7 @@ function DisableDialog({ onClose }: { onClose: () => void }) {
       <div className="flex flex-col gap-3 pb-1">
         <TextInput
           autoFocus
-          aria-label="Code"
+          aria-label={a("code")}
           className="mono"
           autoComplete="one-time-code"
           value={code}
@@ -368,6 +372,7 @@ function DisableDialog({ onClose }: { onClose: () => void }) {
 // ─── Sessions ──────────────────────────────────────────────────────────────
 
 function SessionsSection() {
+  const { t: a } = useTranslation("auth");
   const qc = useQueryClient();
   const confirm = useConfirm();
   const { data, isLoading } = useQuery(q.sessions());
@@ -394,21 +399,21 @@ function SessionsSection() {
 
   return (
     <Section
-      title="Sessions"
-      description="Devices signed in to your account."
+      title={a("sessions")}
+      description={a("devicesSignedInToYourAccount")}
       flush
       actions={
         others.length > 0 ? (
           <Button
             size="sm"
             onClick={() =>
-              confirm.show(`Sign out ${others.length} other ${others.length === 1 ? "device" : "devices"}?`, () => revoke.mutateAsync(others.map((s) => s.id)), {
-                title: "Sign out other devices",
-                confirmLabel: "Sign out",
+              confirm.show(a("signOutOthers", { count: others.length }), () => revoke.mutateAsync(others.map((s) => s.id)), {
+                title: a("signOutOtherDevices"),
+                confirmLabel: a("signOut"),
               })
             }
           >
-            Sign out other devices
+            {a("signOutOtherDevices")}
           </Button>
         ) : undefined
       }
@@ -426,12 +431,12 @@ function SessionsSection() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 text-[13px] font-medium">
                   {ua.label}
-                  {s.current && <Badge tone="solid">This device</Badge>}
+                  {s.current && <Badge tone="solid">{a("thisDevice")}</Badge>}
                 </div>
                 <div className="mt-0.5 flex items-center gap-2 text-xs text-fg-3">
                   <span className="mono">{s.ip}</span>
                   <span aria-hidden>·</span>
-                  <span>{s.current ? "Active now" : `Last used ${relLong(s.last_used_at)}`}</span>
+                  <span>{s.current ? a("activeNow") : a("lastUsed", { date: relLong(s.last_used_at) })}</span>
                 </div>
               </div>
               {!s.current && (
@@ -439,13 +444,13 @@ function SessionsSection() {
                   size="sm"
                   variant="ghost"
                   onClick={() =>
-                    confirm.show(`${ua.label} will be signed out.`, () => revoke.mutateAsync([s.id]), {
-                      title: "Sign out this device?",
-                      confirmLabel: "Sign out",
+                    confirm.show(a("deviceSignOutBody", { name: ua.label }), () => revoke.mutateAsync([s.id]), {
+                      title: a("signOutThisDevice"),
+                      confirmLabel: a("signOut"),
                     })
                   }
                 >
-                  Sign out
+                  {a("signOut")}
                 </Button>
               )}
             </ListRow>
@@ -459,15 +464,16 @@ function SessionsSection() {
 // ─── Delete account ────────────────────────────────────────────────────────
 
 function DeleteAccountSection() {
+  const { t: a } = useTranslation("auth");
   const [open, setOpen] = useState(false);
   return (
-    <Section title="Delete account" danger>
+    <Section title={a("deleteAccount")} danger>
       <Row
-        label="Delete your account"
-        description="Removes your account and every workspace you are the only member of. This can't be undone."
+        label={a("deleteYourAccount2")}
+        description={a("removesYourAccountAndEveryWorkspaceYouAre")}
       >
         <Button variant="danger" onClick={() => setOpen(true)}>
-          Delete account
+          {a("deleteAccount")}
         </Button>
       </Row>
       {open && <DeleteAccountDialog onClose={() => setOpen(false)} />}

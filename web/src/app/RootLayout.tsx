@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, useMatches, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
@@ -9,12 +10,19 @@ import { queryClient } from "@/lib/queryClient";
 import { onAccountFallback } from "@/lib/session";
 import { useDesktopNavigation } from "./useDesktopBridge";
 
+// A page-specific title takes precedence while translated route titles refresh.
+let routeTitle = "opendesk";
+let pageTitle: string | null = null;
+
 function useRouteTitle() {
+  const { t } = useTranslation("navigation");
   const matches = useMatches();
   const title = [...matches].reverse().find((m) => m.staticData?.title)?.staticData.title;
+  const translatedTitle = title ? t(`titles.${title}`) : null;
   useEffect(() => {
-    document.title = title ? `${title} · opendesk` : "opendesk";
-  }, [title]);
+    routeTitle = translatedTitle ? `${translatedTitle} · opendesk` : "opendesk";
+    if (pageTitle === null) document.title = routeTitle;
+  }, [translatedTitle]);
 }
 
 function usePageviews() {
@@ -60,10 +68,11 @@ export function RootLayout() {
 export function useDocumentTitle(title: string | null | undefined) {
   useEffect(() => {
     if (!title) return;
-    const prev = document.title;
+    pageTitle = title;
     document.title = `${title} · opendesk`;
     return () => {
-      document.title = prev;
+      pageTitle = null;
+      document.title = routeTitle;
     };
   }, [title]);
 }

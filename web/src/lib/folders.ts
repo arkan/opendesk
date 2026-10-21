@@ -3,17 +3,17 @@ import type { FieldFilter, TicketCounts } from "./api/types";
 
 export type FolderId = "unassigned" | "mine" | "open" | "pending" | "solved" | "spam";
 
-export type Folder = { id: FolderId; label: string; query: TicketListQuery; count: (c: TicketCounts) => number | null };
+export type Folder = { id: FolderId; labelKey: `folders.${FolderId}`; query: TicketListQuery; count: (c: TicketCounts) => number | null };
 
 const active = ["open", "pending", "on_hold"] as TicketListQuery["status"];
 
 export const folders: Folder[] = [
-  { id: "unassigned", label: "Unassigned", query: { status: active, assignee: "none" }, count: (c) => c.unassigned },
-  { id: "mine", label: "Mine", query: { status: active, assignee: "me" }, count: (c) => c.mine },
-  { id: "open", label: "All open", query: { status: ["open"] }, count: (c) => c.open },
-  { id: "pending", label: "Pending", query: { status: ["pending", "on_hold"] }, count: (c) => c.pending + c.on_hold },
-  { id: "solved", label: "Solved", query: { status: ["solved", "closed"] }, count: () => null },
-  { id: "spam", label: "Spam", query: { spam: true }, count: (c) => c.spam },
+  { id: "unassigned", labelKey: "folders.unassigned", query: { status: active, assignee: "none" }, count: (c) => c.unassigned },
+  { id: "mine", labelKey: "folders.mine", query: { status: active, assignee: "me" }, count: (c) => c.mine },
+  { id: "open", labelKey: "folders.open", query: { status: ["open"] }, count: (c) => c.open },
+  { id: "pending", labelKey: "folders.pending", query: { status: ["pending", "on_hold"] }, count: (c) => c.pending + c.on_hold },
+  { id: "solved", labelKey: "folders.solved", query: { status: ["solved", "closed"] }, count: () => null },
+  { id: "spam", labelKey: "folders.spam", query: { spam: true }, count: (c) => c.spam },
 ];
 
 export function folderById(id: string): Folder | undefined {

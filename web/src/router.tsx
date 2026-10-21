@@ -2,6 +2,7 @@
 // its tab title in staticData.title, and prefetches its first queries in its
 // loader through the same queryOptions its components read.
 
+import type navigation from "./i18n/locales/en/navigation.json";
 import {
   createRootRouteWithContext,
   createRoute,
@@ -28,8 +29,8 @@ declare module "@tanstack/react-router" {
     router: typeof router;
   }
   interface StaticDataRouteOption {
-    /** Tab title, without the brand. */
-    title?: string;
+    /** Navigation title key, without the brand. */
+    title?: keyof typeof navigation.titles;
   }
 }
 
@@ -75,7 +76,7 @@ const helpRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/help/$slug/$",
   component: page(() => import("./pages/public/HelpRedirect")),
-  staticData: { title: "Help center" },
+  staticData: { title: "helpCenter" },
 });
 
 // The survey token rides in the fragment (/csat#t=<token>&score=); /csat/$token serves
@@ -84,14 +85,14 @@ const csatRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/csat",
   component: page(() => import("./pages/public/Csat")),
-  staticData: { title: "Rate your conversation" },
+  staticData: { title: "rateYourConversation" },
 });
 
 const csatLegacyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/csat/$token",
   component: page(() => import("./pages/public/Csat")),
-  staticData: { title: "Rate your conversation" },
+  staticData: { title: "rateYourConversation" },
 });
 
 // ─── Auth ──────────────────────────────────────────────────────────────────
@@ -111,7 +112,7 @@ const loginRoute = createRoute({
   beforeLoad: guestOnly,
   loader: ({ context }) => context.queryClient.prefetchQuery(q.authConfig()),
   component: page(() => import("./pages/auth/Login")),
-  staticData: { title: "Log in" },
+  staticData: { title: "logIn" },
 });
 const registerRoute = createRoute({
   getParentRoute: () => authLayout,
@@ -120,35 +121,35 @@ const registerRoute = createRoute({
   beforeLoad: guestOnly,
   loader: ({ context }) => context.queryClient.prefetchQuery(q.authConfig()),
   component: page(() => import("./pages/auth/Register")),
-  staticData: { title: "Create your account" },
+  staticData: { title: "createYourAccount" },
 });
 const forgotRoute = createRoute({
   getParentRoute: () => authLayout,
   path: "/forgot",
   component: page(() => import("./pages/auth/Forgot")),
   loader: ({ context }) => context.queryClient.prefetchQuery(q.authConfig()),
-  staticData: { title: "Reset your password" },
+  staticData: { title: "resetYourPassword" },
 });
 const resetRoute = createRoute({
   getParentRoute: () => authLayout,
   path: "/reset",
   validateSearch: (s: Record<string, unknown>): { token?: string } => ({ token: str(s.token) }),
   component: page(() => import("./pages/auth/Reset")),
-  staticData: { title: "Choose a new password" },
+  staticData: { title: "chooseANewPassword" },
 });
 const verifyRoute = createRoute({
   getParentRoute: () => authLayout,
   path: "/verify",
   validateSearch: (s: Record<string, unknown>): { token?: string } => ({ token: str(s.token) }),
   component: page(() => import("./pages/auth/Verify")),
-  staticData: { title: "Verify your email" },
+  staticData: { title: "verifyYourEmail" },
 });
 const callbackRoute = createRoute({
   getParentRoute: () => authLayout,
   path: "/auth/callback",
   validateSearch: (s: Record<string, unknown>): { code?: string; error?: string; next?: string } => ({ code: str(s.code), error: str(s.error), next: str(s.next) }),
   component: page(() => import("./pages/auth/Callback")),
-  staticData: { title: "Signing in" },
+  staticData: { title: "signingIn" },
 });
 // Where a sign-in that ran in a popup window returns; it hands the code to the tab that opened it.
 const popupDoneRoute = createRoute({
@@ -156,7 +157,7 @@ const popupDoneRoute = createRoute({
   path: "/auth/popup",
   validateSearch: (s: Record<string, unknown>): { code?: string; error?: string; popup?: string } => ({ code: str(s.code), error: str(s.error), popup: str(s.popup) }),
   component: page(() => import("./pages/auth/PopupDone")),
-  staticData: { title: "Signing in" },
+  staticData: { title: "signingIn" },
 });
 // The footer link of notification emails. It never acts on load (link scanners open it), only on the click.
 const unsubscribeRoute = createRoute({
@@ -164,14 +165,14 @@ const unsubscribeRoute = createRoute({
   path: "/unsubscribe",
   validateSearch: (s: Record<string, unknown>): { token?: string } => ({ token: str(s.token) }),
   component: page(() => import("./pages/auth/Unsubscribe")),
-  staticData: { title: "Notification emails" },
+  staticData: { title: "notificationEmails" },
 });
 const inviteRoute = createRoute({
   getParentRoute: () => authLayout,
   path: "/invite",
   validateSearch: (s: Record<string, unknown>): { token?: string } => ({ token: str(s.token) }),
   component: page(() => import("./pages/auth/Invite")),
-  staticData: { title: "Join workspace" },
+  staticData: { title: "joinWorkspace" },
 });
 
 // The MCP OAuth consent page: an AI client asks to connect; signing in is required.
@@ -185,7 +186,7 @@ const oauthConsentRoute = createRoute({
     if (deps.request && /^[0-9a-f-]{36}$/i.test(deps.request)) void context.queryClient.prefetchQuery(q.oauthRequest(deps.request));
   },
   component: page(() => import("./pages/auth/OAuthConsent")),
-  staticData: { title: "Connect an app" },
+  staticData: { title: "connectAnApp" },
 });
 
 const onboardingRoute = createRoute({
@@ -193,14 +194,14 @@ const onboardingRoute = createRoute({
   path: "/onboarding",
   beforeLoad: ({ location }) => requireAuth(location.href),
   component: page(() => import("./pages/onboarding/Workspace")),
-  staticData: { title: "Create a workspace" },
+  staticData: { title: "createAWorkspace" },
 });
 const onboardingMailboxRoute = createRoute({
   getParentRoute: () => authLayout,
   path: "/onboarding/mailbox",
   beforeLoad: ({ location }) => requireWorkspace(location.href),
   component: page(() => import("./pages/onboarding/Mailbox")),
-  staticData: { title: "Connect a mailbox" },
+  staticData: { title: "connectAMailbox" },
 });
 
 // ─── App ───────────────────────────────────────────────────────────────────
@@ -254,7 +255,7 @@ const inboxRoute = createRoute({
     return qc.ensureInfiniteQueryData(q.tickets(listQuery(f.query, deps)));
   },
   component: page(() => import("./pages/inbox/InboxPage")),
-  staticData: { title: "Inbox" },
+  staticData: { title: "inbox" },
 });
 
 const viewRoute = createRoute({
@@ -269,7 +270,7 @@ const viewRoute = createRoute({
     return qc.ensureInfiniteQueryData(q.tickets(listQuery({ view_id: params.viewId }, deps)));
   },
   component: page(() => import("./pages/inbox/InboxPage")),
-  staticData: { title: "View" },
+  staticData: { title: "view" },
 });
 
 // A team's inbox; teamId "mine" is every team the caller is on.
@@ -285,7 +286,7 @@ const teamRoute = createRoute({
     return qc.ensureInfiniteQueryData(q.tickets(listQuery(teamQuery(params.teamId, deps.tab), deps)));
   },
   component: page(() => import("./pages/inbox/InboxPage")),
-  staticData: { title: "Team" },
+  staticData: { title: "team" },
 });
 
 // Collab mail (contracts/collab.md): a box, or a folder (`folder` search), across accounts or
@@ -320,7 +321,7 @@ const mailRoute = createRoute({
     return qc.ensureInfiniteQueryData(q.mailThreads(mailListQuery(params.box, deps)));
   },
   component: page(() => import("./pages/mail/MailPage")),
-  staticData: { title: "Mail" },
+  staticData: { title: "mail" },
 });
 
 /** Addresses and brands name the chips on every row and the reply address. */
@@ -354,7 +355,7 @@ const contactsRoute = createRoute({
     return context.queryClient.ensureInfiniteQueryData(q.contacts({ q: deps.q, company_id: deps.company }));
   },
   component: page(() => import("./pages/contacts/ContactsPage")),
-  staticData: { title: "Contacts" },
+  staticData: { title: "contacts" },
 });
 
 const companiesRoute = createRoute({
@@ -370,7 +371,7 @@ const companiesRoute = createRoute({
     return context.queryClient.ensureInfiniteQueryData(q.companies({ q: deps.q }));
   },
   component: page(() => import("./pages/contacts/CompaniesPage")),
-  staticData: { title: "Companies" },
+  staticData: { title: "companies" },
 });
 
 const kbRoute = createRoute({
@@ -392,7 +393,7 @@ const kbRoute = createRoute({
     ]);
   },
   component: page(() => import("./pages/kb/KbPage")),
-  staticData: { title: "Knowledge base" },
+  staticData: { title: "knowledgeBase" },
 });
 
 const kbArticleRoute = createRoute({
@@ -406,7 +407,7 @@ const kbArticleRoute = createRoute({
     if (params.articleId !== "new") return context.queryClient.ensureQueryData(q.kbArticle(params.articleId));
   },
   component: page(() => import("./pages/kb/ArticleEditor")),
-  staticData: { title: "Article" },
+  staticData: { title: "article" },
 });
 
 export function defaultRange() {
@@ -447,7 +448,7 @@ const reportsRoute = createRoute({
     return context.queryClient.ensureQueryData(q.reports(reportsQuery(deps)));
   },
   component: page(() => import("./pages/reports/ReportsPage")),
-  staticData: { title: "Reports" },
+  staticData: { title: "reports" },
 });
 
 // ─── Settings ──────────────────────────────────────────────────────────────
@@ -456,7 +457,7 @@ const settingsLayout = createRoute({
   getParentRoute: () => appLayout,
   path: "/settings",
   component: page(() => import("./pages/settings/SettingsLayout")),
-  staticData: { title: "Settings" },
+  staticData: { title: "settings" },
 });
 
 const settingsIndex = createRoute({
@@ -468,7 +469,7 @@ const settingsIndex = createRoute({
 });
 
 type Prefetch = (qc: QueryClient) => unknown;
-function settingsPage<P extends string>(path: P, title: string, load: () => Promise<{ default: React.ComponentType }>, prefetch?: Prefetch) {
+function settingsPage<P extends string>(path: P, title: keyof typeof navigation.titles, load: () => Promise<{ default: React.ComponentType }>, prefetch?: Prefetch) {
   return createRoute({
     getParentRoute: () => settingsLayout,
     path,
@@ -478,18 +479,18 @@ function settingsPage<P extends string>(path: P, title: string, load: () => Prom
   });
 }
 
-const sProfile = settingsPage("/profile", "Profile", () => import("./pages/settings/Profile"));
-const sSecurity = settingsPage("/security", "Security", () => import("./pages/settings/Security"), (qc) => qc.ensureQueryData(q.sessions()));
-const sNotifications = settingsPage("/notifications", "Notifications", () => import("./pages/settings/Notifications"), (qc) =>
+const sProfile = settingsPage("/profile", "profile", () => import("./pages/settings/Profile"));
+const sSecurity = settingsPage("/security", "security", () => import("./pages/settings/Security"), (qc) => qc.ensureQueryData(q.sessions()));
+const sNotifications = settingsPage("/notifications", "notifications", () => import("./pages/settings/Notifications"), (qc) =>
   qc.ensureQueryData(q.notificationPreferences()),
 );
-const sWorkspace = settingsPage("/workspace", "General", () => import("./pages/settings/WorkspaceSettings"), (qc) =>
+const sWorkspace = settingsPage("/workspace", "general", () => import("./pages/settings/WorkspaceSettings"), (qc) =>
   Promise.all([qc.ensureQueryData(q.workspace()), qc.ensureQueryData(q.members())]),
 );
-const sMembers = settingsPage("/members", "Members", () => import("./pages/settings/Members"), (qc) =>
+const sMembers = settingsPage("/members", "members", () => import("./pages/settings/Members"), (qc) =>
   Promise.all([qc.ensureQueryData(q.members()), qc.ensureQueryData(q.invitations())]),
 );
-const sTeams = settingsPage("/teams", "Teams", () => import("./pages/settings/Teams"), (qc) => {
+const sTeams = settingsPage("/teams", "teams", () => import("./pages/settings/Teams"), (qc) => {
   void qc.prefetchQuery(q.mailboxes());
   return Promise.all([qc.ensureQueryData(q.teams()), qc.ensureQueryData(q.members())]);
 });
@@ -505,14 +506,14 @@ const sTeamDetail = createRoute({
     return Promise.all([qc.ensureQueryData(q.teams()), qc.ensureQueryData(q.members())]);
   },
   component: page(() => import("./pages/settings/TeamDetail")),
-  staticData: { title: "Team" },
+  staticData: { title: "team" },
 });
 // Each brand's email layout and satisfaction email (contracts/templates.md).
-const sEmailDesign = settingsPage("/email-design", "Email design", () => import("./pages/settings/EmailDesign"), (qc) => {
+const sEmailDesign = settingsPage("/email-design", "emailDesign", () => import("./pages/settings/EmailDesign"), (qc) => {
   void qc.prefetchQuery(q.templateVariables());
   return qc.ensureQueryData(q.brands());
 });
-const sBrands = settingsPage("/brands", "Brands", () => import("./pages/settings/Brands"), (qc) => qc.ensureQueryData(q.brands()));
+const sBrands = settingsPage("/brands", "brands", () => import("./pages/settings/Brands"), (qc) => qc.ensureQueryData(q.brands()));
 const sBrandDetail = createRoute({
   getParentRoute: () => settingsLayout,
   path: "/brands/$brandId",
@@ -526,7 +527,7 @@ const sBrandDetail = createRoute({
     return Promise.all([qc.ensureQueryData(q.brands()), qc.ensureQueryData(q.widgets())]);
   },
   component: page(() => import("./pages/settings/BrandDetail")),
-  staticData: { title: "Brand" },
+  staticData: { title: "brand" },
 });
 const sWidgetDetail = createRoute({
   getParentRoute: () => settingsLayout,
@@ -540,9 +541,9 @@ const sWidgetDetail = createRoute({
     return Promise.all([qc.ensureQueryData(q.widgets()), qc.ensureQueryData(q.brands()), qc.ensureQueryData(q.workspace())]);
   },
   component: page(() => import("./pages/settings/WidgetDetail")),
-  staticData: { title: "Chat widget" },
+  staticData: { title: "chatWidget" },
 });
-const sRouting = settingsPage("/routing", "Routing", () => import("./pages/settings/Routing"), (qc) => {
+const sRouting = settingsPage("/routing", "routing", () => import("./pages/settings/Routing"), (qc) => {
   void qc.prefetchQuery(q.teams());
   void qc.prefetchQuery(q.mailboxes());
   void qc.prefetchQuery(q.widgets());
@@ -562,7 +563,7 @@ const sRoutingRule = createRoute({
     return qc.ensureQueryData(q.routingRules());
   },
   component: page(() => import("./pages/settings/RoutingRuleEdit")),
-  staticData: { title: "Routing rule" },
+  staticData: { title: "routingRule" },
 });
 const sMailboxes = createRoute({
   getParentRoute: () => settingsLayout,
@@ -570,9 +571,9 @@ const sMailboxes = createRoute({
   validateSearch: (s: Record<string, unknown>): { connected?: string; error?: string } => ({ connected: str(s.connected), error: str(s.error) }),
   loader: ({ context }) => context.queryClient.ensureQueryData(q.mailboxes()),
   component: page(() => import("./pages/settings/Mailboxes")),
-  staticData: { title: "Mailboxes" },
+  staticData: { title: "mailboxes" },
 });
-const sSupportChannels = settingsPage("/support-channels", "Support channels", () => import("./pages/settings/SupportChannels"), (qc) =>
+const sSupportChannels = settingsPage("/support-channels", "supportChannels", () => import("./pages/settings/SupportChannels"), (qc) =>
   Promise.all([
     qc.ensureQueryData(q.supportChannelProviders()),
     qc.ensureQueryData(q.supportChannelConnections()),
@@ -589,7 +590,7 @@ const sMailboxNew = createRoute({
     return context.queryClient.prefetchQuery(q.teams());
   },
   component: page(() => import("./pages/settings/MailboxNew")),
-  staticData: { title: "Add a mailbox" },
+  staticData: { title: "addAMailbox" },
 });
 const sMailboxDetail = createRoute({
   getParentRoute: () => settingsLayout,
@@ -599,7 +600,7 @@ const sMailboxDetail = createRoute({
     return context.queryClient.ensureQueryData(q.mailboxes());
   },
   component: page(() => import("./pages/settings/MailboxDetail")),
-  staticData: { title: "Mailbox" },
+  staticData: { title: "mailbox" },
 });
 // Collab mail accounts (contracts/collab.md), listed in settings only while Collab is on.
 const sMailAccounts = createRoute({
@@ -614,7 +615,7 @@ const sMailAccounts = createRoute({
     if (status?.enabled) return qc.ensureQueryData(q.mailAccounts());
   },
   component: page(() => import("./pages/settings/MailAccounts")),
-  staticData: { title: "Mail accounts" },
+  staticData: { title: "mailAccounts" },
 });
 const sMailAccountDetail = createRoute({
   getParentRoute: () => settingsLayout,
@@ -627,23 +628,23 @@ const sMailAccountDetail = createRoute({
     return qc.ensureQueryData(q.mailAccounts());
   },
   component: page(() => import("./pages/settings/MailAccountDetail")),
-  staticData: { title: "Mail account" },
+  staticData: { title: "mailAccount" },
 });
-const sTags = settingsPage("/tags", "Labels", () => import("./pages/settings/Tags"), (qc) => qc.ensureQueryData(q.tags()));
-const sCustomFields = settingsPage("/custom-fields", "Custom fields", () => import("./pages/settings/CustomFields"));
-const sAssignment = settingsPage("/assignment", "Assignment", () => import("./pages/settings/Assignment"), (qc) =>
+const sTags = settingsPage("/tags", "labels", () => import("./pages/settings/Tags"), (qc) => qc.ensureQueryData(q.tags()));
+const sCustomFields = settingsPage("/custom-fields", "customFields", () => import("./pages/settings/CustomFields"));
+const sAssignment = settingsPage("/assignment", "assignment", () => import("./pages/settings/Assignment"), (qc) =>
   Promise.all([qc.ensureQueryData(q.assignment()), qc.ensureQueryData(q.members())]),
 );
-const sTriage = settingsPage("/triage", "Triage", () => import("./pages/settings/Triage"), (qc) => qc.ensureQueryData(q.triage()));
-const sBusinessHours = settingsPage("/business-hours", "Business hours", () => import("./pages/settings/BusinessHours"), (qc) =>
+const sTriage = settingsPage("/triage", "triage", () => import("./pages/settings/Triage"), (qc) => qc.ensureQueryData(q.triage()));
+const sBusinessHours = settingsPage("/business-hours", "businessHours", () => import("./pages/settings/BusinessHours"), (qc) =>
   qc.ensureQueryData(q.businessHours()),
 );
-const sSavedReplies = settingsPage("/saved-replies", "Saved replies", () => import("./pages/settings/SavedReplies"), (qc) =>
+const sSavedReplies = settingsPage("/saved-replies", "savedReplies", () => import("./pages/settings/SavedReplies"), (qc) =>
   qc.ensureQueryData(q.savedReplies()),
 );
-const sViews = settingsPage("/views", "Views", () => import("./pages/settings/Views"), (qc) => qc.ensureQueryData(q.views()));
-const sSla = settingsPage("/sla", "SLA policies", () => import("./pages/settings/Sla"), (qc) => qc.ensureQueryData(q.slaPolicies()));
-const sAutomations = settingsPage("/automations", "Automations", () => import("./pages/settings/Automations"), (qc) =>
+const sViews = settingsPage("/views", "views", () => import("./pages/settings/Views"), (qc) => qc.ensureQueryData(q.views()));
+const sSla = settingsPage("/sla", "slaPolicies", () => import("./pages/settings/Sla"), (qc) => qc.ensureQueryData(q.slaPolicies()));
+const sAutomations = settingsPage("/automations", "automations", () => import("./pages/settings/Automations"), (qc) =>
   qc.ensureQueryData(q.automations()),
 );
 const sAutomationEdit = createRoute({
@@ -656,7 +657,7 @@ const sAutomationEdit = createRoute({
     return qc.ensureQueryData(q.automations());
   },
   component: page(() => import("./pages/settings/AutomationEdit")),
-  staticData: { title: "Automation" },
+  staticData: { title: "automation" },
 });
 // The old single widget page: the default brand's first widget, else the brand's widgets.
 const sWidget = createRoute({
@@ -671,12 +672,12 @@ const sWidget = createRoute({
     throw redirect({ to: "/settings/brands" });
   },
 });
-const sApiKeys = settingsPage("/api-keys", "API keys", () => import("./pages/settings/ApiKeys"), (qc) => qc.ensureQueryData(q.apiKeys()));
+const sApiKeys = settingsPage("/api-keys", "apiKeys", () => import("./pages/settings/ApiKeys"), (qc) => qc.ensureQueryData(q.apiKeys()));
 // Connecting AI clients to opendesk's MCP server (contracts/agent.md "opendesk MCP server").
-const sAiClients = settingsPage("/ai-clients", "AI clients", () => import("./pages/settings/AiClients"), (qc) =>
+const sAiClients = settingsPage("/ai-clients", "aiClients", () => import("./pages/settings/AiClients"), (qc) =>
   Promise.all([qc.ensureQueryData(q.aiClientServer()), qc.ensureQueryData(q.aiClientConnections())]),
 );
-const sWebhooks = settingsPage("/webhooks", "Webhooks", () => import("./pages/settings/Webhooks"), (qc) => qc.ensureQueryData(q.webhooks()));
+const sWebhooks = settingsPage("/webhooks", "webhooks", () => import("./pages/settings/Webhooks"), (qc) => qc.ensureQueryData(q.webhooks()));
 const sWebhookDetail = createRoute({
   getParentRoute: () => settingsLayout,
   path: "/webhooks/$webhookId",
@@ -686,9 +687,9 @@ const sWebhookDetail = createRoute({
       context.queryClient.ensureQueryData(q.webhookDeliveries(params.webhookId)),
     ]),
   component: page(() => import("./pages/settings/WebhookDetail")),
-  staticData: { title: "Webhook" },
+  staticData: { title: "webhook" },
 });
-const sAudit = settingsPage("/audit-log", "Audit log", () => import("./pages/settings/AuditLog"), (qc) =>
+const sAudit = settingsPage("/audit-log", "auditLog", () => import("./pages/settings/AuditLog"), (qc) =>
   qc.ensureInfiniteQueryData(q.auditLogs()),
 );
 
@@ -702,28 +703,28 @@ const sBilling = createRoute({
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(q.billing()),
   component: page(() => import("./pages/settings/Billing")),
-  staticData: { title: "Plan and billing" },
+  staticData: { title: "planAndBilling" },
 });
-const sAi = settingsPage("/ai", "AI", () => import("./pages/settings/AiSettings"), (qc) => {
+const sAi = settingsPage("/ai", "ai", () => import("./pages/settings/AiSettings"), (qc) => {
   void qc.prefetchQuery(q.aiModels());
   return qc.ensureQueryData(q.aiConfig());
 });
 
 // The widget AI agent (contracts/agent.md).
-const sAgent = settingsPage("/ai/agent", "AI agent", () => import("./pages/settings/agent/AgentOverview"), (qc) => {
+const sAgent = settingsPage("/ai/agent", "aiAgent", () => import("./pages/settings/agent/AgentOverview"), (qc) => {
   void qc.prefetchQuery(q.aiConfig());
   void qc.prefetchQuery(q.agentSetup());
   void qc.prefetchQuery(q.agentReview());
   return qc.ensureQueryData(q.agentReport(defaultRange()));
 });
-const sAgentBehaviour = settingsPage("/ai/behaviour", "Agent behaviour", () => import("./pages/settings/agent/AgentBehaviour"), (qc) => {
+const sAgentBehaviour = settingsPage("/ai/behaviour", "agentBehaviour", () => import("./pages/settings/agent/AgentBehaviour"), (qc) => {
   void qc.prefetchQuery(q.aiModels());
   void qc.prefetchQuery(q.bots());
   void qc.prefetchQuery(q.widgetSettings());
   return Promise.all([qc.ensureQueryData(q.aiConfig()), qc.ensureQueryData(q.workspace())]);
 });
 // The bots customers talk to (contracts/bots.md).
-const sAgentBots = settingsPage("/ai/bots", "Bots", () => import("./pages/settings/agent/Bots"), (qc) => {
+const sAgentBots = settingsPage("/ai/bots", "bots", () => import("./pages/settings/agent/Bots"), (qc) => {
   void qc.prefetchQuery(q.widgets());
   void qc.prefetchQuery(q.mailboxes());
   return qc.ensureQueryData(q.bots());
@@ -742,9 +743,9 @@ const sAgentBot = createRoute({
     return Promise.all([qc.ensureQueryData(q.bots()), qc.ensureQueryData(q.workspace())]);
   },
   component: page(() => import("./pages/settings/agent/BotDetail")),
-  staticData: { title: "Bot" },
+  staticData: { title: "bot" },
 });
-const sAgentKnowledge = settingsPage("/ai/knowledge", "Knowledge", () => import("./pages/settings/agent/AgentKnowledge"), (qc) =>
+const sAgentKnowledge = settingsPage("/ai/knowledge", "knowledge", () => import("./pages/settings/agent/AgentKnowledge"), (qc) =>
   qc.ensureQueryData(q.knowledge()),
 );
 const sAgentTools = createRoute({
@@ -753,15 +754,15 @@ const sAgentTools = createRoute({
   validateSearch: (s: Record<string, unknown>): { connected?: string; error?: string } => ({ connected: str(s.connected), error: str(s.error) }),
   loader: ({ context }) => context.queryClient.ensureQueryData(q.mcpServers()),
   component: page(() => import("./pages/settings/agent/AgentTools")),
-  staticData: { title: "Agent tools" },
+  staticData: { title: "agentTools" },
 });
-const sAgentPlayground = settingsPage("/ai/playground", "Agent playground", () => import("./pages/settings/agent/AgentPlayground"), (qc) => {
+const sAgentPlayground = settingsPage("/ai/playground", "agentPlayground", () => import("./pages/settings/agent/AgentPlayground"), (qc) => {
   void qc.prefetchQuery(q.aiModels());
   void qc.prefetchQuery(q.bots());
   void qc.prefetchQuery(q.widgetSettings());
   return Promise.all([qc.ensureQueryData(q.aiConfig()), qc.ensureQueryData(q.workspace())]);
 });
-const sAgentTests = settingsPage("/ai/tests", "Agent tests", () => import("./pages/settings/agent/AgentTests"), (qc) => {
+const sAgentTests = settingsPage("/ai/tests", "agentTests", () => import("./pages/settings/agent/AgentTests"), (qc) => {
   void qc.prefetchQuery(q.agentTestRuns());
   void qc.prefetchQuery(q.mcpServers());
   return Promise.all([qc.ensureQueryData(q.agentTests()), qc.ensureQueryData(q.aiConfig())]);
@@ -775,7 +776,7 @@ const sIntegrations = createRoute({
     return context.queryClient.ensureQueryData(q.integrations());
   },
   component: page(() => import("./pages/settings/Integrations")),
-  staticData: { title: "Integrations" },
+  staticData: { title: "integrations" },
 });
 
 const sImport = createRoute({
@@ -790,7 +791,7 @@ const sImport = createRoute({
     return qc.ensureQueryData(q.imports());
   },
   component: page(() => import("./pages/settings/Import")),
-  staticData: { title: "Import" },
+  staticData: { title: "import" },
 });
 
 const routeTree = rootRoute.addChildren([

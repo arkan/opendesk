@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 // /auth/popup: where a provider sign-in that ran in a popup window comes back
 // (lib/oauthPopup.ts). It hands the one-time code to the tab that started it and closes;
 // when no tab answers, it finishes the sign-in here instead.
@@ -10,6 +11,7 @@ import { deliverPopupResult } from "@/lib/oauthPopup";
 const route = getRouteApi("/auth/auth/popup");
 
 export default function PopupDone() {
+  const { t: a } = useTranslation("auth");
   const search = route.useSearch();
   const router = useRouter();
   const [handed, setHanded] = useState(false);
@@ -33,11 +35,10 @@ export default function PopupDone() {
 
   return (
     <div className="flex flex-col items-center gap-3 py-12 text-center text-[13px] text-fg-3" aria-live="polite">
-      {handed ? "You're signed in. You can close this window." : (
+      {handed ? a("youreSignedInYouCanCloseThisWindow") : (
         <>
           <Spinner />
-          Signing you in
-        </>
+           {a("signingYouIn")} </>
       )}
     </div>
   );
