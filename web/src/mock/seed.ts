@@ -63,15 +63,45 @@ function screenshotSvg(label: string, dark = false): string {
   );
 }
 
-function makeAttachment(kind: "screenshot" | "screenshot2" | "pdf" | "log"): Attachment {
+// A few seconds of a soft, wavering tone as a WAV, standing in for a visitor's voice message.
+function voiceWav(seconds = 4, rate = 8000): string {
+  const n = seconds * rate;
+  const bytes = new Uint8Array(44 + n);
+  const v = new DataView(bytes.buffer);
+  const text = (at: number, s: string) => [...s].forEach((ch, i) => v.setUint8(at + i, ch.charCodeAt(0)));
+  text(0, "RIFF");
+  v.setUint32(4, 36 + n, true);
+  text(8, "WAVEfmt ");
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true);
+  v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true);
+  v.setUint32(28, rate, true);
+  v.setUint16(32, 1, true);
+  v.setUint16(34, 8, true);
+  text(36, "data");
+  v.setUint32(40, n, true);
+  for (let i = 0; i < n; i++) {
+    const t = i / rate;
+    const loud = 0.5 + 0.5 * Math.sin(2 * Math.PI * 1.5 * t);
+    bytes[44 + i] = 128 + Math.round(40 * loud * Math.sin(2 * Math.PI * 220 * t));
+  }
+  let bin = "";
+  bytes.forEach((b) => (bin += String.fromCharCode(b)));
+  return `data:audio/wav;base64,${btoa(bin)}`;
+}
+
+function makeAttachment(kind: "screenshot" | "screenshot2" | "pdf" | "log" | "voice"): Attachment {
   const a: Attachment =
     kind === "screenshot"
       ? { id: uuid(), filename: "screenshot-2026-10-11.png", content_type: "image/png", size_bytes: 284_311, inline: false, url: screenshotSvg("Sign-in redirect loop") }
       : kind === "screenshot2"
         ? { id: uuid(), filename: "export-preview.png", content_type: "image/png", size_bytes: 512_904, inline: false, url: screenshotSvg("Images missing in export", true) }
-        : kind === "pdf"
-          ? { id: uuid(), filename: kind === "pdf" ? "document.pdf" : "file", content_type: "application/pdf", size_bytes: 1_204_118, inline: false, url: "data:text/plain;charset=utf-8,Mock%20PDF%20attachment" }
-          : { id: uuid(), filename: "crash-report.log", content_type: "text/plain", size_bytes: 48_220, inline: false, url: "data:text/plain;charset=utf-8,Thread%200%20Crashed%3A%20EXC_BAD_ACCESS" };
+        : kind === "voice"
+          ? { id: uuid(), filename: "Voice message.wav", content_type: "audio/wav", size_bytes: 32_044, inline: false, url: voiceWav() }
+          : kind === "pdf"
+            ? { id: uuid(), filename: kind === "pdf" ? "document.pdf" : "file", content_type: "application/pdf", size_bytes: 1_204_118, inline: false, url: "data:text/plain;charset=utf-8,Mock%20PDF%20attachment" }
+            : { id: uuid(), filename: "crash-report.log", content_type: "text/plain", size_bytes: 48_220, inline: false, url: "data:text/plain;charset=utf-8,Thread%200%20Crashed%3A%20EXC_BAD_ACCESS" };
   db.attachments.push(a);
   return a;
 }
@@ -156,6 +186,10 @@ export function defaultWidget(): WidgetSettings {
     topics: [],
     offline_message: "",
     email_follow_up: true,
+    attachments: true,
+    attachment_types: [],
+    voice_messages: false,
+    voice_max_seconds: 60,
   };
 }
 
@@ -1145,14 +1179,17 @@ function seedMargin(): WsData {
   keys[0].private_team_ids = [];
   ws.apiKeys = keys;
   const hooks: Webhook[] = [
-    { id: uuid(), url: "https://hooks.margin.app/opendesk", description: "Internal event bus", events: ["ticket.created", "ticket.updated", "message.created"], enabled: true, created_at: ago(100 * DAY),
+    { id: uuid(), url: "https://hooks.margin.app/opendesk", description: "Internal event bus", events: ["ticket.created", "ticket.updated", "message.created"], enabled: true, verified: true, created_at: ago(100 * DAY),
       private_team_ids: [teamId("Security")!], private_teams: [{ id: teamId("Security")!, name: "Security", granted_by: userRef(uid("priya")) }] },
-    { id: uuid(), url: "https://hooks.slack.com/services/T0001/B0002/XXXX", description: "Urgent tickets to #support-alerts", events: ["ticket.created"], enabled: true, created_at: ago(30 * DAY) },
+    { id: uuid(), url: "https://hooks.slack.com/services/T0001/B0002/XXXX", description: "Urgent tickets to #support-alerts", events: ["ticket.created"], enabled: true, verified: true, created_at: ago(30 * DAY) },
+    // A Zapier catch hook cannot echo the verification challenge: it waits for the code.
+    { id: uuid(), url: "https://hooks.zapier.com/hooks/catch/48213/b7kq2x/", description: "New tickets to the CRM", events: ["ticket.created"], enabled: true, verified: false, created_at: ago(2 * HOUR) },
   ];
   ws.webhooks = hooks;
   for (const h of hooks) {
     const list: WebhookDelivery[] = [];
-    for (let i = 0; i < (h === hooks[0] ? 14 : 8); i++) {
+    // An address gets no events until it is verified.
+    for (let i = 0; h.verified && i < (h === hooks[0] ? 14 : 8); i++) {
       const failed = chance(0.2);
       list.push({
         id: uuid(),
@@ -1208,8 +1245,17 @@ function seedMargin(): WsData {
   const byNum = (n: number) => ws.tickets.find((t) => t.number === n)!;
   const nref = (t: Ticket) => ({ id: t.id, number: t.number, subject: t.subject });
   const jonas = userRef(uid("jonas"));
+  // The newest unassigned email ticket, as the team heard about it.
+  const newTicketNotes = () => {
+    const t = ws.tickets
+      .filter((x) => !x.spam && !x.assignee && x.channel === "email" && x.status === "open" && x.contact)
+      .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
+    if (!t?.contact) return [];
+    return [{ id: uuid(), type: "new_ticket" as const, ticket: nref(t), data: { channel: "email", contact: { id: t.contact.id, name: t.contact.name } }, read_at: null, created_at: t.created_at }];
+  };
   ws.notifications = [
     { id: uuid(), type: "customer_replied", ticket: nref(byNum(1072)), data: { contact: { name: "Dana Whitfield" } }, read_at: null, created_at: ago(6 * MIN) },
+    ...newTicketNotes(),
     { id: uuid(), type: "mentioned", ticket: nref(byNum(1072)), data: { actor: jonas }, read_at: null, created_at: ago(61 * MIN) },
     { id: uuid(), type: "customer_replied", ticket: nref(byNum(1068)), data: { contact: { name: "Tomás García" } }, read_at: null, created_at: ago(35 * MIN) },
     { id: uuid(), type: "sla_breached", ticket: nref(byNum(1067)), data: { kind: "first_response" }, read_at: null, created_at: ago(2 * HOUR) },
@@ -1220,6 +1266,7 @@ function seedMargin(): WsData {
     { id: uuid(), type: "mentioned", ticket: nref(byNum(1070)), data: { actor: userRef(uid("lea")) }, read_at: ago(20 * HOUR), created_at: ago(25 * HOUR) },
     { id: uuid(), type: "customer_replied", ticket: nref(byNum(1065)), data: { contact: { name: "Hugo Moreau" } }, read_at: ago(60 * HOUR), created_at: ago(68 * HOUR) },
   ];
+  ws.notifications.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
 
   ws.csat.demo = { ticket_id: byNum(1066).id, score: null, comment: "" };
 

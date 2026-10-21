@@ -4,10 +4,11 @@
 import { Fragment, type ComponentChildren, type VNode } from "preact";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import { aiHandling, isAiAnswer, latestAiAnswer, teamReplied } from "./ai";
-import { readBot } from "./config";
+import { canAttach, fileProblem, readBot } from "./config";
 import { NEW, type Controller } from "./controller";
+import { canRecord, clock, useRecorder, VoicePlayer, type Recording } from "./voice";
 import { current, dayLabel, isRtl, relTime, t } from "./i18n";
-import { Arrow, Back, ChatIc, Clip, Clock, Down, Ext, FileIc, OdMark, Up, X } from "./icons";
+import { Arrow, Back, ChatIc, Clip, Clock, Down, Ext, FileIc, Mic, OdMark, StopIc, Trash, Up, X } from "./icons";
 import { repliesFor, type LiveReply } from "./live";
 import { AiMessage, AvatarStack, BotGreeting, Bubble, Dots, HandedOff, LiveReplyView, reducedMotion, type Offer } from "./messages";
 import { primeSound } from "./sound";
@@ -52,6 +53,8 @@ export function App({ c }: { c: Controller }) {
   const launcher = useRef<HTMLButtonElement>(null);
   const [live, setLive] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  // Why the last picked, dropped or pasted file was left out.
+  const [fileNote, setFileNote] = useState("");
   const [drag, setDrag] = useState(false);
   // The panel stays mounted for its exit, so closing eases out instead of vanishing.
   const [shown, setShown] = useState(s.open);
@@ -123,11 +126,15 @@ export function App({ c }: { c: Controller }) {
   };
 
   const addFiles = (list: FileList | File[] | null) => {
-    if (!list) return;
-    const arr = Array.from(list).slice(0, 5);
-    if (!arr.length) return;
+    if (!list || !canAttach(cfg)) return;
+    const all = Array.from(list);
+    if (!all.length) return;
+    const exts = cfg?.attachment_extensions;
+    const bad = all.find((f) => fileProblem(f, exts));
+    setFileNote(bad ? t(fileProblem(bad, exts) === "size" ? "fileTooLarge" : "fileTypeRefused", { name: bad.name }) : "");
     if (s.view !== "thread") c.newConversation();
-    setFiles((f) => [...f, ...arr].slice(0, 5));
+    const arr = all.filter((f) => !fileProblem(f, exts)).slice(0, 5);
+    if (arr.length) setFiles((f) => [...f, ...arr].slice(0, 5));
   };
 
   const label = cfg?.launcher === "label";
@@ -155,7 +162,7 @@ export function App({ c }: { c: Controller }) {
           aria-label={t("chatWith", { name: titleOf(cfg) })}
           onKeyDown={onKey}
           onDragOver={(e) => {
-            if (e.dataTransfer?.types.includes("Files")) {
+            if (canAttach(cfg) && e.dataTransfer?.types.includes("Files")) {
               e.preventDefault();
               setDrag(true);
             }
@@ -169,7 +176,7 @@ export function App({ c }: { c: Controller }) {
             addFiles(e.dataTransfer?.files ?? null);
           }}
         >
-          {s.view === "home" ? <Home c={c} /> : <Thread c={c} files={files} setFiles={setFiles} addFiles={addFiles} />}
+          {s.view === "home" ? <Home c={c} /> : <Thread c={c} files={files} setFiles={setFiles} addFiles={addFiles} fileNote={fileNote} setFileNote={setFileNote} />}
           {drag && <div class="drop">{t("dropFiles")}</div>}
         </div>
       )}
@@ -326,7 +333,21 @@ function Home({ c }: { c: Controller }) {
 
 // ── Thread ───────────────────────────────────────────────────────────────────
 
-function Thread({ c, files, setFiles, addFiles }: { c: Controller; files: File[]; setFiles: (f: File[]) => void; addFiles: (f: FileList | null) => void }) {
+function Thread({
+  c,
+  files,
+  setFiles,
+  addFiles,
+  fileNote,
+  setFileNote,
+}: {
+  c: Controller;
+  files: File[];
+  setFiles: (f: File[]) => void;
+  addFiles: (f: FileList | null) => void;
+  fileNote: string;
+  setFileNote: (note: string) => void;
+}) {
   const s = useStore(c.store);
   const cfg = s.config;
   const bot = botOf(cfg);
@@ -476,7 +497,7 @@ function Thread({ c, files, setFiles, addFiles }: { c: Controller; files: File[]
         )}
       </Scroller>
       {cfg?.open === false && <Away cfg={cfg} bar />}
-      <Composer c={c} files={files} setFiles={setFiles} addFiles={addFiles} disabled={needsEmail || needsTopic || !s.session} hint={needsEmail ? t("placeholderEmail") : needsTopic ? t("placeholderTopic") : undefined} focusOn={s.preview || s.active ? null : s.topic} />
+      <Composer c={c} files={files} setFiles={setFiles} addFiles={addFiles} fileNote={fileNote} setFileNote={setFileNote} disabled={needsEmail || needsTopic || !s.session} hint={needsEmail ? t("placeholderEmail") : needsTopic ? t("placeholderTopic") : undefined} focusOn={s.preview || s.active ? null : s.topic} />
     </>
   );
 }
@@ -682,6 +703,8 @@ function Composer({
   files,
   setFiles,
   addFiles,
+  fileNote,
+  setFileNote,
   disabled,
   hint,
   focusOn,
@@ -690,6 +713,8 @@ function Composer({
   files: File[];
   setFiles: (f: File[]) => void;
   addFiles: (f: FileList | null) => void;
+  fileNote: string;
+  setFileNote: (note: string) => void;
   disabled: boolean;
   hint?: string;
   /** Focus the field when this becomes set (a topic was picked). */
@@ -700,7 +725,17 @@ function Composer({
   const ta = useRef<HTMLTextAreaElement>(null);
   const mirror = useRef<HTMLTextAreaElement>(null);
   const picker = useRef<HTMLInputElement>(null);
-  const ready = !disabled && (!!text.trim() || files.length > 0);
+  const cfg = useStore(c.store).config;
+  const attachments = canAttach(cfg);
+  const maxVoice = cfg?.voice_max_seconds ?? 60;
+  const [voice, setVoice] = useState<Recording | null>(null);
+  const recorder = useRecorder(maxVoice, setVoice);
+  const recording = recorder.phase === "recording";
+  const mic = cfg?.voice_messages === true && canRecord();
+  const ready = !disabled && !recording && (!!text.trim() || files.length > 0 || !!voice);
+
+  // A recording let go of (deleted, sent, or the thread left) frees its audio.
+  useEffect(() => () => voice && URL.revokeObjectURL(voice.url), [voice]);
 
   useEffect(() => {
     if (focusOn && !disabled) ta.current?.focus({ preventScroll: true });
@@ -716,14 +751,34 @@ function Composer({
 
   const send = () => {
     if (!ready) return;
-    void c.send(text, files);
+    void c.send(text, voice ? [...files, voice.file] : files);
     setText("");
     setFiles([]);
+    setVoice(null);
+    setFileNote("");
     ta.current?.focus();
   };
 
   return (
     <div class="composer">
+      {(fileNote || recorder.error) && (
+        <div class="err" role="alert">
+          {recorder.error || fileNote}
+        </div>
+      )}
+      {voice && (
+        <div class="pending-voice">
+          <VoicePlayer
+            src={voice.url}
+            seconds={voice.seconds}
+            action={
+              <button class="voice-del" aria-label={t("deleteRecording")} onClick={() => setVoice(null)}>
+                <Trash />
+              </button>
+            }
+          />
+        </div>
+      )}
       {files.length > 0 && (
         <div class="pending-files">
           {files.map((f, i) => (
@@ -737,55 +792,98 @@ function Composer({
           ))}
         </div>
       )}
-      <div class={`cbar${disabled ? " off" : ""}`}>
-        <div class="input-wrap">
-          <textarea
-            ref={ta}
-            class="input"
-            rows={1}
-            value={text}
-            style={{ height: `${height}px`, overflowY: height >= MAX_INPUT ? "auto" : "hidden" }}
-            disabled={disabled}
-            placeholder={disabled ? (hint ?? t("placeholder")) : t("placeholder")}
-            aria-label={t("message")}
-            dir="auto"
-            onInput={(e) => {
-              setText(e.currentTarget.value);
-              c.typing();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
-                e.preventDefault();
-                send();
-              }
-            }}
-            onPaste={(e) => {
-              const f = e.clipboardData?.files;
-              if (f && f.length) {
-                e.preventDefault();
-                addFiles(f);
-              }
-            }}
-          />
-          {/* After the field, and disabled, so focus and selectors never land on it. */}
-          <textarea ref={mirror} class="input mirror" rows={1} tabIndex={-1} aria-hidden="true" disabled />
-        </div>
-        <input
-          ref={picker}
-          type="file"
-          multiple
-          hidden
-          onChange={(e) => {
-            addFiles(e.currentTarget.files);
-            e.currentTarget.value = "";
-          }}
-        />
-        <button class="icon-btn" aria-label={t("attach")} disabled={disabled} onClick={() => picker.current?.click()}>
-          <Clip />
-        </button>
-        <button class={`send${ready ? " ready" : ""}`} aria-label={t("send")} disabled={!ready} onClick={send}>
-          <Up />
-        </button>
+      <div class={`cbar${disabled ? " off" : ""}${attachments && !recording ? " lead" : ""}${recording ? " rec" : ""}`}>
+        {attachments && !recording && (
+          <>
+            <input
+              ref={picker}
+              type="file"
+              multiple
+              hidden
+              accept={cfg?.attachment_extensions?.join(",") || undefined}
+              onChange={(e) => {
+                addFiles(e.currentTarget.files);
+                e.currentTarget.value = "";
+              }}
+            />
+            <button class="icon-btn" aria-label={t("attach")} disabled={disabled} onClick={() => picker.current?.click()}>
+              <Clip />
+            </button>
+          </>
+        )}
+        {recording && (
+          <button class="icon-btn" aria-label={t("cancelRecording")} onClick={recorder.cancel}>
+            {X(16)}
+          </button>
+        )}
+        {recording ? (
+          <div class="rec-bar" role="timer" aria-label={t("recording")}>
+            <span class="rec-dot" aria-hidden="true" />
+            <span class="rec-time">{clock(recorder.elapsed)}</span>
+            {recorder.levels ? (
+              <div class="rec-wave" aria-hidden="true">
+                {recorder.levels.map((v, k) => (
+                  <span key={k} style={{ height: `${Math.max(14, v * 100)}%` }} />
+                ))}
+              </div>
+            ) : (
+              <div class="rec-track" aria-hidden="true">
+                <span style={{ width: `${Math.min(100, (recorder.elapsed / maxVoice) * 100)}%` }} />
+              </div>
+            )}
+            <span class="rec-max">{clock(maxVoice)}</span>
+          </div>
+        ) : (
+          <div class="input-wrap">
+            <textarea
+              ref={ta}
+              class="input"
+              rows={1}
+              value={text}
+              style={{ height: `${height}px`, overflowY: height >= MAX_INPUT ? "auto" : "hidden" }}
+              disabled={disabled}
+              placeholder={disabled ? (hint ?? t("placeholder")) : t("placeholder")}
+              aria-label={t("message")}
+              dir="auto"
+              onInput={(e) => {
+                setText(e.currentTarget.value);
+                c.typing();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              onPaste={(e) => {
+                const f = e.clipboardData?.files;
+                if (attachments && f && f.length) {
+                  e.preventDefault();
+                  addFiles(f);
+                }
+              }}
+            />
+            {/* After the field, and disabled, so focus and selectors never land on it. */}
+            <textarea ref={mirror} class="input mirror" rows={1} tabIndex={-1} aria-hidden="true" disabled />
+          </div>
+        )}
+        {recording ? (
+          <button class="rec-stop" aria-label={t("stopRecording")} onClick={recorder.stop}>
+            <StopIc />
+          </button>
+        ) : (
+          mic &&
+          !voice && (
+            <button class="icon-btn" aria-label={t("recordVoice")} disabled={disabled || recorder.phase === "asking"} onClick={() => void recorder.start()}>
+              <Mic />
+            </button>
+          )
+        )}
+        {!recording && (
+          <button class={`send${ready ? " ready" : ""}`} aria-label={t("send")} disabled={!ready} onClick={send}>
+            <Up />
+          </button>
+        )}
       </div>
     </div>
   );

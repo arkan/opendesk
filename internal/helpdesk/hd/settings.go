@@ -46,13 +46,27 @@ type WidgetSettings struct {
 	Topics         []WidgetTopic `json:"topics"`
 	OfflineMessage string        `json:"offline_message"`
 	EmailFollowUp  bool          `json:"email_follow_up"`
+	// Attachments lets visitors send files: of AttachmentTypes (FileTypes ids), or any
+	// file but a program or a script when that is empty.
+	Attachments     bool     `json:"attachments"`
+	AttachmentTypes []string `json:"attachment_types"`
+	// VoiceMessages lets visitors record voice messages of up to VoiceMaxSeconds.
+	VoiceMessages   bool `json:"voice_messages"`
+	VoiceMaxSeconds int  `json:"voice_max_seconds"`
 }
+
+// The range of a widget's longest voice message, in seconds.
+const (
+	MinVoiceSeconds = 5
+	MaxVoiceSeconds = 300
+)
 
 // DefaultWidgetSettings are the settings of a workspace that never changed them.
 func DefaultWidgetSettings() WidgetSettings {
 	return WidgetSettings{Greeting: "Hi! How can we help?", Enabled: true, AllowedOrigins: []string{},
 		Theme: "auto", Position: "right", OffsetX: 20, OffsetY: 20, Launcher: "icon", Radius: "soft",
-		ShowTeam: true, Suggestions: []string{}, Topics: []WidgetTopic{}, EmailFollowUp: true}
+		ShowTeam: true, Suggestions: []string{}, Topics: []WidgetTopic{}, EmailFollowUp: true, Attachments: true,
+		AttachmentTypes: []string{}, VoiceMaxSeconds: 60}
 }
 
 // UnmarshalJSON fills keys missing from a stored document with their defaults.
@@ -92,6 +106,14 @@ func (w *WidgetSettings) normalize() {
 	if w.Topics == nil {
 		w.Topics = []WidgetTopic{}
 	}
+	if w.VoiceMaxSeconds < MinVoiceSeconds || w.VoiceMaxSeconds > MaxVoiceSeconds {
+		w.VoiceMaxSeconds = d.VoiceMaxSeconds
+	}
+	// Ids this version does not know are dropped; a list of only those stays, and takes
+	// nothing, rather than opening the widget to any file.
+	if known := knownFileTypes(w.AttachmentTypes); len(known) > 0 || len(w.AttachmentTypes) == 0 {
+		w.AttachmentTypes = known
+	}
 }
 
 // ParseWidgetSettings decodes a stored widget settings document with defaults; a
@@ -115,6 +137,8 @@ type Settings struct {
 	AutoAssign        string `json:"auto_assign"`
 	// AutoAwayMinutes marks an online member away after this long unseen; 0 = off.
 	AutoAwayMinutes int `json:"auto_away_minutes"`
+	// NewTicketNotifyRaw is settings.new_ticket_notify; read it with NewTicketNotify().
+	NewTicketNotifyRaw string `json:"new_ticket_notify"`
 	// BusinessHoursRaw is settings.business_hours; read it with Hours().
 	BusinessHoursRaw json.RawMessage `json:"business_hours"`
 	// Locale is the default language (BCP 47) of customer-facing pages; "" = the visitor's browser.
@@ -124,6 +148,27 @@ type Settings struct {
 	Widget        *WidgetSettings `json:"widget"`
 	// AIRaw is settings.ai; read it with AI().
 	AIRaw json.RawMessage `json:"ai"`
+}
+
+// Who hears about a new ticket nobody is assigned to (settings.new_ticket_notify,
+// contracts/api.md "Assignment").
+const (
+	// NewTicketNotifyAuto: everyone on small teams, else only the leads.
+	NewTicketNotifyAuto     = "auto"
+	NewTicketNotifyEveryone = "everyone"
+	NewTicketNotifyLeads    = "leads"
+	NewTicketNotifyOff      = "off"
+)
+
+// NewTicketNotifyModes are the values of settings.new_ticket_notify.
+var NewTicketNotifyModes = []string{NewTicketNotifyAuto, NewTicketNotifyEveryone, NewTicketNotifyLeads, NewTicketNotifyOff}
+
+// NewTicketNotify returns settings.new_ticket_notify; empty or unknown reads as auto.
+func (s Settings) NewTicketNotify() string {
+	if slices.Contains(NewTicketNotifyModes, s.NewTicketNotifyRaw) {
+		return s.NewTicketNotifyRaw
+	}
+	return NewTicketNotifyAuto
 }
 
 // DefaultAutoCloseDays applies when settings.auto_close_days is not set.
@@ -187,6 +232,7 @@ func ParseSettings(raw []byte) Settings {
 	field("csat_enabled", &s.CSATEnabled)
 	field("auto_assign", &s.AutoAssign)
 	field("auto_away_minutes", &s.AutoAwayMinutes)
+	field("new_ticket_notify", &s.NewTicketNotifyRaw)
 	field("business_hours", &s.BusinessHoursRaw)
 	field("auto_close_days", &s.AutoCloseDays)
 	field("ai", &s.AIRaw)

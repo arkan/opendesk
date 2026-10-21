@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { OLLIE_LOOK, renderBotSvg } from "../../src/lib/botlook";
-import { botShown, hostVars, pageUrl, readBotRef, resolveConfig } from "./config";
+import { botShown, canAttach, fileProblem, hostVars, pageUrl, readBotRef, resolveConfig } from "./config";
 import { splitSources } from "./html";
 import { actionStatus } from "./ai";
 
@@ -19,10 +19,39 @@ describe("widget config", () => {
       subtitle: "",
       suggestions: [],
       sound: false,
+      attachments: true,
       team: [],
       ai_answers: false,
       bot: { id: null, name: "Ollie", role: "", avatar_url: "", look: OLLIE_LOOK, greeting: "" },
     });
+  });
+
+  it("takes files unless the widget turns them off", () => {
+    expect(resolveConfig({ workspace_name: "Acme", attachments: false }).attachments).toBe(false);
+    expect(resolveConfig({ workspace_name: "Acme", attachments: "no" as never }).attachments).toBe(true);
+  });
+
+  it("takes voice messages only when the widget turns them on, of a length in range", () => {
+    expect(resolveConfig({ workspace_name: "Acme" })).toMatchObject({ voice_messages: false, voice_max_seconds: 60 });
+    expect(resolveConfig({ workspace_name: "Acme", voice_messages: true, voice_max_seconds: 120 })).toMatchObject({ voice_messages: true, voice_max_seconds: 120 });
+    expect(resolveConfig({ workspace_name: "Acme", voice_max_seconds: 9999 }).voice_max_seconds).toBe(300);
+    expect(resolveConfig({ workspace_name: "Acme", voice_max_seconds: 1 }).voice_max_seconds).toBe(5);
+  });
+
+  it("reads the allowed extensions and checks files against them", () => {
+    expect(resolveConfig({ workspace_name: "Acme" }).attachment_extensions).toBeNull();
+    const c = resolveConfig({ workspace_name: "Acme", attachment_extensions: [".png", ".JPG", "exe", ".tar.gz", 5 as never, ".pdf"] });
+    expect(c.attachment_extensions).toEqual([".png", ".jpg", ".pdf"]);
+    expect(fileProblem({ name: "shot.PNG", size: 10 }, c.attachment_extensions)).toBeNull();
+    expect(fileProblem({ name: "run.sh", size: 10 }, c.attachment_extensions)).toBe("type");
+    expect(fileProblem({ name: "noext", size: 10 }, c.attachment_extensions)).toBe("type");
+    expect(fileProblem({ name: "a.pdf", size: 26 * 1024 * 1024 }, c.attachment_extensions)).toBe("size");
+    // An older server sends no list: any type, still the size limit.
+    expect(fileProblem({ name: "a.anything", size: 10 }, null)).toBeNull();
+    expect(canAttach(c)).toBe(true);
+    expect(canAttach(resolveConfig({ workspace_name: "Acme", attachment_extensions: [] }))).toBe(false);
+    expect(canAttach(resolveConfig({ workspace_name: "Acme", attachments: false }))).toBe(false);
+    expect(canAttach(resolveConfig({ workspace_name: "Acme" }))).toBe(true);
   });
 
   it("keeps values in range and drops invalid ones", () => {

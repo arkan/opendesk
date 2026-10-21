@@ -77,15 +77,23 @@ func (s *Service) open(ctx context.Context, x *row) (source.Source, error) {
 	return f(c, s.Options)
 }
 
+// uploadReadError is a failure to read a stored upload: its text names storage internals,
+// so it is logged, never shown.
+type uploadReadError struct{ err error }
+
+func (e uploadReadError) Error() string { return "read upload: " + e.err.Error() }
+func (e uploadReadError) Unwrap() error { return e.err }
+
+// readCSV reads and parses an upload. Only a parse error's text is for people.
 func (s *Service) readCSV(ctx context.Context, key string) (*csvFile, error) {
 	rc, err := s.d.Storage.Get(ctx, key)
 	if err != nil {
-		return nil, fmt.Errorf("read upload: %w", err)
+		return nil, uploadReadError{err}
 	}
 	defer rc.Close()
 	raw, err := io.ReadAll(io.LimitReader(rc, maxCSVBytes+1))
 	if err != nil {
-		return nil, fmt.Errorf("read upload: %w", err)
+		return nil, uploadReadError{err}
 	}
 	return parseCSV(raw)
 }
@@ -121,6 +129,9 @@ func (s *Service) run(ctx context.Context, args jobs.ImportRunArgs) error {
 		x.Options.Articles = false
 	}
 	deadline := time.Now().Add(runBudget)
+	// Copying a ticket's files may go on a minute past the budget: with one download in
+	// flight it still ends before the job's timeout.
+	w.copyUntil = deadline.Add(time.Minute)
 	for time.Now().Before(deadline) {
 		done, err := s.step(ctx, w)
 		if err != nil {
@@ -173,17 +184,18 @@ func (s *Service) step(ctx context.Context, w *writer) (bool, error) {
 		}
 		for i := range page.Items {
 			t := &page.Items[i]
-			if t.Skip {
-				x.Counts.Skipped++
-				continue
-			}
-			if _, err := w.writeTicket(ctx, t); err != nil {
+			result, err := w.writeTicket(ctx, t)
+			if err != nil {
 				if stopping(err) {
 					return false, err
 				}
 				s.d.Log.Warn("import ticket failed", "import_id", x.ID, "ticket", t.ID, "error", err)
 				w.problem("Ticket "+t.Ref, plain(err))
 				x.Counts.Failed++
+				continue
+			}
+			if result == outcomeSkipped {
+				x.Counts.Skipped++
 			}
 		}
 		return false, s.checkpoint(ctx, w, PhaseTickets, page.Next)
@@ -279,6 +291,8 @@ func (s *Service) trouble(ctx context.Context, x *row, cause error) error {
 	switch {
 	case errors.Is(cause, errStopped):
 		return nil
+	case errors.Is(cause, errOutOfTime):
+		return river.JobSnooze(0)
 	case ctx.Err() != nil:
 		// Shutting down: the next worker picks up at the checkpoint.
 		return river.JobSnooze(5 * time.Second)

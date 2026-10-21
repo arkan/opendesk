@@ -29,6 +29,8 @@ export type WorkspaceSettings = {
   csat_enabled?: boolean;
   /** The workspace default assignment mode; see Assignment. */
   auto_assign?: AssignMode;
+  /** Who hears about a new ticket nobody is assigned to (read only here, set through Assignment). Default "auto". */
+  new_ticket_notify?: NewTicketNotify;
   /** Look up contact pictures on Gravatar. Default false. */
   gravatar?: boolean;
   /** Fetch company logos from the company's website. Default true. */
@@ -446,6 +448,7 @@ export type Message = {
   /** The third-party thread a note belongs to (contracts/api.md "Threads"), else null. */
   thread_id?: string | null;
   created_at: string;
+  edited_at: string | null;
 };
 /** A third-party thread: an email conversation on a ticket with someone outside the team (contracts/api.md "Threads"). */
 export type Thread = {
@@ -482,6 +485,8 @@ export type ActivityType =
   | "csat_received"
   /** data: {key, name, from, to} with FieldValue | null values. */
   | "field_changed"
+  /** data: {from, to}, each {id, name} (name, else email) or null. */
+  | "contact_changed"
   | (string & {});
 export type Activity = {
   id: string;
@@ -538,6 +543,8 @@ export type SlaPolicy = {
 
 // Triage, assignment and setup (contracts/api.md "Assignment", "Triage", "Business hours", "Onboarding").
 export type AssignMode = "none" | "round_robin" | "load_balanced";
+/** Who hears about a new ticket nobody is assigned to (settings.new_ticket_notify). */
+export type NewTicketNotify = "auto" | "everyone" | "leads" | "off";
 export type AssignmentRule = { target_type: "mailbox" | "team"; target_id: string; mode: AssignMode };
 export type Assignment = {
   /** settings.auto_assign */
@@ -545,6 +552,7 @@ export type Assignment = {
   rules: AssignmentRule[];
   /** 0 is off, else 10..1440. */
   auto_away_minutes: number;
+  new_ticket_notify: NewTicketNotify;
 };
 export type TriageField = "priority" | "severity" | "labels" | "team";
 /** The decision engine behind triage (contracts/api.md). Jev is TypeSafe's decision model. */
@@ -714,7 +722,7 @@ export type MailHost =
   | "other";
 export type PasswordAuth = "app_password" | "password" | "oauth_only" | "unsupported";
 export type MailEndpoint = { host: string; port: number; security: "tls" | "starttls" };
-/** GET /v1/mailboxes/detect. */
+/** POST /v1/mailboxes/detect {email}. */
 export type MailDetection = {
   domain: string;
   host: MailHost | "";
@@ -837,6 +845,8 @@ export type Webhook = {
   description: string;
   events: string[];
   enabled: boolean;
+  /** The address answered its verification challenge; until then it receives no events. */
+  verified: boolean;
   created_at: string;
   private_team_ids?: string[];
   private_teams?: PrivateTeamGrant[];
@@ -881,18 +891,32 @@ export type SupportChannelProvider = {
   key: string;
   name: string;
   description: string;
-  fields: { name: string; label: string; secret: boolean; help?: string }[];
+  /** opendesk sets the provider up itself; otherwise an admin enters webhook_url there. */
+  configures?: boolean;
+  fields: { name: string; label: string; secret: boolean; generated?: boolean; discovered?: boolean; help?: string }[];
 };
+export type SupportChannelAccount = { id: string; name: string };
 export type SupportChannelConnection = {
   id: string;
   provider: string;
   name: string;
   external_account_id: string;
   external_account_name: string;
+  /** The bot's @username where people address it by one (Telegram). */
+  external_account_handle?: string;
   status: "connected" | "error";
   last_error: string;
+  health_status: "unknown" | "healthy" | "action_required" | "error";
+  health_detail: string;
+  health_checked_at?: string;
   webhook_url: string;
   created_at: string;
+};
+export type SupportChannelAvailableDestination = {
+  id: string;
+  name: string;
+  kind?: string;
+  available: boolean;
 };
 export type SupportChannelDestination = {
   id: string;
@@ -937,7 +961,7 @@ export type AuditLog = {
   ip: string;
   created_at: string;
 };
-export type NotificationType = "assigned" | "mentioned" | "customer_replied" | "thread_replied" | "sla_breached" | "ai_handoff" | "ai_cap_reached" | "ai_balance_low" | "ai_balance_out" | "auto_recharge_failed" | "ai_key_failed" | "team_joined" | "import_finished" | "collab_assigned" | "collab_mention";
+export type NotificationType = "assigned" | "new_ticket" | "mentioned" | "customer_replied" | "thread_replied" | "sla_breached" | "ai_handoff" | "ai_cap_reached" | "ai_balance_low" | "ai_balance_out" | "auto_recharge_failed" | "ai_key_failed" | "team_joined" | "import_finished" | "collab_assigned" | "collab_mention";
 /** `ai_cap_reached`: data `{cap_usd}`, ticket null; the widget agent reached `widget_monthly_cap_usd` (once a month, owners and admins).
  * `ai_balance_low` / `ai_balance_out`: data `{remaining_usd}` (US dollars); `auto_recharge_failed`: data `{reason: AutoRechargeFailure}` (billing, owners and admins, ticket null).
  * `ai_key_failed`: data `{provider: AIKeyKind, reason: "rejected" | "no_funds"}`; the workspace's own AI key failed (at most hourly, owners and admins, ticket null).
@@ -1038,7 +1062,14 @@ export type AuthConfig = {
   /** The VAPID public key browsers subscribe to web pushes with; null when the server sends none. */
   web_push_key: string | null;
 };
-export type TokenResponse = { access_token: string; expires_in: number; user: User; redirect_to?: string };
+export type TokenResponse = {
+  access_token: string;
+  expires_in: number;
+  user: User;
+  redirect_to?: string;
+  /** The password signed in with is breached or shorter than the rules now ask. */
+  change_password?: boolean;
+};
 /** One account this browser is signed in to (POST /v1/auth/accounts). */
 export type Account = {
   user: Pick<User, "id" | "name" | "email" | "avatar_url">;
@@ -1147,6 +1178,14 @@ export type WidgetSettings = {
   offline_message: string;
   /** Email agent replies to a visitor who left an email and is not connected. */
   email_follow_up: boolean;
+  /** Visitors may send files. */
+  attachments: boolean;
+  /** Ids of the file type catalog (components/widget/fileTypes.ts) visitors may send; [] takes any file but programs and scripts. */
+  attachment_types: string[];
+  /** Visitors may record voice messages, whether or not they may send files. */
+  voice_messages: boolean;
+  /** The longest voice message, 5 to 300 seconds. */
+  voice_max_seconds: number;
 };
 /** GET /v1/widget/config: what the widget renders. */
 export type WidgetConfig = {
@@ -1169,6 +1208,13 @@ export type WidgetConfig = {
   subtitle: string;
   suggestions: string[];
   sound: boolean;
+  /** Visitors may send files; older servers omit it. */
+  attachments?: boolean;
+  /** Extensions of the types visitors may send; null for any file but programs and scripts; [] while attachments is off. */
+  attachment_extensions?: string[] | null;
+  /** Visitors may record voice messages; older servers omit it. */
+  voice_messages?: boolean;
+  voice_max_seconds?: number;
   team: { name: string; avatar_url: string | null }[];
   ai_answers: boolean;
   /** The widget's bot, else the default bot (contracts/bots.md). */
@@ -1180,7 +1226,7 @@ export type WidgetConfig = {
   brand?: { name: string; color: string | null };
 };
 
-/** GET /v1/public/csat/{token}. `locale` is the workspace default ("" when not set). */
+/** POST /v1/public/csat/survey {token}. `locale` is the workspace default ("" when not set). */
 export type CsatSurvey = {
   workspace_name: string;
   brand_color: string;
@@ -1196,6 +1242,8 @@ export type TicketPatch = {
   priority?: Priority;
   /** null clears. */
   severity?: Severity | null;
+  /** Changes the contact who receives future replies. */
+  contact_id?: string;
   assignee_id?: string | null;
   team_id?: string | null;
   /** The address replies go out from (an address of the ticket's brand). */

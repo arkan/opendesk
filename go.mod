@@ -4,14 +4,14 @@ go 1.27.1
 
 require (
 	github.com/SherClockHolmes/webpush-go v1.4.0
-	github.com/anthropics/anthropic-sdk-go v1.81.0
+	github.com/anthropics/anthropic-sdk-go v1.82.0
 	github.com/aws/aws-sdk-go-v2 v1.47.3
 	github.com/aws/aws-sdk-go-v2/config v1.33.9
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.9
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.3
 	github.com/aws/aws-sdk-go-v2/service/sesv2 v1.79.1
 	github.com/aymerick/douceur v0.2.0
-	github.com/coder/websocket v1.8.14
+	github.com/coder/websocket v1.8.15
 	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/danielgtaylor/huma/v2 v2.39.1
 	github.com/emersion/go-imap/v2 v2.0.0-beta.8
@@ -32,7 +32,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/nats-io/nats-server/v2 v2.15.1
 	github.com/nats-io/nats.go v1.54.0
-	github.com/posthog/posthog-go v1.35.0
+	github.com/posthog/posthog-go v1.35.1
 	github.com/pquerna/otp v1.5.0
 	github.com/riverqueue/river v0.49.0
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.49.0

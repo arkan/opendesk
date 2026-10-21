@@ -8,10 +8,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/useopendesk/opendesk/internal/auth"
 	"github.com/useopendesk/opendesk/internal/domain"
 	"github.com/useopendesk/opendesk/internal/helpdesk/hdtest"
+	"github.com/useopendesk/opendesk/internal/helpdesk/tickets"
 	"github.com/useopendesk/opendesk/internal/ids"
 	"github.com/useopendesk/opendesk/internal/jobs"
 )
@@ -82,6 +84,38 @@ func TestCreateAndGet(t *testing.T) {
 	e.Do("GET", "/v1/tickets/"+tk.ID.String(), hdtest.Auth{Bearer: key}, nil).Want(t, 404)
 	// A workspace header the user is not a member of resolves no workspace.
 	e.Do("GET", "/v1/tickets/"+tk.ID.String(), hdtest.Auth{Bearer: other.Owner.Token, Workspace: ws.ID}, nil).Want(t, 400)
+}
+
+func TestTrustedAssistantCreateUsesNormalTicketPath(t *testing.T) {
+	e, ws := newEnv(t)
+	teamID := addTeam(t, e, ws, ws.Agent.ID)
+	p := &auth.Principal{Kind: auth.KindUser, UserID: ws.Agent.ID, WorkspaceID: ws.ID, Role: auth.RoleAgent, Assistant: true}
+	var tk domain.Ticket
+	err := e.D.DB.Tx(e.Ctx, func(tx pgx.Tx) error {
+		var err error
+		tk, err = tickets.CreateTicket(e.Ctx, tx, e.D, p, tickets.CreateInput{
+			Subject: "Printer is offline", BodyHTML: "<p>Third floor</p>", Kind: "note", Channel: domain.ChannelAPI, TeamID: &teamID,
+		})
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tk.Channel != domain.ChannelAPI || tk.TeamID == nil || *tk.TeamID != teamID || tk.Subject != "Printer is offline" {
+		t.Fatalf("ticket = %+v", tk)
+	}
+	var authorType, kind, body string
+	var authorID uuid.UUID
+	if err := e.D.DB.Pool.QueryRow(e.Ctx, `SELECT author_type,author_user_id,kind,body_text FROM messages WHERE ticket_id=$1`, tk.ID).
+		Scan(&authorType, &authorID, &kind, &body); err != nil {
+		t.Fatal(err)
+	}
+	if authorType != "user" || authorID != ws.Agent.ID || kind != "note" || body != "Third floor" {
+		t.Fatalf("message = %s %s %s %q", authorType, authorID, kind, body)
+	}
+	if n := len(e.Jobs(jobs.TicketTriggerArgs{}.Kind(), ws.ID)); n != 1 {
+		t.Fatalf("want one ticket-created trigger, got %d", n)
+	}
 }
 
 func TestCreateValidation(t *testing.T) {
@@ -245,6 +279,94 @@ func TestPatch(t *testing.T) {
 	if actor != "api" {
 		t.Fatalf("actor %s", actor)
 	}
+}
+
+func TestPatchContact(t *testing.T) {
+	e, ws := newEnv(t)
+	mb := addMailbox(t, e, ws)
+	tk := createTicket(t, e, ws, map[string]any{
+		"mailbox_id": mb.String(), "contact": map[string]any{"email": "old@example.com", "name": "Old Contact"},
+	})
+
+	newContactID := ids.New()
+	e.Exec(`INSERT INTO contacts (id, workspace_id, email, name) VALUES ($1, $2, $3, $4)`, newContactID, ws.ID, "new@example.com", "New Contact")
+	_, seq := e.Events(ws.ID, 0)
+
+	var got domain.Ticket
+	e.Do("PATCH", "/v1/tickets/"+tk.ID.String(), ws.Agent.As(ws), map[string]any{"contact_id": newContactID.String()}).
+		Want(t, 200).JSON(t, &got)
+	if got.Contact == nil || got.Contact.ID != newContactID || got.Contact.Name != "New Contact" || got.Contact.Email == nil || *got.Contact.Email != "new@example.com" {
+		t.Fatalf("contact was not changed: %+v", got.Contact)
+	}
+	var n int
+	e.Scalar(`SELECT count(*) FROM activities WHERE ticket_id = $1 AND type = 'contact_changed'
+		AND data->'from'->>'id' = $2 AND data->'to'->>'id' = $3
+		AND data->'from'->>'name' = 'Old Contact' AND data->'to'->>'name' = 'New Contact'`,
+		&n, tk.ID, tk.Contact.ID.String(), newContactID.String())
+	if n != 1 {
+		t.Fatalf("contact_changed activity count %d", n)
+	}
+	e.Scalar(`SELECT count(*) FROM events WHERE workspace_id = $1 AND type = 'ticket.updated'
+		AND data->'changes' @> '["contact_id"]'::jsonb AND data->'ticket'->'contact'->>'id' = $2`, &n, ws.ID, newContactID.String())
+	if n != 1 {
+		t.Fatalf("ticket.updated contact change count %d", n)
+	}
+	types, _ := e.Events(ws.ID, seq)
+	if !slices.Contains(types, "ticket.updated") || !slices.Contains(types, "activity.created") {
+		t.Fatalf("contact change events %v", types)
+	}
+
+	// Existing messages keep their original recipient; later replies use the new contact.
+	var messages struct{ Data []domain.Message }
+	e.Do("GET", "/v1/tickets/"+tk.ID.String()+"/messages", ws.Agent.As(ws), nil).Want(t, 200).JSON(t, &messages)
+	if len(messages.Data) != 1 || len(messages.Data[0].To) != 1 || messages.Data[0].To[0] != "old@example.com" {
+		t.Fatalf("existing message recipient changed: %+v", messages.Data)
+	}
+	var reply domain.Message
+	e.Do("POST", "/v1/tickets/"+tk.ID.String()+"/messages", ws.Agent.As(ws), map[string]any{"kind": "reply", "body_html": "<p>Following up</p>"}).
+		Want(t, 201).JSON(t, &reply)
+	if len(reply.To) != 1 || reply.To[0] != "new@example.com" {
+		t.Fatalf("reply recipient %+v", reply.To)
+	}
+
+	// Admins can also change the contact; viewers cannot.
+	adminContactID := ids.New()
+	e.Exec(`INSERT INTO contacts (id, workspace_id, email, name) VALUES ($1, $2, $3, $4)`, adminContactID, ws.ID, "admin@example.com", "Admin Contact")
+	e.Do("PATCH", "/v1/tickets/"+tk.ID.String(), ws.Admin.As(ws), map[string]any{"contact_id": adminContactID.String()}).Want(t, 200)
+	e.Do("PATCH", "/v1/tickets/"+tk.ID.String(), ws.Viewer.As(ws), map[string]any{"contact_id": newContactID.String()}).Want(t, 403)
+
+	other := e.NewWorkspace()
+	foreign := createTicket(t, e, other, map[string]any{"contact": map[string]any{"email": "foreign@example.com"}})
+	for _, body := range []map[string]any{
+		{"contact_id": foreign.Contact.ID.String()},
+		{"contact_id": ids.New().String()},
+		{"contact_id": nil},
+	} {
+		if res := e.Do("PATCH", "/v1/tickets/"+tk.ID.String(), ws.Agent.As(ws), body); res.Status != 422 {
+			t.Errorf("%v: status %d %s", body, res.Status, res.Body)
+		}
+	}
+	got = getTicket(t, e, ws, tk.ID)
+	if got.Contact == nil || got.Contact.ID != adminContactID {
+		t.Fatalf("invalid or unauthorized patch changed contact: %+v", got.Contact)
+	}
+
+	// Setting the contact it already has records nothing.
+	e.Do("PATCH", "/v1/tickets/"+tk.ID.String(), ws.Agent.As(ws), map[string]any{"contact_id": adminContactID.String()}).Want(t, 200)
+	if n := countRows(t, e, `SELECT count(*) FROM activities WHERE ticket_id = $1 AND type = 'contact_changed'`, tk.ID); n != 2 {
+		t.Fatalf("contact_changed activities %d", n)
+	}
+	// An API key needs tickets:write; bulk never changes a contact.
+	read := e.APIKey(ws, "tickets:read")
+	e.Do("PATCH", "/v1/tickets/"+tk.ID.String(), hdtest.Auth{Bearer: read}, map[string]any{"contact_id": newContactID.String()}).Want(t, 403)
+	e.Do("POST", "/v1/tickets/bulk", ws.Agent.As(ws), map[string]any{"ids": []string{tk.ID.String()},
+		"patch": map[string]any{"contact_id": newContactID.String()}}).Want(t, 422)
+	// A live chat stays with its visitor, whose widget lists it by contact.
+	e.Exec(`UPDATE tickets SET channel = 'chat' WHERE id = $1`, tk.ID)
+	e.Do("PATCH", "/v1/tickets/"+tk.ID.String(), ws.Agent.As(ws), map[string]any{"contact_id": newContactID.String()}).Want(t, 422)
+	// A ticket of a private team the caller is not on is not there at all.
+	hidden, _ := privateTicket(t, e, ws)
+	e.Do("PATCH", "/v1/tickets/"+hidden.ID.String(), ws.Agent.As(ws), map[string]any{"contact_id": newContactID.String()}).Want(t, 404)
 }
 
 func TestBulkDeleteMerge(t *testing.T) {

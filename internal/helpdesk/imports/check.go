@@ -192,6 +192,9 @@ func samples(ctx context.Context, src source.Source) []ImportSample {
 				if err := src.Load(ctx, t); err != nil {
 					return out
 				}
+				if t.Skip {
+					continue
+				}
 			}
 			out = append(out, sampleOf(t))
 			if len(out) >= maxSamples {

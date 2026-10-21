@@ -17,6 +17,32 @@ async function call(method: string, path: string, body?: unknown) {
 describe("mock backend", () => {
   installMock();
 
+  it("turns off files in the widget", async () => {
+    expect((await call("GET", "/v1/widget/settings")).body.attachments).toBe(true);
+    expect((await call("PATCH", "/v1/widget/settings", { attachments: "no" })).status).toBe(422);
+    const off = (await call("PATCH", "/v1/widget/settings", { attachments: false })).body;
+    expect(off.attachments).toBe(false);
+  });
+
+  it("takes voice messages of up to the picked length", async () => {
+    expect((await call("GET", "/v1/widget/settings")).body).toMatchObject({ voice_messages: false, voice_max_seconds: 60 });
+    for (const bad of [4, 301, 30.5, "60"]) {
+      expect((await call("PATCH", "/v1/widget/settings", { voice_max_seconds: bad })).status, JSON.stringify(bad)).toBe(422);
+    }
+    const w = (await call("PATCH", "/v1/widget/settings", { voice_messages: true, voice_max_seconds: 120 })).body;
+    expect(w).toMatchObject({ voice_messages: true, voice_max_seconds: 120 });
+  });
+
+  it("limits the widget's files to the picked types", async () => {
+    expect((await call("GET", "/v1/widget/settings")).body.attachment_types).toEqual([]);
+    for (const bad of [["svg"], ["png", "exe"], "png"]) {
+      expect((await call("PATCH", "/v1/widget/settings", { attachment_types: bad })).status, JSON.stringify(bad)).toBe(422);
+    }
+    const w = (await call("PATCH", "/v1/widget/settings", { attachments: true, attachment_types: ["pdf", "jpg", "pdf"] })).body;
+    expect(w.attachment_types).toEqual(["jpg", "pdf"]);
+    expect((await call("PATCH", "/v1/widget/settings", { attachment_types: [] })).body.attachment_types).toEqual([]);
+  });
+
   it("breaks reports down by team and brand, and narrows them", async () => {
     const range = "from=2026-09-12&to=2026-10-11";
     const all = (await call("GET", `/v1/reports/overview?${range}`)).body;
@@ -74,12 +100,14 @@ describe("mock backend", () => {
       "/v1/sla-policies", "/v1/automations", "/v1/mailboxes", "/v1/members", "/v1/invitations", "/v1/teams",
       "/v1/api-keys", "/v1/webhooks", "/v1/audit-logs", "/v1/notifications", "/v1/kb/collections", "/v1/kb/articles",
       "/v1/saved-replies", "/v1/me/sessions", "/v1/widget/settings", "/v1/workspace", "/v1/search?q=sso",
-      "/v1/reports/overview?from=2026-09-12&to=2026-10-11", "/v1/public/help/margin", "/v1/public/csat/demo", "/v1/auth/config",
+      "/v1/reports/overview?from=2026-09-12&to=2026-10-11", "/v1/public/help/margin", "/v1/auth/config",
       "/v1/integrations", "/v1/integrations/catalog",
       "/v1/support-channels/providers", "/v1/support-channels/connections", "/v1/support-channels/destinations",
     ]) {
       expect((await call("GET", path)).status, path).toBe(200);
     }
+    // The survey token rides in the body.
+    expect((await call("POST", "/v1/public/csat/survey", { token: "demo" })).status).toBe(200);
   });
 
   it("publishes contiguous events for mutations", async () => {

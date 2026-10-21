@@ -113,6 +113,36 @@ func loadVisitorWidget(ctx context.Context, q db.Querier, p *auth.Principal) (wi
 
 var errWidgetDisabled = httpx.E(http.StatusForbidden, "widget_disabled", "The chat widget is turned off.")
 
+var errAttachmentsOff = httpx.E(http.StatusForbidden, "attachments_off", "This chat does not take files.")
+
+var errVoiceTooLong = httpx.E(http.StatusRequestEntityTooLarge, "voice_too_long", "This voice message is longer than this chat takes.")
+
+// takesUploads reports whether visitors may send the widget anything: files or voice
+// messages.
+func takesUploads(w hd.WidgetSettings) bool { return w.Attachments || w.VoiceMessages }
+
+// visitorAccept decides whether a visitor's file is taken through a widget: as a file of
+// its attachment types (any but a program while it has none), or, with voice messages on,
+// as a recording of sound alone no larger than voice_max_seconds allows. Nil when the
+// widget takes any file, so nothing is checked again.
+func visitorAccept(w hd.WidgetSettings) hd.Accept {
+	if w.Attachments && len(w.AttachmentTypes) == 0 {
+		return nil
+	}
+	return func(head []byte, filename string, size int64) error {
+		if w.Attachments && hd.FileTypeAllowed(head, filename, w.AttachmentTypes) {
+			return nil
+		}
+		if w.VoiceMessages && hd.IsVoice(head, filename) {
+			if size > hd.VoiceMaxBytes(w.VoiceMaxSeconds) {
+				return errVoiceTooLong
+			}
+			return nil
+		}
+		return hd.ErrFileTypeNotAllowed
+	}
+}
+
 type configTopic struct {
 	ID    string `json:"id"`
 	Label string `json:"label"`
@@ -139,6 +169,10 @@ type widgetConfig struct {
 		Subtitle        string        `json:"subtitle"`
 		Suggestions     []string      `json:"suggestions"`
 		Sound           bool          `json:"sound"`
+		Attachments     bool          `json:"attachments" doc:"Visitors may send files"`
+		AttachmentExts  []string      `json:"attachment_extensions" nullable:"true" doc:"Extensions of the file types visitors may send; null when any file but a program or a script; [] while attachments is off"`
+		VoiceMessages   bool          `json:"voice_messages" doc:"Visitors may record voice messages"`
+		VoiceMaxSeconds int           `json:"voice_max_seconds" doc:"The longest voice message, in seconds"`
 		Team            []teamFace    `json:"team" doc:"Up to 3 members of the widget's team (else of the workspace), available first; first names only"`
 		AIAnswers       bool          `json:"ai_answers" doc:"The AI agent handles new conversations"`
 		Bot             struct {
@@ -210,17 +244,7 @@ func isOpen(ctx context.Context, q db.Querier, g widgetRow, now time.Time) (bool
 	if !bh.Enabled {
 		return true, nil
 	}
-	return openAt(bh, loc, now), nil
-}
-
-// openAt reports whether the business hours are open at now. A schedule with no open
-// time is never open.
-func openAt(b hd.BusinessHours, loc *time.Location, now time.Time) bool {
-	open := false
-	for _, ranges := range b.Schedule {
-		open = open || len(ranges) > 0
-	}
-	return open && b.AddBusinessMinutes(now, 1, loc).Equal(now.Add(time.Minute))
+	return hd.OpenAt(bh, loc, now), nil
 }
 
 type widgetSessionInput struct {
@@ -290,6 +314,14 @@ func (h *handler) registerPublic(api huma.API) {
 			b.Theme, b.Position, b.OffsetX, b.OffsetY = ws.Theme, ws.Position, ws.OffsetX, ws.OffsetY
 			b.Launcher, b.LauncherLabel, b.Radius = ws.Launcher, ws.LauncherLabel, ws.Radius
 			b.Title, b.Subtitle, b.Suggestions, b.Sound = ws.Title, ws.Subtitle, ws.Suggestions, ws.Sound
+			b.Attachments = ws.Attachments
+			b.AttachmentExts = []string{}
+			if ws.Attachments && len(ws.AttachmentTypes) == 0 {
+				b.AttachmentExts = nil
+			} else if ws.Attachments {
+				b.AttachmentExts = hd.FileTypeExtensions(ws.AttachmentTypes)
+			}
+			b.VoiceMessages, b.VoiceMaxSeconds = ws.VoiceMessages, ws.VoiceMaxSeconds
 			if b.Title == "" {
 				b.Title = g.BrandName
 			}
@@ -327,6 +359,20 @@ func (h *handler) registerPublic(api huma.API) {
 			"user_hash = hex HMAC-SHA256(widget_secret, user_id) marks the visitor verified.",
 		Middlewares: huma.Middlewares{h.withClientIP}},
 		h.session)
+
+	huma.Register(api, huma.Operation{OperationID: "widget-end-session", Method: http.MethodDelete, Path: "/v1/widget/session",
+		Summary: "End the visitor's chat widget session", Tags: []string{"Widget"}, DefaultStatus: http.StatusNoContent,
+		Description: "The visitor token stops working at once; the widget's shutdown calls it when the host page signs its user out."},
+		func(ctx context.Context, _ *struct{}) (*struct{}, error) {
+			p, err := auth.RequireVisitor(ctx)
+			if err != nil {
+				return nil, httpx.Wrap(err)
+			}
+			if _, err := h.d.DB.Pool.Exec(ctx, `DELETE FROM widget_sessions WHERE workspace_id = $1 AND id = $2`, p.WorkspaceID, p.VisitorID); err != nil {
+				return nil, httpx.Wrap(err)
+			}
+			return nil, nil
+		})
 }
 
 // errInvalidHash answers a user_hash that does not verify.
@@ -400,7 +446,7 @@ func (h *handler) session(ctx context.Context, in *widgetSessionInput) (*widgetS
 			var sessVerified, blocked bool
 			var external *string
 			err := tx.QueryRow(ctx, `SELECT s.contact_id, s.widget_id, s.verified, c.blocked, c.external_id FROM widget_sessions s
-				JOIN contacts c ON c.id = s.contact_id WHERE s.workspace_id = $1 AND s.token_hash = $2`,
+				JOIN contacts c ON c.id = s.contact_id WHERE s.workspace_id = $1 AND s.token_hash = $2 AND `+auth.VisitorSessionLive,
 				wid, crypto.HashToken(t)).Scan(&sessContact, &sessWidget, &sessVerified, &blocked, &external)
 			switch {
 			case db.IsNotFound(err):
@@ -410,6 +456,9 @@ func (h *handler) session(ctx context.Context, in *widgetSessionInput) (*widgetS
 				return httpx.E(http.StatusForbidden, "blocked", "This conversation is not available.")
 			case verified && (external == nil || *external != userID):
 				// A different signed-in user on this browser gets a session of their own.
+			case sessVerified && !verified:
+				// A signed-in visitor's session is not someone's who is not signed in: on a
+				// shared computer, the next person starts anonymous and sees nothing of it.
 			case sessWidget != nil && *sessWidget != g.ID:
 				// The same visitor on another widget of the workspace: a session of this
 				// widget. An identity is verified with each widget's own secret, so a

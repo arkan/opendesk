@@ -42,7 +42,7 @@ type Workspace = { id: string; name: string; slug: string; widget_key: string /*
 // settings.help_center_enabled, help_center_title, brand_color and locale are kept in step with the default brand
 // (contracts/teams.md): a PATCH here updates it, and a PATCH of the default brand's help center updates them.
 type WorkspaceSettings = { brand_color?: string; timezone?: string; help_center_enabled?: boolean; help_center_title?: string; csat_enabled?: boolean;
-  auto_assign?: AssignMode /* the workspace default; see "Assignment" */; locale?: string /* BCP 47 default for customer-facing pages (help center, CSAT, widget); "" = the visitor's browser */;
+  auto_assign?: AssignMode /* the workspace default; see "Assignment" */; new_ticket_notify?: NewTicketNotify /* read here, set through /v1/assignment; see "Assignment" */; locale?: string /* BCP 47 default for customer-facing pages (help center, CSAT, widget); "" = the visitor's browser */;
   gravatar?: boolean /* default false: look up contact pictures on Gravatar (sends a hash of the contact's email to Gravatar) */;
   domain_logos?: boolean /* default true: fetch company logos from the company's website */;
   label_creation?: "anyone" | "admins" /* default "anyone": applying an unknown label name creates it; "admins": only admins (and keys with settings:write) may, others get 422 unknown_label */;
@@ -93,12 +93,12 @@ type Message = {
   received_at: string; // inbound email: the address of ours it was written to (its mailbox's address or an alias, lowercased; contracts/teams.md "Routing"), else ""
   // reply_to, auth_failed, form_sender and received_at are for agents: the widget and public events always carry "", false, "" and "".
   thread_id: string | null; // the third-party thread a note belongs to ("Threads"), else null; public views always carry null
-  created_at: string;
+  created_at: string; edited_at: string | null; // edited_at is set only when an internal note was edited
 };
 type Attachment = { id: string; filename: string; content_type: string; size_bytes: number; inline: boolean; url: string };
 type Activity = { id: string; ticket_id: string; actor: { type: string; user: UserRef | null }; type: string; data: Record<string, unknown>; created_at: string };
-// activity types: status_changed{from,to, reason?: "sender_unverified" | "thread_replied", message_id?} (with "sender_unverified", from equals to: a reply that failed sender checks left the status where it was, actor "system"; "thread_replied": an answer in a third-party thread opened a pending or on-hold ticket, actor "system") priority_changed{from,to} severity_changed{from: Severity | null, to: Severity | null} assigned{from,to,via?: "round_robin"|"load_balanced"|"triage"} (actor "system", or "ai" for via "triage") team_changed{from,to,via: "agent"|"automation"|"api"|"triage"|..., mailbox_from?, mailbox_to? /* the reply address switched with the team */} brand_changed{from,to} mailbox_changed{from,to} /* the reply address */ tagged{tag} untagged{tag} sla_breached{kind} merged{into, into_number /* null when the target is in another, private team */} csat_received{score} linked{link_id,url,title,provider} unlinked{url,title,provider}
-// thread_started{thread_id, subject, to} thread_closed{thread_id, subject} thread_reopened{thread_id, subject} ("Threads")
+// activity types: status_changed{from,to, reason?: "sender_unverified" | "thread_replied", message_id?} (with "sender_unverified", from equals to: a reply that failed sender checks left the status where it was, actor "system"; "thread_replied": an answer in a third-party thread opened a pending or on-hold ticket, actor "system") priority_changed{from,to} severity_changed{from: Severity | null, to: Severity | null} assigned{from,to,via?: "round_robin"|"load_balanced"|"triage"} (actor "system", or "ai" for via "triage") team_changed{from,to,via: "agent"|"automation"|"api"|"triage"|..., mailbox_from?, mailbox_to? /* the reply address switched with the team */} brand_changed{from,to} mailbox_changed{from,to} /* the reply address */ tagged{tag} untagged{tag} sla_breached{kind} merged{into, into_number /* null when the target is in another, private team */} csat_received{score} linked{link_id,url,title,provider} unlinked{url,title,provider} contact_changed{from,to} /* each {id, name} (the name, else the email) or null */
+// thread_started{thread_id, subject, to} thread_closed{thread_id, subject} thread_reopened{thread_id, subject} ("Threads"); note_edited{message_id} and note_deleted{message_id} record internal note changes without the note text
 // field_changed{key, name, from, to} (one per custom field; from/to are FieldValue | null)
 // AI (actor.type "ai", contracts/ai.md): ai_triaged{category,sentiment,language,priority,severity,via,model?,engine?}; AI changes carry {via, model?: "jev", confidence?: number} ai_answered{message_id,sources,tools} ai_action{action_id,tool,status} ai_handoff (actor "ai" or "contact")
 
@@ -135,7 +135,9 @@ type SlaPolicy = { id: string; name: string; priority: Priority | null; team_id:
 // Triage, assignment and setup (see "Triage, assignment and onboarding").
 type AssignMode = "none" | "round_robin" | "load_balanced";
 type AssignmentRule = { target_type: "mailbox" | "team"; target_id: string; mode: AssignMode };
-type Assignment = { mode: AssignMode /* = settings.auto_assign */; rules: AssignmentRule[]; auto_away_minutes: number /* 0 = off */ };
+type NewTicketNotify = "auto" | "everyone" | "leads" | "off";
+type Assignment = { mode: AssignMode /* = settings.auto_assign */; rules: AssignmentRule[]; auto_away_minutes: number /* 0 = off */;
+  new_ticket_notify: NewTicketNotify /* = settings.new_ticket_notify; empty or unknown reads as "auto" */ };
 type TriageField = "priority" | "severity" | "labels" | "team";
 type DecisionEngine = { provider: "typesafe" /* Jev, direct or through OpenRouter */ | "llm" | "none"; model: string /* "jev-latest", "~typesafe/jev-latest", or the LLM fast model */; connected: boolean };
 type TriageSettings = { auto_triage: boolean; fields: TriageField[]; assign_after_triage: boolean;
@@ -190,7 +192,7 @@ type ApiKey = { id: string; name: string; prefix: string; scopes: string[]; last
 type Webhook = { id: string; url: string; description: string; events: string[]; enabled: boolean; created_at: string };
 type WebhookDelivery = { id: string; event_id: string; event_type: string; status: "pending" | "succeeded" | "failed"; attempts: number; response_code: number | null; duration_ms: number | null; created_at: string };
 type AuditLog = { id: string; actor: { type: "user" | "api_key" | "system"; user: UserRef | null; api_key_id: string | null }; action: string; entity_type: string; entity_id: string | null; data: Record<string, unknown>; ip: string; created_at: string };
-type Notification = { id: string; type: "assigned" | "mentioned" | "customer_replied" | "thread_replied" /* data {message_id, thread_id, subject, preview, from: {name, email}}: someone outside the team answered a third-party thread on a ticket assigned to you */ | "sla_breached" | "ai_handoff" | "ai_cap_reached" | "ai_balance_low" | "ai_balance_out" | "auto_recharge_failed" | "ai_key_failed" | "team_joined" /* data {team_id, team: {id, name, private}, user: {id, name}, by}: an admin joined a team you lead (a private one to see its tickets) */ | "import_finished" /* data contracts/imports.md: a history import you started completed, failed or needs new credentials */ | "collab_assigned" | "collab_mention" /* Collab conversations, contracts/collab.md "Notifications" */; ticket: { id: string; number: number; subject: string } | null; data: Record<string, unknown>; read_at: string | null; created_at: string };
+type Notification = { id: string; type: "assigned" | "new_ticket" /* data {channel, contact?: {id, name}}: a new ticket nobody is assigned to, see "Assignment" */ | "mentioned" | "customer_replied" | "thread_replied" /* data {message_id, thread_id, subject, preview, from: {name, email}}: someone outside the team answered a third-party thread on a ticket assigned to you */ | "sla_breached" | "ai_handoff" | "ai_cap_reached" | "ai_balance_low" | "ai_balance_out" | "auto_recharge_failed" | "ai_key_failed" | "team_joined" /* data {team_id, team: {id, name, private}, user: {id, name}, by}: an admin joined a team you lead (a private one to see its tickets) */ | "import_finished" /* data contracts/imports.md: a history import you started completed, failed or needs new credentials */ | "collab_assigned" | "collab_mention" /* Collab conversations, contracts/collab.md "Notifications" */; ticket: { id: string; number: number; subject: string } | null; data: Record<string, unknown>; read_at: string | null; created_at: string };
 type Device = { id: string; platform: "ios"; name: string; app_version: string; environment: "production" | "sandbox";
   muted_types: string[]; current: boolean /* bound to the caller's session */; created_at: string; last_push_at: string | null };
 // Notification preferences ("Notification preferences and emails" below). Channels per type, per workspace;
@@ -208,7 +210,7 @@ type NotificationPreferences = {
   unsubscribed_at: string | null /* an email's unsubscribe link turned off email from this workspace; resubscribe undoes it */;
   types: NotificationTypePrefs[] /* the types the caller can receive in this workspace: owners and admins also get the ai_billing and workspace groups */ };
 // Notification.data: assigned {by, actor_type, actor?: {id, name}}; mentioned {message_id, by, actor?: {id, name}, preview};
-// customer_replied {message_id?, preview?, contact?: {id, name}}; sla_breached {kind}; ai_handoff {via: "ai" | "contact", contact?: {id, name}}; ai_cap_reached {cap_usd} (ticket null; the widget agent reached `widget_monthly_cap_usd`, once a month to owners and admins); ai_balance_low {remaining_usd}, ai_balance_out {remaining_usd} (US dollars), auto_recharge_failed {reason} (ticket null; owners and admins, contracts/billing.md "Auto-recharge"); ai_key_failed {provider: "openrouter" | "openai" | "anthropic", reason: "rejected" | "no_funds"} (ticket null; the workspace's own AI key failed, at most once an hour to owners and admins, contracts/ai.md "Provider per workspace"); import_finished {import_id, source, source_name, account, status: "completed" | "failed" | "needs_credentials", tickets, updated, articles, failed, error} (ticket null; to the admin who started the import, contracts/imports.md); collab_assigned {thread_id, account_id, by, subject, actor?: {id, name}}, collab_mention {thread_id, comment_id, by, subject, preview, actor?: {id, name}} (ticket null; contracts/collab.md).
+// new_ticket {channel, contact?: {id, name}}; customer_replied {message_id?, preview?, contact?: {id, name}}; sla_breached {kind}; ai_handoff {via: "ai" | "contact", contact?: {id, name}}; ai_cap_reached {cap_usd} (ticket null; the widget agent reached `widget_monthly_cap_usd`, once a month to owners and admins); ai_balance_low {remaining_usd}, ai_balance_out {remaining_usd} (US dollars), auto_recharge_failed {reason} (ticket null; owners and admins, contracts/billing.md "Auto-recharge"); ai_key_failed {provider: "openrouter" | "openai" | "anthropic", reason: "rejected" | "no_funds"} (ticket null; the workspace's own AI key failed, at most once an hour to owners and admins, contracts/ai.md "Provider per workspace"); import_finished {import_id, source, source_name, account, status: "completed" | "failed" | "needs_credentials", tickets, updated, articles, failed, error} (ticket null; to the admin who started the import, contracts/imports.md); collab_assigned {thread_id, account_id, by, subject, actor?: {id, name}}, collab_mention {thread_id, comment_id, by, subject, preview, actor?: {id, name}} (ticket null; contracts/collab.md).
 // Mentions in note HTML: <span data-type="mention" data-id="<user_id>">@Name</span> (also data-mention="<user_id>"), or "@<full name or email>" in text.
 ```
 
@@ -218,9 +220,9 @@ type NotificationPreferences = {
 | method | path | body → response |
 | --- | --- | --- |
 | GET | `/v1/auth/config` | → `{ providers: [{id:"google"|"microsoft"|"github"|"oidc", name}], password_login: bool, signup_enabled: bool, passkeys: bool, turnstile_site_key: string \| null, native: {app_attest: bool, push: "direct"\|"relay"\|"off", relay_url: string \| null}, web_push_key: string \| null }`. `passkeys` is true when passkey sign-in is available; `native` is for the native apps (`contracts/native.md`): `app_attest` when `APP_ATTEST_APP_IDS` is set, `push` from the APNs key / `PUSH_RELAY_URL`, `relay_url` only with `push: "relay"`; `web_push_key` is the VAPID public key browsers subscribe with (`contracts/native.md` "Web Push") |
-| POST | `/v1/auth/register` | `{email,password,name,turnstile_token?,app_attest?,invite_token?}` → `{access_token, expires_in, user}` + the account's refresh cookie, `od_rt_<user id hex>` (native requests: `refresh_token` in the body, no cookie). `409 too_many_accounts` when the browser already holds 5 other accounts (see "Several accounts" below). `409 email_taken`. With signup off, only a valid `invite_token` for the same email may register (`403 signup_disabled`); an invite token also marks the email verified |
-| POST | `/v1/auth/login` | `{email,password,turnstile_token?,app_attest?}` → `{access_token, expires_in, user}` or `{mfa_required:true, mfa_token}` |
-| POST | `/v1/auth/mfa` | `{mfa_token, code}` → `{access_token, expires_in, user, redirect_to?}`. `code` is a 6-digit TOTP code or a recovery code (`xxxx-xxxx-xxxx-xxxx`) |
+| POST | `/v1/auth/register` | `{email,password,name,turnstile_token?,app_attest?,invite_token?}` → `{access_token, expires_in, user}` + the account's refresh cookie, `od_rt_<user id hex>` (native requests: `refresh_token` in the body, no cookie). `409 too_many_accounts` when the browser already holds 5 other accounts (see "Several accounts" below). `409 email_taken` (the address's owner is emailed about the attempt, at most 3 times a day). With signup off, only a valid `invite_token` for the same email may register (`403 signup_disabled`); an invite token also marks the email verified |
+| POST | `/v1/auth/login` | `{email,password,turnstile_token?,app_attest?}` → `{access_token, expires_in, user, change_password?}` or `{mfa_required:true, mfa_token}`. `change_password: true` (here, or from `/v1/auth/mfa` after the code): the password is in the breached list or shorter than the rules now ask; the app asks for a new one |
+| POST | `/v1/auth/mfa` | `{mfa_token, code}` → `{access_token, expires_in, user, redirect_to?, change_password?}`. `code` is a 6-digit TOTP code or a recovery code (`xxxx-xxxx-xxxx-xxxx`) |
 | POST | `/v1/auth/refresh` | `{user_id?}` with the account's cookie, or `{refresh_token}` in the body when there is no cookie → `{access_token, expires_in, user}`. Rotates only that account's refresh token (native requests get the new `refresh_token` in the body). Without `user_id`, the account this browser used most recently. A refused refresh (`401 unauthenticated`) clears only that account's cookie |
 | POST | `/v1/auth/accounts` | cookies → `{accounts: [{user: {id, name, email, avatar_url}, memberships: [{workspace: {id, name, slug, avatar_url}, role}]}]}`: the accounts this browser is signed in to, in the order they were added. Rotates nothing; accounts whose session ended are left out and their cookies cleared. Native requests get `[]` |
 | POST | `/v1/auth/logout` | `{user_id?, all?, refresh_token?}` → 204. Signs out of the access token's account (else `user_id`'s, else the body token's session): revokes the session (and its push devices), closes its sockets, clears only that account's cookie. `{all: true}` signs out of every account in this browser |
@@ -236,7 +238,7 @@ type NotificationPreferences = {
 | POST | `/v1/auth/oauth/link` | `{link_token, password}` → same as exchange (tokens or `mfa_required`). Binds the provider identity after the account password is presented; `401 invalid_credentials` on a wrong password (the link token stays usable for 10 min) |
 | POST | `/v1/auth/passkey/login/begin` | `{}` → `{options: PublicKeyCredentialRequestOptionsJSON, passkey_token}`. Discoverable (no `allowCredentials`), so no email is needed and conditional UI works. `passkey_token` is single use, 5 min |
 | POST | `/v1/auth/passkey/login/finish` | `{passkey_token, credential: AuthenticationResponseJSON}` → same as `/v1/auth/login` (`{access_token, expires_in, user}` + refresh cookie). A user-verified passkey is a complete multi-factor sign-in (the session counts as having passed 2FA); without user verification an account with 2FA on answers `{mfa_required:true, mfa_token}`. `401 invalid_credentials` for every refused attempt (unknown passkey, bad signature, spent or wrong token, sign counter not advancing) |
-| POST | `/v1/auth/totp/setup` | → `{secret, otpauth_url}` |
+| POST | `/v1/auth/totp/setup` | → `{secret, otpauth_url}`. Needs a sign-in within 12 hours (`403 reauth_required`) |
 | POST | `/v1/auth/totp/enable` | `{code}` → `{recovery_codes: string[]}` |
 | POST | `/v1/auth/totp/disable` | `{code}` → 204 |
 | GET | `/v1/me` | → `{user: User, memberships: Membership[]}` |
@@ -254,7 +256,7 @@ type NotificationPreferences = {
 | POST | `/v1/me/passkeys/register/begin` | `{}` → `{options: PublicKeyCredentialCreationOptionsJSON, passkey_token}` (resident key required, user verification preferred, no attestation, the account's passkeys in `excludeCredentials`). Same gate as owner-level operations (`403 mfa_required`, `403 reauth_required`); `409 passkey_limit` at 25 passkeys |
 | POST | `/v1/me/passkeys/register/finish` | `{passkey_token, credential: RegistrationResponseJSON, name?}` → 201 `Passkey`. `name` defaults to `"Passkey"`. `400 invalid_passkey` when the token is spent, expired or from another session, or the credential does not verify; `409 passkey_exists` |
 | PATCH | `/v1/me/passkeys/{id}` | `{name}` → `Passkey` |
-| DELETE | `/v1/me/passkeys/{id}` | → 204 |
+| DELETE | `/v1/me/passkeys/{id}` | → 204. Needs the second factor (when on) and a sign-in within 12 hours, like adding one (`403 mfa_required` / `reauth_required`) |
 | DELETE | `/v1/me` | `{password?, code?}` → 204. `password` when the account has one, `code` when 2FA is on. Deletes the account and every workspace it solely owns (`409 sole_owner` while owner of a workspace with other members) |
 
 ### Workspace (owner: backend-core)
@@ -266,8 +268,8 @@ type NotificationPreferences = {
 | POST | `/v1/workspace/transfer` | owner + MFA, `{user_id}` |
 | POST | `/v1/workspace/widget-secret/rotate` | admin → `{secret}` (shown once): the default brand's first widget. Any widget: `POST /v1/widgets/{id}/secret/rotate` (contracts/teams.md) |
 | GET | `/v1/members` · PATCH/DELETE `/v1/members/{user_id}` | `{role}` |
-| PATCH | `/v1/members/{user_id}/profile` | `{title?, phone?, pronouns?, signature_html?}` → `Member`. `user_id` may be `me`; members edit their own, admins anyone's. One line each (80, 40, 40 characters, no markup); `signature_html` is the personal signature (design allowlist, template variables except itself, contracts/templates.md). Publishes `member.updated` |
-| PATCH | `/v1/members/{user_id}/availability` | `{availability?: Availability, max_open_tickets?: number \| null /* 1..1000, null clears */}` → `Member`. `user_id` may be `me`. Members set their own `availability`; admins set anyone's and `max_open_tickets` (viewers cannot be assigned, so theirs is refused). Publishes `member.updated` |
+| PATCH | `/v1/members/{user_id}/profile` | `{title?, phone?, pronouns?, signature_html?}` → `Member`. `user_id` may be `me`; members edit their own; the owner edits anyone's, an admin those of agents and viewers (`403` otherwise). One line each (80, 40, 40 characters, no markup); `signature_html` is the personal signature (design allowlist, template variables except itself, contracts/templates.md). Publishes `member.updated` |
+| PATCH | `/v1/members/{user_id}/availability` | `{availability?: Availability, max_open_tickets?: number \| null /* 1..1000, null clears */}` → `Member`. `user_id` may be `me`. Members set their own `availability`; the owner sets anyone's, an admin those of agents and viewers (`403` otherwise), with `max_open_tickets` (viewers cannot be assigned, so theirs is refused). Publishes `member.updated` |
 | PUT/DELETE | `/v1/workspace/images/{slot}` | admin. `slot`: `logo` (the workspace `avatar_url`), `help_center_logo`, `help_center_favicon`, `widget_avatar`, `widget_launcher` (a bot's picture is `PUT /v1/bots/{id}/image`, contracts/bots.md). PUT multipart `file` (image, 5 MB) → `Workspace`; DELETE → `Workspace`. Audit `workspace.image_updated` / `workspace.image_removed`; publishes `workspace.updated` |
 | GET | `/v1/images/{id}?s=256\|64` | public. The processed PNG behind every `avatar_url` (`s` defaults to 256). Ids are unguessable and immutable: `Cache-Control: public, max-age=31536000, immutable`, `X-Content-Type-Options: nosniff`, `Content-Security-Policy: default-src 'none'; sandbox` |
 | GET | `/v1/onboarding` | members → `Onboarding`, computed from the workspace's real state (below) |
@@ -276,15 +278,16 @@ type NotificationPreferences = {
 | POST | `/v1/invitations/{id}/link` | → `{url, expires_at}`: the invitation's link, to send another way (admin) |
 | POST | `/v1/invitations/{id}/resend` | → `Invitation`: emails the same link again (admin; 3 / hour per invitation) |
 | POST | `/v1/invitations/accept` | `{token}` → `Membership` (no workspace header) |
-| GET | `/v1/invitations/lookup?token=` | → `{workspace_name, email, role}` public |
+| POST | `/v1/invitations/lookup` | `{token}` → `{workspace_name, email, role}` public (the token never rides in a URL) |
 | CRUD | `/v1/teams`, `/v1/teams/{id}` | `{name, member_ids}`; the full team API, brands, widgets and routing rules are in contracts/teams.md |
-| CRUD | `/v1/api-keys`, `/v1/api-keys/{id}` | admin users only (not API keys). create `{name, scopes, expires_at?, private_team_ids?}` → `ApiKey & {secret}` (`secret` shown once; `prefix` is `od_live_` + 8 chars); PATCH `{name?, private_team_ids?}` (the list is replaced; contracts/teams.md "Visibility": `422` for an id that is not a private team of the workspace, `403 forbidden` for adding a team the caller is not on; removing is open to admins; a change closes the key's sockets). `private_teams` lists the same teams with `granted_by`: a team lasts while its granter is on it, and setting the list makes the caller the granter of the listed teams they are on; DELETE revokes |
+| CRUD | `/v1/api-keys`, `/v1/api-keys/{id}` | admin users only (not API keys). create `{name, scopes, expires_at?, private_team_ids?}` → `ApiKey & {secret}`, needing the second factor (when on) and a sign-in within 12 hours (`403 mfa_required` / `reauth_required`) (`secret` shown once; `prefix` is `od_live_` + 8 chars); PATCH `{name?, private_team_ids?}` (the list is replaced; contracts/teams.md "Visibility": `422` for an id that is not a private team of the workspace, `403 forbidden` for adding a team the caller is not on; removing is open to admins; a change closes the key's sockets). `private_teams` lists the same teams with `granted_by`: a team lasts while its granter is on it, and setting the list makes the caller the granter of the listed teams they are on; DELETE revokes |
 | GET | `/v1/ai-clients/server` | members → `{url, resource_metadata, authorization_server, scopes, tools[]}`: the MCP server for AI client setup (`contracts/agent.md` "opendesk MCP server") |
 | GET · DELETE | `/v1/ai-clients/connections` · `/v1/ai-clients/connections/{id}` | members (users only) → `{data: AIClientConnection[]}`: AI clients connected with OAuth, your own (admins: everyone's); DELETE disconnects one (your own; admins any) → 204, audit `oauth.grant_revoked` |
 | GET · POST | `/v1/oauth/requests/{id}` · `/v1/oauth/requests/{id}/approve` · `/v1/oauth/requests/{id}/deny` | signed-in users (no workspace header, no API keys): the MCP OAuth consent page. GET → `OAuthRequest`; approve `{workspace_id}` → `{redirect_to}` (audit `oauth.grant_created`); deny → `{redirect_to}`. `410 request_expired` once decided or after 10 minutes |
 | CRUD | `/v1/webhooks`, `/v1/webhooks/{id}` | `{url, description, events, enabled, private_team_ids}` create → `Webhook & {secret}`. `events: ["*"]` (or `[]`) is every event, including types added later; a list may use `resource.*`. Events of a private team's tickets are delivered only with the team in `private_team_ids` (same rules as API keys, `private_teams` with `granted_by` too) |
 | GET | `/v1/webhooks/{id}/deliveries` | list |
-| POST | `/v1/webhooks/{id}/test` | sends `webhook.test` → 202 `WebhookDelivery` |
+| POST | `/v1/webhooks/{id}/test` | sends `webhook.test` → 202 `WebhookDelivery`; `409 webhook_unverified` before the webhook is verified |
+| POST | `/v1/webhooks/{id}/verify` | `{code?}` → `Webhook`. Endpoint ownership (CASA 7.1.2): a webhook created, or whose `url` changes, is `verified: false` and receives no events until its URL answers a signed `webhook.verification` event (`data: {webhook_id, challenge}`) with `2xx` and the challenge as the body (or JSON `{challenge}`), or an admin sends that challenge here as `code` (within 24 h; `422 invalid_code` otherwise). Without `code`, a new challenge is sent. Webhooks made before verification existed count as verified |
 | CRUD | `/v1/bots`, `/v1/bots/{id}` | members read, admin write. The AI agent's customer-facing bots: name, look and personality, with duplicate, default, reorder, picture and public avatar routes; see `contracts/bots.md` |
 | CRUD | `/v1/integrations`, `/v1/integrations/{id}` | admin users only. Connected products for Ollie (MCP servers); see `contracts/integrations.md`, which also lists `/v1/tickets/{id}/links` |
 | GET | `/v1/audit-logs` | admin, list, optional `?action=&entity_type=` |
@@ -296,7 +299,7 @@ type NotificationPreferences = {
 | POST | `/v1/me/notification-preferences/test` | workspace-scoped → 204. Sends a sample notification email to the caller now, whatever the preferences. 5 per hour. `422 email_unverified` |
 | POST | `/v1/notifications/unsubscribe` | public, `{token}` → `{workspace: {id, name}, email}`. Turns off every notification email from that workspace for the token's user (the `email` channel of every type). Idempotent. `400 invalid_token`. 30 per IP per hour |
 | POST | `/v1/notifications/unsubscribe/one-click?token=` | public, RFC 8058 one-click (`List-Unsubscribe-Post: List-Unsubscribe=One-Click`, any form body) → 200 `text/plain`. Same effect as above |
-| GET | `/v1/notifications?unread=` · POST `/v1/notifications/read` | `{ids?: string[], all?: bool}` → 204. Rows are created by helpdesk (assigned, mentioned, customer_replied, sla_breached, ai_handoff) the AI area (ai_cap_reached, ai_key_failed) billing (ai_balance_low, ai_balance_out, auto_recharge_failed) and imports (import_finished) with a `notification.created` event to `user:<uid>`, and pushed to the user's phones (`contracts/native.md` "Push"). Marking read sends the phones a badge update |
+| GET | `/v1/notifications?unread=` · POST `/v1/notifications/read` | `{ids?: string[], all?: bool}` → 204. Rows are created by helpdesk (assigned, new_ticket, mentioned, customer_replied, thread_replied, sla_breached, ai_handoff, team_joined) the AI area (ai_cap_reached, ai_key_failed) billing (ai_balance_low, ai_balance_out, auto_recharge_failed) and imports (import_finished) with a `notification.created` event to `user:<uid>`, and pushed to the user's phones (`contracts/native.md` "Push"). Marking read sends the phones a badge update |
 | GET | `/v1/push/instance-key` | public, every instance → `{public_key}` (Ed25519, base64url, `Cache-Control: public, max-age=3600`): verifies this instance's relay requests |
 | POST | `/v1/push/relay/register` | relay only (`PUSH_RELAY_SERVE`), called by the app → `{token, environment, instance}` → `{relay_token}`. `instance` is the instance's https API URL. 30 per IP per hour. `404 relay_off` elsewhere |
 | POST | `/v1/push/relay/send` | relay only, signed by the instance (`OD-Push-Instance`, `OD-Push-Timestamp`, `OD-Push-Signature`) → `{relay_token, push: {kind: "alert"\|"badge", type?, notification_id?, ticket_id?, ticket_number?, workspace_id?, badge}}` → 204. Unknown members are refused (`422`), so no ticket text can be sent. `401 invalid_signature` (bad, stale or foreign signature, or a relay token of another instance), `410 gone` (APNs dropped the token), `429` (per instance), `502 push_failed` |
@@ -354,7 +357,9 @@ notifications from the desktop app, or from a browser that allowed them). A chan
 | type | group | email | push | desktop |
 | --- | --- | --- | --- | --- |
 | `assigned`, `mentioned`, `sla_breached` | tickets | on | on | on |
+| `new_ticket` (a new ticket nobody is assigned to; who gets it: "Assignment") | tickets | off | on | on |
 | `customer_replied` (tickets assigned to you) | tickets | on | on | on |
+| `thread_replied` (an answer in a side conversation on a ticket assigned to you) | tickets | on | on | on |
 | `ai_handoff` | tickets | on | on | on |
 | `team_joined` | team | off | off | on |
 | `ai_cap_reached`, `ai_key_failed`, `ai_balance_low`, `ai_balance_out`, `auto_recharge_failed` (owners and admins) | ai_billing | on | off | on |
@@ -421,14 +426,16 @@ Each value is overridable: `NOTIFY_EMAIL_DELAY`, `NOTIFY_EMAIL_COOLDOWNS` (e.g. 
 | GET | `/v1/tickets/counts` | → `{ unassigned, mine, open, pending, on_hold, solved, spam, views: {<view_id>: n}, teams: {<team_id>: {open, unassigned}}, my_teams: {open, unassigned}, stats: {<row id>: {awaiting, urgent, overdue}} }`. `teams` lists every team the caller can see (open and pending, spam excluded); `my_teams` sums the caller's teams; `views` counts only tickets the caller can see (contracts/teams.md "Visibility"). `stats` breaks a sidebar row's tickets down, over the same tickets as its count: `ticket_folder:unassigned`, `ticket_folder:mine`, `ticket_folder:open`, `ticket_folder:pending` (pending and on hold), `team:<id>` for each team in `teams`, `team:mine` (as `my_teams`) and `view:<id>` for each view in `views`. `awaiting`: open or pending, and the customer's last message is the last message (within a second); `urgent`: urgent priority; `overdue`: not solved or closed, and the due time that applies has passed (first response while unanswered, else resolution) or an SLA breach is recorded |
 | POST | `/v1/tickets` | `{subject, contact_id? , contact?: {email,name}, channel?: "email"\|"api", mailbox_id?, brand_id?, body_html, kind?: "reply"\|"note", priority?, severity?, assignee_id?, team_id?, tags?: string[], fields?: FieldValues, status?}`; an email ticket with a reply is sent to the contact (`422 mailbox_cannot_send` when its mailbox has `sending: "system_off"`; nothing is created). Without `team_id` the team comes from routing (contracts/teams.md "Routing"); `brand_id` defaults to the mailbox's brand, else the default brand (`mailbox_id` of another brand: `422`; an address the caller may not send from: `403 forbidden`). An assignee who is not on a private team is `422 not_on_team` |
 | GET | `/v1/tickets/{id}` | id is uuid, or `#<number>` / numeric number |
-| PATCH | `/v1/tickets/{id}` | `{subject?, status?, priority?, severity? /* null clears */, assignee_id?, team_id?, mailbox_id? /* the reply address */, brand_id?, snoozed_until?, spam?, tags?: string[] /* replaces */, add_tags?: string[], remove_tags?: string[], custom?, fields?: Record<string, FieldValue \| null> /* merged; null clears */}`. A status of `solved` or `closed` with an empty `required_on_solve` field is `422 field_required`. Setting `snoozed_until` without a `status` moves the ticket to `on_hold`; a status change that is not `on_hold` clears the snooze. Changing `priority`, `severity`, `team_id`, `spam` or labels removes Ollie's pending suggestion for that field (`custom.ai_suggestions`, contracts/ai.md). `team_id`, `mailbox_id` and `brand_id` follow contracts/teams.md "Reply address": an address of another brand is `422`, one the caller may not send from `403 forbidden`, an assignee not on the ticket's private team `422 not_on_team` (a team change alone unassigns them) |
+| PATCH | `/v1/tickets/{id}` | `{subject?, status?, priority?, severity? /* null clears */, contact_id? /* a contact in this workspace */, assignee_id?, team_id?, mailbox_id? /* the reply address */, brand_id?, snoozed_until?, spam?, tags?: string[] /* replaces */, add_tags?: string[], remove_tags?: string[], custom?, fields?: Record<string, FieldValue \| null> /* merged; null clears */}`. Changing `contact_id` changes the recipient of future replies; existing messages stay as sent. It logs `contact_changed` and publishes `ticket.updated` with `contact_id` in `changes`. A live chat stays with the visitor who started it (the widget lists their chats by contact): changing its contact is `422`, and so is `contact_id` in a bulk patch. A status of `solved` or `closed` with an empty `required_on_solve` field is `422 field_required`. Setting `snoozed_until` without a `status` moves the ticket to `on_hold`; a status change that is not `on_hold` clears the snooze. Changing `priority`, `severity`, `team_id`, `spam` or labels removes Ollie's pending suggestion for that field (`custom.ai_suggestions`, contracts/ai.md). `team_id`, `mailbox_id` and `brand_id` follow contracts/teams.md "Reply address": an address of another brand is `422`, one the caller may not send from `403 forbidden`, an assignee not on the ticket's private team `422 not_on_team` (a team change alone unassigns them) |
 | DELETE | `/v1/tickets/{id}` | soft delete |
-| POST | `/v1/tickets/bulk` | `{ids, patch: {...PATCH body}}` or `{ids, delete: true}` |
+| POST | `/v1/tickets/bulk` | `{ids, patch: {...PATCH body except contact_id}}` or `{ids, delete: true}` |
 | POST | `/v1/tickets/{id}/merge` | `{into_id}` |
 | GET | `/v1/tickets/{id}/messages` | ascending, all |
 | GET | `/v1/tickets/{id}/variables` | agent+, `?mailbox_id=` → `{values, signature_html}`: the ticket's template values with the caller as the agent, and the signature their email reply would carry (contracts/templates.md) |
 | POST | `/v1/tickets/{id}/render` | agent+. `{body_html}` → `{body_html}`: filled for this ticket and sanitized like a reply (inserting saved replies) |
 | POST | `/v1/tickets/{id}/messages` | `{kind: "reply"\|"note", body_html, cc?, bcc?, attachment_ids?, status?: TicketStatus, mailbox_id?}` → `Message`. A reply's template variables are filled when it is created, with the caller as the agent (contracts/templates.md); notes are not. `mailbox_id` (replies only) sends from that address and makes it the ticket's reply address (same rules as PATCH). An email reply from a mailbox with `sending: "system_off"` is `422 mailbox_cannot_send` ("This mailbox has no way to send email yet. Connect Google or Microsoft, or add SMTP, in its settings.") and stores nothing; automations skip their email replies there, and the AI agent's answers wait as a suggested reply |
+| PATCH | `/v1/tickets/{id}/messages/{messageId}` | agent, author only; `{body_html}` edits a plain internal note and returns `Message`. Replies and side-conversation messages return `422`; successful edits publish `message.updated` and `activity.created` (`note_edited`, message id only). Members it now mentions for the first time are notified; earlier mention notifications show the edited text |
+| DELETE | `/v1/tickets/{id}/messages/{messageId}` | agent; the author may delete their own plain internal note, admins may delete any. Returns 204; replies and side-conversation messages return `422`. Deletes the note, its attachment records and its mention notifications, removes unshared stored files, publishes `message.deleted` and records `note_deleted` with the message id only. Both routes are for a signed-in member: an API key gets `403`, so a note an API key wrote is deleted by an admin. A copy already posted to a support channel (contracts/support-channels.md) stays as posted |
 | GET | `/v1/tickets/{id}/activities` | ascending |
 | GET | `/v1/tickets/{id}/threads` | viewer → `{data: Thread[]}`, oldest first ("Threads") |
 | POST | `/v1/tickets/{id}/threads` | `{to: string[] /* 1..20 */, cc?: string[], subject, body_html, attachment_ids?, mailbox_id?, include_history?: boolean, forward_attachment_ids?: string[]}` → 201 `{thread: Thread, message: Message}` |
@@ -459,7 +466,7 @@ Each value is overridable: `NOTIFY_EMAIL_DELAY`, `NOTIFY_EMAIL_COOLDOWNS` (e.g. 
 | CRUD | `/v1/views` | `{name, filters, shared, team_id?}`. `team_id` shares the view with that team's members (admins and the team's leads write it; with `shared: true` it is `422`). List `?team_id=` |
 | CRUD | `/v1/sla-policies` | body takes `business_hours?: boolean`, `team_id?` (null for every team). List `?team_id=` |
 | GET/PUT | `/v1/business-hours` | GET members → `BusinessHours`; PUT admin, full `BusinessHours` (`timezone` sets `settings.timezone`) → `BusinessHours`. Audit `business_hours.updated` |
-| GET/PATCH | `/v1/assignment` | GET members → `Assignment`; PATCH admin `{mode?, rules? /* replaces */, auto_away_minutes?}` → `Assignment`. Audit `assignment.updated` |
+| GET/PATCH | `/v1/assignment` | GET members → `Assignment`; PATCH admin `{mode?, rules? /* replaces */, auto_away_minutes?, new_ticket_notify?}` → `Assignment` (another `new_ticket_notify` is `422`). Audit `assignment.updated {mode, rules, auto_away_minutes, new_ticket_notify}` |
 | GET/PATCH | `/v1/triage` | GET members → `TriageSettings`; PATCH admin `{auto_triage?, fields?, assign_after_triage?, threshold?}` → `TriageSettings` (stored in `settings.ai`, contracts/ai.md). Audit `triage.updated` |
 | CRUD | `/v1/automations` | |
 | CRUD | `/v1/imports`, `/v1/imports/{id}` | admin users only (reads also API keys with `settings:read`). History imports from Zendesk, Help Scout, Freshdesk, Intercom and CSV files: check, CSV upload, start, pause, resume, cancel, sync, undo and credential removal; see `contracts/imports.md` |
@@ -467,7 +474,7 @@ Each value is overridable: `NOTIFY_EMAIL_DELAY`, `NOTIFY_EMAIL_COOLDOWNS` (e.g. 
 | GET | `/v1/search?q=&brand_id=` | → `{tickets: Ticket[], contacts: Contact[], articles: KbArticle[]}` (5 each). `brand_id` (optional) narrows the articles to what that brand shows: its own and those of every brand |
 | GET | `/v1/reports/overview?from=&to=&team_id=&brand_id=` | → `{created, solved, open_now, first_response_p50_minutes, resolution_p50_minutes, csat_avg, csat_count, sla_breached, by_day: [{date, created, solved}], by_channel: {...}, by_severity: Record<Severity \| "none", number> /* tickets created in the range */, by_agent: [{user, solved, first_response_p50_minutes}], by_team: [{team_id: string \| null, created, solved, open_now, first_response_p50_minutes}], by_brand: [{brand_id, created, solved, open_now, first_response_p50_minutes}]}`. `team_id` (a team, or `none`) and `brand_id` narrow every figure. Private teams' tickets are counted, with no subjects or contacts |
 | POST | `/v1/attachments` | multipart `file` → `Attachment` (unattached, linked when sent). Only whoever uploaded it (that user, or that API key) may send it in `attachment_ids` (`422` otherwise) |
-| GET | `/v1/attachments/{id}` | → 302 to signed URL or streamed (`?token=` for img tags). A file on a ticket the caller may not see is `404` (contracts/teams.md "Visibility") |
+| GET | `/v1/attachments/{id}` | → 302 to signed URL or streamed. For img tags, the links messages carry are signed (`?exp=&sig=`) and work for one to two hours. A file on a ticket the caller may not see is `404` (contracts/teams.md "Visibility"); an upload not sent yet is its uploader's alone (`404` for anyone else) |
 
 #### Threads
 
@@ -523,7 +530,7 @@ Labels are the API's `tags` (routes, body members and event names keep that word
   (activity `untagged` for each); when one write names several labels of the same exclusive group, the last one named wins. This holds
   for ticket, contact and company writes, bulk, automations and AI triage (enforced in `internal/domain`). Making a group exclusive does
   not rewrite existing records; the rule applies on their next label change.
-- `usage` counts the records (not deleted tickets) carrying the label.
+- `usage` counts the records (not deleted tickets) carrying the label; `tickets` leaves out private teams' tickets (contracts/teams.md).
 - New workspaces get coloured labels plus an exclusive **Type** group: Question (blue), Problem (orange), Bug (red),
   Feature request (violet), Billing (green), and ungrouped VIP (amber) and Feedback (teal).
 
@@ -589,6 +596,23 @@ automation is saved and skipped at run time if the field was archived or deleted
 - `presence` is `away` when `availability` is `online` but `auto_away_minutes` > 0 and the member was not seen (sign-in,
   token refresh, `POST /v1/me/heartbeat`) for that long. `auto_away_minutes`: 0 or 10..1440, default 0.
 - Rules: at most 200, one per target, targets must be the workspace's mailboxes and teams (deleting one deletes its rule).
+- New tickets nobody is assigned to are announced with a `new_ticket` notification, in the `ticket_created` trigger
+  after auto-assignment: only a ticket still unassigned, not spam, not solved or closed and not handed off by the bot
+  (`custom.ai_handoff`). The person who created it is never told. Who hears follows `settings.new_ticket_notify`, for
+  the ticket's team, else its mailbox's team (the assignment pool):
+  - `auto` (the default): the team's leads and members (not observers or viewers), or every owner, admin and agent
+    when there is no team, when that is at most 5 people; when more, the team's leads, or the owners and admins when
+    there is no team or it has no lead (at most 5).
+  - `everyone`: the team's leads and members, or every owner, admin and agent (at most 50).
+  - `leads`: the team's leads, or the owners and admins (at most 50).
+  - `off`: nobody.
+  A team with nobody to work it falls back to its leads, else the owners and admins. `hd.Notify` still skips anyone who
+  may not see a private team's ticket.
+- While the answer bot takes a new ticket on, nobody hears until it hands over (the `ai_handoff` notification): a chat
+  when the instance has AI and the workspace's `ai.enabled` and `ai.widget_answers` are on; an email to an address with
+  `ai_answers` on and `ai_answers_mode` `send` (Ollie replies itself; with `draft` people hear at once), within the
+  hours it answers (`ai_answers_outside_hours`: only while business hours are closed), unless the sender is one of the
+  workspace's members or addresses.
 
 #### Triage
 
@@ -626,22 +650,24 @@ checklist is complete (`GET /v1/ai/agent/setup`, `contracts/agent.md` "Setup"). 
 | GET | `/v1/public/help/{workspace_slug}/collections/{slug}` | `{collection, articles}`, the brand's and shared only |
 | GET | `/v1/public/help/{workspace_slug}/articles/{slug}` | `KbArticle`, increments views; the brand's and shared only |
 | GET | `/v1/public/help/{workspace_slug}/search?q=` | `KbArticle[]`, the brand's and shared only |
-| GET/POST | `/v1/public/csat/{token}` | GET → `{workspace_name, brand_color, ticket: {number, subject}, score: number \| null, comment, locale}`; POST `{score: 1..5, comment?}` records the score and answers the same survey object |
+| POST | `/v1/public/csat/survey` | `{token}` → `{workspace_name, brand_color, ticket: {number, subject}, score: number \| null, comment, locale}` |
+| POST | `/v1/public/csat/rating` | `{token, score: 1..5, comment?}` records the score and answers the same survey object. The token rides in bodies only, never an API URL |
 
 ### Widget (owner: backend-helpdesk; `Authorization: Visitor <token>` except session)
 | method | path | notes |
 | --- | --- | --- |
 | GET | `/v1/widget/config?key=<widget_key>` | `WidgetConfig` below; any widget's key (contracts/teams.md) |
-| POST | `/v1/widget/session` | `{key, visitor_token?, email?, name?, user_id?, user_hash?, avatar_url?}` → `{visitor_token, contact: ContactRef, ws_token, gateway_url}`; `user_hash` = hex HMAC-SHA256(widget_secret, user_id) marks the session verified, with the secret of the widget whose `key` it is. A session belongs to that widget; a `visitor_token` of another widget of the workspace gives a new session of this widget for the same contact. `avatar_url` (https) is used only on a verified session: it is fetched server-side as the contact's picture (`avatar_source: "widget"`) unless an agent uploaded one |
+| POST | `/v1/widget/session` | `{key, visitor_token?, email?, name?, user_id?, user_hash?, avatar_url?}` → `{visitor_token, contact: ContactRef, ws_token, gateway_url}`; `user_hash` = hex HMAC-SHA256(widget_secret, user_id) marks the session verified, with the secret of the widget whose `key` it is. A session belongs to that widget; a `visitor_token` of another widget of the workspace gives a new session of this widget for the same contact. `avatar_url` (https) is used only on a verified session: it is fetched server-side as the contact's picture (`avatar_source: "widget"`) unless an agent uploaded one. A session works while used within 90 days, and a verified one for 30 days from its start (the host page verifies the visitor again, which starts a fresh one). A verified session is never resumed without `user_hash`: that request starts an anonymous session |
+| DELETE | `/v1/widget/session` | → 204: ends the visitor's session at once (the widget's `shutdown`, when the host page signs its user out) |
 | GET | `/v1/widget/conversations` | visitor's chat tickets of the session's widget's brand `{id, subject, status, last_message_preview, last_message_at, ai_handoff}` (`ai_handoff`: the visitor asked for a person, contracts/ai.md). Conversations of another brand answer 404 |
-| POST | `/v1/widget/conversations` | `{body, attachment_ids?, page_url?, topic_id?}` → conversation + first message. `page_url`: the host page (https, up to 500 chars, no fragment), stored as the ticket's `page_url` and given to routing rules and the AI agent. `topic_id`: one of `WidgetConfig.topics` (422 otherwise). The ticket gets the widget's brand and `widget_id`, and its team by routing (contracts/teams.md "Routing") |
+| POST | `/v1/widget/conversations` | `{body, attachment_ids?, page_url?, topic_id?}` → conversation + first message. `body` may be empty when `attachment_ids` has a file; the conversation is then named after the first file. `page_url`: the host page (https, up to 500 chars, no fragment), stored as the ticket's `page_url` and given to routing rules and the AI agent. `topic_id`: one of `WidgetConfig.topics` (422 otherwise). The ticket gets the widget's brand and `widget_id`, and its team by routing (contracts/teams.md "Routing") |
 | GET | `/v1/widget/conversations/{id}/messages` | public messages only (no notes). Counts as the visitor being on the page (contracts/teams.md "Chat follow-up") |
 | POST | `/v1/widget/conversations/{id}/seen` | → 204. The widget sends it while the conversation is on screen and an agent's reply arrives, so the reply is not also emailed (contracts/teams.md "Chat follow-up"). 30 a minute per session |
-| POST | `/v1/widget/conversations/{id}/messages` | `{body, attachment_ids?, page_url?}` (`page_url`: the host page, https, up to 500 chars, given to the AI agent) |
+| POST | `/v1/widget/conversations/{id}/messages` | `{body, attachment_ids?, page_url?}` (`body` may be empty with a file) (`page_url`: the host page, https, up to 500 chars, given to the AI agent) |
 | POST | `/v1/widget/conversations/{id}/handoff` | → 204; ask for a person while the AI agent handles the conversation (contracts/agent.md) |
 | POST | `/v1/widget/conversations/{id}/actions/{action_id}` | `{decision: "confirm" \| "decline"}` → 204 (contracts/agent.md "Visitor actions") |
 | POST | `/v1/widget/conversations/{id}/messages/{message_id}/rating` | `{rating: "up" \| "down" \| null}` → 204 (contracts/agent.md "Ratings") |
-| POST | `/v1/widget/attachments` | multipart |
+| POST | `/v1/widget/attachments` | multipart. `403 attachments_off` while the session's widget has both `attachments` and `voice_messages` off, and so is a message or new conversation with `attachment_ids`. With `voice_messages` on, a recording is taken besides the widget's files: a `webm`, `ogg` or `m4a` (the types a browser records in) whose header declares sound and no picture, else `422 file_type_not_allowed`, of at most 32 KB per second of `voice_max_seconds` plus 64 KB, else `413 voice_too_long`. It is stored as `audio/webm`, `audio/ogg` or `audio/mp4`. A message or new conversation checks its `attachment_ids` again by the same rules |
 | GET/PATCH | `/v1/widget/settings` | admin, agent-side: `WidgetSettings` below of the default brand's first widget (`widgets.settings`, mirrored to workspace `settings.widget`); PATCH merges the given keys, audit `widget.settings_updated` with the changed keys, publishes `widget.updated`. Every widget: `/v1/widgets` (contracts/teams.md) |
 
 ```ts
@@ -667,6 +693,10 @@ interface WidgetSettings {
   topics: { id: string /* kept when sent, else generated; 1..40 of A-Z a-z 0-9 _ - */; label: string /* 2..40 */; team_id: string | null /* a team of the workspace */ }[]  // at most 8
   offline_message: string               // up to 300 chars, plain text with newlines; "" = the translated default
   email_follow_up: boolean              // default true: agents' chat replies also go by email to a visitor with an email who is not on the page (contracts/teams.md "Chat follow-up")
+  attachments: boolean                  // default true: visitors may send files
+  attachment_types: string[]            // ids of the file type catalog below visitors may send; default [] = any file but programs and scripts
+  voice_messages: boolean               // visitors may record voice messages; default false
+  voice_max_seconds: number             // 5..300 (422 otherwise); default 60
 }
 
 // GET /v1/widget/config. Public; Origin checked against the widget's allowed_origins.
@@ -682,6 +712,10 @@ interface WidgetConfig {
   launcher: "icon" | "label"; launcher_label: string; radius: "square" | "soft" | "round"
   title: string                         // the widget's title, else the brand name
   subtitle: string; suggestions: string[]; sound: boolean
+  attachments: boolean                  // visitors may send files; the widget hides attaching while false
+  attachment_extensions: string[] | null // extensions of the widget's attachment_types, for the file picker; null = any file but programs and scripts; [] while attachments is false
+  voice_messages: boolean               // visitors may record voice messages, whether or not attachments is on
+  voice_max_seconds: number             // the longest voice message; the widget stops recording there, and the server bounds a recording's size by it
   team: { name: string /* first name */; avatar_url: string | null }[]  // up to 3 non-viewer members of the widget's team (else of the workspace), available first; [] when show_team is off
   ai_answers: boolean                   // the AI agent handles new conversations (contracts/agent.md)
   bot: { id: string | null; name: string; role: string; avatar_url: string /* a PNG of the look, or the picture */; look: BotLook; greeting: string /* "" = greeting */ }
@@ -692,6 +726,23 @@ interface WidgetConfig {
   brand: { name: string; color: string /* the brand's colour, else the workspace brand_color */ }
 }
 ```
+
+File types a widget may take (`attachment_types`; `internal/helpdesk/hd/filetypes.go`, mirrored in
+`web/src/components/widget/fileTypes.ts`). A visitor's upload is taken only when its extension is one of a
+picked type's and its first bytes are that type's; anything else is `422 file_type_not_allowed`, at upload
+and again, by the stored bytes, when a message or new conversation attaches it. With no types picked any
+file is taken. Programs and scripts are refused whatever they are named (`422 file_type_refused`), and
+agents' uploads are not limited by a widget. Stored ids this version does not know are dropped; a list of
+only those takes no file.
+
+| group | id: extensions, leading bytes |
+| --- | --- |
+| image | `png`: .png, PNG signature; `jpg`: .jpg .jpeg, `FF D8 FF`; `gif`: .gif, `GIF87a`/`GIF89a`; `webp`: .webp, RIFF `WEBP`; `heic`: .heic .heif, `ftyp` with a HEIF brand |
+| document | `pdf`: .pdf, `%PDF-`; `txt`: .txt and `csv`: .csv, text without control characters (any 8-bit encoding, or UTF-16 with a byte order mark); `rtf`: .rtf, `{\rtf`; `doc`: .doc, OLE; `docx`: .docx and `odt`: .odt, ZIP |
+| spreadsheet | `xls`: .xls, OLE; `xlsx`: .xlsx and `ods`: .ods, ZIP |
+| presentation | `ppt`: .ppt, OLE; `pptx`: .pptx and `odp`: .odp, ZIP |
+| media | `mp4`: .mp4 .m4v, `mov`: .mov and `m4a`: .m4a, `ftyp`; `mp3`: .mp3, `ID3` or an MPEG frame; `wav`: .wav, RIFF `WAVE`; `webm`: .webm, EBML `1A 45 DF A3`; `ogg`: .ogg .oga .opus, `OggS` |
+| archive | `zip`: .zip, ZIP |
 
 Text settings (`launcher_label`, `title`, `subtitle`, `suggestions`) are trimmed, have
 runs of whitespace collapsed, and refuse `<`, `>` and control characters (`422 validation_failed`).
@@ -705,14 +756,14 @@ runs of whitespace collapsed, and refuse `<`, `>` and control characters (`422 v
 | POST | `/v1/mailboxes/oauth/{provider}/start` | `{mailbox_id?, name, email?, receive?: "forwarding" \| "sync" \| "api", sync_start?: "recent" \| "new"}` → `{url}` (google, microsoft). `sync_start` is stored as `config.sync_start`; a reconnect without it keeps the mailbox's own. `receive` (default `"forwarding"`) is how a new mailbox receives: `"forwarding"` connects send-only (Google `openid email https://www.googleapis.com/auth/gmail.send`; Microsoft `openid email offline_access https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/User.Read`, the code redeemed for the Graph token alone); `"sync"` also reads the inbox over IMAP (Google `https://mail.google.com/`; Microsoft adds `https://outlook.office.com/IMAP.AccessAsUser.All`) and is `422 imap_off` while `MAILBOX_IMAP` is off; `"api"` reads the inbox through the provider's API with the Collab OAuth client and scopes (Google `openid email https://www.googleapis.com/auth/gmail.modify`, offline, consent; Microsoft `openid email offline_access https://graph.microsoft.com/Mail.ReadWrite https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/User.Read`, the code redeemed for the Graph token alone) and is `422 api_sync_unavailable` unless the workspace has Collab and that provider's Collab client is configured ("Reading the inbox directly needs Collab on this workspace's plan. Forward its mail to opendesk instead.", or that it is not set up on this instance). A reconnect (`mailbox_id`) keeps how the mailbox receives: a forwarding mailbox reconnects send-only, one that receives over IMAP reconnects with sync scopes while IMAP is on and, while it is off, becomes a forwarding mailbox with a send-only connection; one that reads through the API reconnects with the api scopes while the workspace may and, otherwise, becomes a forwarding mailbox with a send-only connection. `receive: "api"` on a reconnect moves the mailbox to reading through the API (the same `422 api_sync_unavailable` otherwise); other values are ignored. A new connection while that provider's mailbox sign-in is off (`GOOGLE_MAILBOX_OAUTH`, `MICROSOFT_MAILBOX_OAUTH`) is `403 mailbox_oauth_disabled`; reconnecting a mailbox that already uses it is allowed. That switch governs an api connection only while the Collab client is the mailbox client itself |
 | GET | `/v1/mailboxes/oauth/{provider}/callback` | → 302 `APP_URL/settings/mailboxes?connected=<id>`. A send-only connection creates (or turns the reconnected or same-address mailbox into) `inbound_kind: "forwarding"`, `outbound_kind: <provider>`, `config.oauth_grant: "send"`, with a forwarding address like any forwarding mailbox; its IMAP settings and passwords are dropped. A sync connection sets `inbound_kind` and `outbound_kind` to the provider and `config.oauth_grant: "sync"` (should IMAP be off by the callback, it receives by forwarding and keeps the sync connection for sending). An api connection sets them to the provider with `config.oauth_grant: "api"`, `config.oauth_client: "collab"` and no IMAP settings (should the workspace no longer have Collab by the callback, it receives by forwarding and keeps the connection for sending). The callback is the same for every grant, so `<API_URL>/v1/mailboxes/oauth/{google,microsoft}/callback` must be registered on the Collab client too when it is a different client. Audit `mailbox.connected` with `{provider, email, reconnect, grant, inbound_kind}` |
 | GET | `/v1/mailboxes/connect-options` | admin, `settings:read` → `{google: {configured, oauth, api_sync}, microsoft: {configured, oauth, api_sync}, forwarding: {enabled, domain}, mailbox_imap, instance_imap, system_sender}`. `configured`: the OAuth client is set; `oauth`: new connections with that sign-in are allowed; `api_sync`: this workspace may connect the provider to read the inbox directly (`receive: "api"`: it has Collab and the provider's Collab client is configured); `mailbox_imap`: this workspace's mailboxes may receive over generic IMAP (`MAILBOX_IMAP`, or Collab, as on create); `instance_imap`: the instance has `MAILBOX_IMAP` on, so Google and Microsoft may also sync over IMAP (the web app's `mailboxImap`); `system_send`: mailboxes may send through the platform mailer from `system_sender` (`MAILBOX_SYSTEM_SEND`) |
-| GET | `/v1/mailboxes/detect?email=` | admin, users only (not API keys), 30 a minute per user → `MailDetection` (below); `422 validation_failed` for an invalid address |
+| POST | `/v1/mailboxes/detect` `{email}` | admin, users only (not API keys), 30 a minute per user → `MailDetection` (below); `422 validation_failed` for an invalid address |
 | GET | `/v1/templates/variables` | → `TemplateCatalog` (contracts/templates.md) |
 | GET | `/v1/email-templates/{brand_id}` | → `{layout: EmailTemplate, csat: EmailTemplate}` |
 | PUT | `/v1/email-templates/{brand_id}/{kind}` | admin. `{subject?, body_html?, options?}` → `EmailTemplate`; problems are `422` with each in `errors`. Publishes `email_template.updated` |
 | DELETE | `/v1/email-templates/{brand_id}/{kind}` | admin → 204, back to the default |
 | POST | `/v1/templates/preview` | agent+. `{kind, body_html?, subject?, options?, brand_id?, team_id?, mailbox_id?, ticket_id?}` → `{subject, html, text, problems}` |
 | POST | `/v1/templates/test` | agent+, users only. Same body; sends the preview to the caller's login address, `[Test]` subject. 10 an hour (`429`) |
-| POST | `/v1/inbound/email` | header `OD-Inbound-Secret`, query `to=<rcpt>`, body raw RFC 822 → 202 (Cloudflare Email Worker / SES) |
+| POST | `/v1/inbound/email` | header `OD-Inbound-Signature: t=<unix seconds>,v1=<hex>`, an HMAC-SHA256 keyed with `INBOUND_SECRET` over `<t>.<recipient>.<envelope sender>.` followed by the raw message, refused when more than five minutes old, query `to=<rcpt>`, header `OD-Envelope-From`, body raw RFC 822 → 202 (Cloudflare Email Worker / SES) |
 
 Reading the inbox directly (`oauth_grant: "api"`): the per-mailbox sync job (`email.sync_mailbox`, queued
 every minute by `email.sync_due` for each due mailbox) reads it over HTTPS, whatever `MAILBOX_IMAP` says,
@@ -830,7 +881,10 @@ at (`mailbox_id`).
   `In-Reply-To`; then our own format `<m_<message id>.t<n>@…>` when that message exists on ticket n,
   or `<a_<id>.t<n>@…>` (auto-replies and CSAT, not stored) when its id carries the MAC we made for
   this workspace and ticket n; then the `+t<n>` address tag and the `[#n]` subject tag. A ticket
-  number that is not proven so threads only when the sender is the ticket's contact.
+  number that is not proven so threads only when the sender is the ticket's contact. Mail we send
+  never names a forwarding address: it answers to the mailbox's own address, or the alias the
+  customer wrote to (`Reply-To` only when `From` is not that address), so the customer's reply comes
+  back the way their first message did and threads by `In-Reply-To` and `References`.
 - **Sender checks.** `Authentication-Results` (or `ARC-Authentication-Results`) count only from an
   authserv-id in `INBOUND_AUTHSERV_ID`, plus `mx.google.com` for Google mailboxes and Microsoft's
   for Microsoft 365 ones; the first such header from the top is the verdict. A DMARC `fail` opens a

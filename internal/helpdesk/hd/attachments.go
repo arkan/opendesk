@@ -14,6 +14,7 @@ import (
 	"unicode"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/useopendesk/opendesk/internal/db"
 	"github.com/useopendesk/opendesk/internal/domain"
@@ -97,6 +98,9 @@ func CleanFilename(name string) string {
 func DetectType(head []byte, filename string) string {
 	ct := http.DetectContentType(head)
 	base := strings.ToLower(strings.TrimSpace(strings.Split(ct, ";")[0]))
+	if a := audioType(head, base, strings.ToLower(filepath.Ext(filename))); a != "" {
+		return a
+	}
 	if base == "application/octet-stream" || base == "text/plain" || base == "application/zip" {
 		if byExt := mime.TypeByExtension(strings.ToLower(filepath.Ext(filename))); byExt != "" {
 			b := strings.ToLower(strings.TrimSpace(strings.Split(byExt, ";")[0]))
@@ -114,6 +118,47 @@ func DetectType(head []byte, filename string) string {
 	return ct
 }
 
+// audioType tells audio from video where the sniffed type says video, as browsers
+// record voice: an .m4a without a video track (one with is video/mp4), or a WebM or Ogg
+// whose header names only audio codecs.
+func audioType(head []byte, base, ext string) string {
+	has := func(s ...string) bool {
+		return slices.ContainsFunc(s, func(m string) bool { return bytes.Contains(head, []byte(m)) })
+	}
+	switch base {
+	case "video/mp4", "application/octet-stream":
+		if ext == ".m4a" && len(head) >= 8 && string(head[4:8]) == "ftyp" {
+			if videoHandler(head) {
+				return "video/mp4"
+			}
+			return "audio/mp4"
+		}
+	case "video/webm":
+		if has("A_OPUS", "A_VORBIS") && !has("V_VP8", "V_VP9", "V_AV1", "V_MPEG") {
+			return "audio/webm"
+		}
+	case "application/ogg":
+		if has("OpusHead", "\x01vorbis") && !has("\x80theora") {
+			return "audio/ogg"
+		}
+	}
+	return ""
+}
+
+// videoHandler reports whether an MP4 header declares a video track: a "vide" handler.
+func videoHandler(head []byte) bool {
+	for i := 0; ; {
+		j := bytes.Index(head[i:], []byte("hdlr"))
+		if j < 0 {
+			return false
+		}
+		i += j + 4
+		if len(head) >= i+12 && string(head[i+8:i+12]) == "vide" {
+			return true
+		}
+	}
+}
+
 // Upload is a file arriving from a client.
 type Upload struct {
 	WorkspaceID       uuid.UUID
@@ -123,6 +168,11 @@ type Upload struct {
 	Filename          string
 	Size              int64
 	Body              io.Reader
+	// Accept, when set, decides whether the file is taken, by its first bytes, name and
+	// size; programs and scripts are refused before it is asked.
+	Accept Accept
+	// Imported marks a file an import copied: it counts against the plan's import limit.
+	Imported bool
 }
 
 // SaveUpload sniffs, refuses executables, stores the object under
@@ -135,7 +185,7 @@ func SaveUpload(ctx context.Context, st storage.Storage, q db.Querier, up Upload
 		return domain.Attachment{}, httpx.Validation("the file is empty")
 	}
 	filename := CleanFilename(up.Filename)
-	head := make([]byte, 512)
+	head := make([]byte, sniffBytes)
 	n, err := io.ReadFull(up.Body, head)
 	if err != nil && err != io.ErrUnexpectedEOF && err != io.EOF {
 		return domain.Attachment{}, fmt.Errorf("read upload: %w", err)
@@ -143,6 +193,11 @@ func SaveUpload(ctx context.Context, st storage.Storage, q db.Querier, up Upload
 	head = head[:n]
 	if IsExecutable(head, filename) {
 		return domain.Attachment{}, httpx.E(422, "file_type_refused", "Executable files and scripts cannot be attached.")
+	}
+	if up.Accept != nil {
+		if err := up.Accept(head, filename, up.Size); err != nil {
+			return domain.Attachment{}, err
+		}
 	}
 	ct := DetectType(head, filename)
 	id := ids.New()
@@ -157,12 +212,70 @@ func SaveUpload(ctx context.Context, st storage.Storage, q db.Querier, up Upload
 		return domain.Attachment{}, httpx.E(413, "too_large", "Files can be at most 25 MB.")
 	}
 	if _, err := q.Exec(ctx, `INSERT INTO attachments (id, workspace_id, filename, content_type, size_bytes, storage_key,
-		uploaded_by, uploaded_by_contact_id, uploaded_by_api_key_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-		id, up.WorkspaceID, filename, ct, counter.n, key, up.UploadedBy, up.UploadedByContact, up.UploadedByAPIKey); err != nil {
+		uploaded_by, uploaded_by_contact_id, uploaded_by_api_key_id, imported) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+		id, up.WorkspaceID, filename, ct, counter.n, key, up.UploadedBy, up.UploadedByContact, up.UploadedByAPIKey, up.Imported); err != nil {
 		_ = st.Delete(context.WithoutCancel(ctx), key)
 		return domain.Attachment{}, fmt.Errorf("insert attachment: %w", err)
 	}
 	return domain.Attachment{ID: id, Filename: filename, ContentType: ct, SizeBytes: counter.n, URL: domain.AttachmentURL(id)}, nil
+}
+
+// sniffBytes is how much of a file its type is told from.
+const sniffBytes = 4096
+
+// Accept decides whether an upload is taken, by its first bytes, name and size.
+type Accept func(head []byte, filename string, size int64) error
+
+// ErrFileTypeNotAllowed refuses a file of a type the place it is sent to does not take.
+var ErrFileTypeNotAllowed = httpx.E(422, "file_type_not_allowed", "This type of file can't be sent here.")
+
+// AcceptTypes takes files of types (FileTypes ids); empty types take any.
+func AcceptTypes(types []string) Accept {
+	return func(head []byte, filename string, _ int64) error {
+		if len(types) > 0 && !FileTypeAllowed(head, filename, types) {
+			return ErrFileTypeNotAllowed
+		}
+		return nil
+	}
+}
+
+// CheckAttachmentFiles holds uploads about to be attached to accept, by their names,
+// sizes and stored bytes, so a file uploaded under other rules is held to these.
+func CheckAttachmentFiles(ctx context.Context, st storage.Storage, q db.Querier, wid uuid.UUID, attIDs []uuid.UUID, accept Accept) error {
+	if accept == nil || len(attIDs) == 0 {
+		return nil
+	}
+	rows, err := q.Query(ctx, `SELECT filename, storage_key, size_bytes FROM attachments WHERE workspace_id = $1 AND id = ANY($2)`, wid, attIDs)
+	if err != nil {
+		return err
+	}
+	type file struct {
+		name, key string
+		size      int64
+	}
+	files, err := pgx.CollectRows(rows, func(r pgx.CollectableRow) (file, error) {
+		var f file
+		return f, r.Scan(&f.name, &f.key, &f.size)
+	})
+	if err != nil {
+		return err
+	}
+	for _, f := range files {
+		body, err := st.Get(ctx, f.key)
+		if err != nil {
+			return fmt.Errorf("read attachment: %w", err)
+		}
+		head := make([]byte, sniffBytes)
+		n, err := io.ReadFull(body, head)
+		_ = body.Close()
+		if err != nil && err != io.ErrUnexpectedEOF && err != io.EOF {
+			return fmt.Errorf("read attachment: %w", err)
+		}
+		if err := accept(head[:n], f.name, f.size); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type countingReader struct {

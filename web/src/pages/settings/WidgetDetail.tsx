@@ -6,7 +6,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowRight, KeyRound, LayoutPanelLeft, MessageCircle, MessagesSquare, Monitor, Moon, PanelRight, Sun, Trash2 } from "lucide-react";
+import { ArrowRight, ChevronDown, KeyRound, LayoutPanelLeft, MessageCircle, MessagesSquare, Monitor, Moon, PanelRight, Sun, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StatePill } from "@/components/settings2/bits";
@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/ui/empty";
 import { Textarea, TextInput } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { Picker } from "@/components/ui/picker";
 import { Segmented } from "@/components/ui/tabs";
 import { CopyField } from "@/components/ui/copy-button";
 import { useConfirm } from "@/components/ui/confirm";
@@ -34,6 +35,7 @@ import { LivePreview, type PreviewScene } from "@/components/widget/LivePreview"
 import { ColorField, hasMarkup, HEX, LIMITS, suggestionProblem, SuggestionsEditor, tidy, toWidgetConfig, widgetBotOf } from "@/components/widget/fields";
 import { BotSelect, resolveBot } from "@/components/bots/BotSelect";
 import { topicProblem, topicsForSave, TopicsEditor } from "@/components/widget/TopicsEditor";
+import { ALL_FILE_TYPES, FILE_TYPES } from "@/components/widget/fileTypes";
 import { api } from "@/lib/api/endpoints";
 import { ApiError, errorMessage } from "@/lib/api/client";
 import type { Brand, Widget, WidgetSettings as WS } from "@/lib/api/types";
@@ -99,11 +101,19 @@ function withDefaults(s: WS): WS {
     topics: (s.topics ?? []).map((x) => ({ ...x })),
     offline_message: s.offline_message ?? "",
     email_follow_up: s.email_follow_up ?? true,
+    attachments: s.attachments ?? true,
+    attachment_types: s.attachment_types ?? [],
+    voice_messages: s.voice_messages ?? false,
+    voice_max_seconds: s.voice_max_seconds ?? 60,
   };
 }
 
-type Draft = { name: string; team_id: string | null; bot_id: string | null; settings: WS };
-const toDraft = (w: Widget): Draft => ({ name: w.name, team_id: w.team_id, bot_id: w.bot_id ?? null, settings: withDefaults(w.settings) });
+// limitTypes: files are held to settings.attachment_types; off, any file but a program is taken.
+type Draft = { name: string; team_id: string | null; bot_id: string | null; limitTypes: boolean; settings: WS };
+const toDraft = (w: Widget): Draft => {
+  const settings = withDefaults(w.settings);
+  return { name: w.name, team_id: w.team_id, bot_id: w.bot_id ?? null, limitTypes: settings.attachment_types.length > 0, settings };
+};
 
 type TextKey = "greeting" | "launcher_label" | "title" | "subtitle";
 
@@ -223,6 +233,7 @@ function WidgetEditor({ widget, brand, back }: { widget: Widget; brand: Brand | 
     s.suggestions.some((x) => suggestionProblem(x)) ||
     s.topics.some((x) => topicProblem(x, s.topics)) ||
     !!offlineError ||
+    (s.attachments && draft.limitTypes && s.attachment_types.length === 0) ||
     (s.color !== "" && !HEX.test(s.color));
 
   const save = useMutation({
@@ -499,6 +510,76 @@ function WidgetEditor({ widget, brand, back }: { widget: Widget; brand: Brand | 
             <Row label={t("widget.requireEmail")} description={t("widget.requireEmailHint")}>
               <Switch checked={s.require_email} onCheckedChange={(require_email) => set({ require_email })} aria-label={t("widget.requireEmail")} />
             </Row>
+            <Row label={t("widget.attachments")} description={t("widget.attachmentsHint")}>
+              <Switch checked={s.attachments} onCheckedChange={(attachments) => set({ attachments })} aria-label={t("widget.attachments")} />
+            </Row>
+            {s.attachments && (
+              <Row label={t("widget.fileTypes")} description={t("widget.fileTypesHint")} stack>
+                <div className="flex flex-col items-start gap-2">
+                  <Segmented
+                    size="xs"
+                    value={draft.limitTypes ? "some" : "any"}
+                    onChange={(v) =>
+                      setDraft((d) => ({ ...d, limitTypes: v === "some", settings: { ...d.settings, attachment_types: v === "some" ? d.settings.attachment_types : [] } }))
+                    }
+                    options={[
+                      { value: "any", label: t("widget.anyFileType") },
+                      { value: "some", label: t("widget.someFileTypes") },
+                    ]}
+                  />
+                  {draft.limitTypes && (
+                    <Picker
+                      multi
+                      values={s.attachment_types}
+                      onChange={(ids) => set({ attachment_types: ALL_FILE_TYPES.filter((id) => ids.includes(id)) })}
+                      items={FILE_TYPES.map((f) => ({ value: f.id, label: f.extensions.join(" "), group: t(`widget.fileGroups.${f.group}`), keywords: [f.id] }))}
+                      placeholder={t("widget.searchFileTypes")}
+                      width={280}
+                      trigger={
+                        <button
+                          type="button"
+                          aria-label={t("widget.pickFileTypes")}
+                          className="group inline-flex h-8 w-full min-w-0 items-center justify-between gap-2 rounded-md border border-line bg-surface px-2.5 text-left text-sm text-fg shadow-[0_1px_1px_rgb(0_0_0/0.02)] outline-none transition-[border-color,box-shadow] duration-150 hover:border-line-strong focus-visible:border-fg-3 focus-visible:shadow-[0_0_0_3px_var(--focus)] [&_svg]:size-3.5"
+                        >
+                          <span className={cn("min-w-0 truncate", s.attachment_types.length === 0 && "text-fg-4")}>
+                            {s.attachment_types.length === ALL_FILE_TYPES.length
+                              ? t("widget.allFileTypes")
+                              : s.attachment_types.length === 0
+                                ? t("widget.pickFileTypes")
+                                : FILE_TYPES.filter((f) => s.attachment_types.includes(f.id))
+                                    .map((f) => f.extensions[0])
+                                    .join(" ")}
+                          </span>
+                          <ChevronDown className="shrink-0 text-fg-3" />
+                        </button>
+                      }
+                    />
+                  )}
+                  {draft.limitTypes && s.attachment_types.length === 0 && (
+                    <span role="alert" className="text-xs text-danger-fg">
+                      {t("widget.noFileTypes")}
+                    </span>
+                  )}
+                </div>
+              </Row>
+            )}
+            <Row label={t("widget.voice")} description={t("widget.voiceHint")}>
+              <Switch checked={s.voice_messages} onCheckedChange={(voice_messages) => set({ voice_messages })} aria-label={t("widget.voice")} />
+            </Row>
+            {s.voice_messages && (
+              <Row label={t("widget.voiceLength")} description={t("widget.voiceLengthHint")}>
+                <Stepper
+                  value={s.voice_max_seconds}
+                  onChange={(voice_max_seconds) => set({ voice_max_seconds })}
+                  min={5}
+                  max={300}
+                  step={5}
+                  suffix={t("widget.secondsSuffix")}
+                  aria-label={t("widget.voiceLength")}
+                  className="w-[124px]"
+                />
+              </Row>
+            )}
             <Row label={t("widget.sound")} description={t("widget.soundHint")}>
               <Switch checked={s.sound} onCheckedChange={(sound) => set({ sound })} aria-label={t("widget.sound")} />
             </Row>

@@ -31,6 +31,8 @@
   "continue": "继续",
   "dropFiles": "拖放文件以添加附件",
   "removeFile": "移除 {name}",
+  "fileTypeRefused": "无法在此发送 {name}。请尝试其他文件类型。",
+  "fileTooLarge": "{name} 超过 25 MB。",
   "placeholder": "输入消息…",
   "placeholderEmail": "请先在上方填写邮箱",
   "message": "消息",
@@ -68,5 +70,15 @@
   "topicsHint": "选择一个主题，让您的消息送达合适的人。",
   "placeholderTopic": "选择一个主题开始",
   "changeTopic": "更改主题",
-  "offlineDefault": "我们现在不在线。请留言，我们回来后会尽快回复您。"
+  "offlineDefault": "我们现在不在线。请留言，我们回来后会尽快回复您。",
+  "recordVoice": "录制语音消息",
+  "stopRecording": "停止录音",
+  "cancelRecording": "取消录音",
+  "recording": "正在录音",
+  "deleteRecording": "删除录音",
+  "playVoice": "播放语音消息",
+  "pauseVoice": "暂停",
+  "micBlocked": "请在浏览器中允许使用麦克风以录制语音消息。",
+  "micFailed": "无法录音。请检查麦克风后重试。",
+  "voiceFileName": "语音消息"
 }

@@ -368,7 +368,7 @@ export class Controller {
         content_type: f.type,
         size_bytes: f.size,
         inline: false,
-        url: f.type.startsWith("image/") ? URL.createObjectURL(f) : "",
+        url: f.type.startsWith("image/") || f.type.startsWith("audio/") ? URL.createObjectURL(f) : "",
       })),
       created_at: new Date().toISOString(),
       local: "pending",
@@ -513,6 +513,9 @@ export class Controller {
 
   shutdown() {
     this.stop();
+    // The host page signed its user out: end the session on the server too, so the
+    // token stops working even where a copy of it survives.
+    void this.api.endSession().catch(() => {});
     this.remember(null);
     this.api.visitorToken = null;
   }

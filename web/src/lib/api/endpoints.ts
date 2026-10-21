@@ -2,6 +2,7 @@
 
 import { http, stream, streamEvents, type StreamHandlers } from "./client";
 import type * as T from "./types";
+import { creatingTicket } from "../ownTickets";
 
 type ListQuery = { limit?: number; cursor?: string | null };
 
@@ -258,7 +259,7 @@ export const api = {
     resend: (id: string) => http.post<T.Invitation>(`/v1/invitations/${id}/resend`),
     accept: (token: string) => http.post<T.Membership>("/v1/invitations/accept", { token }, { workspace: false }),
     lookup: (token: string) =>
-      http.get<{ workspace_name: string; email: string; role: T.Role }>("/v1/invitations/lookup", { ...pub, query: { token } }),
+      http.post<{ workspace_name: string; email: string; role: T.Role }>("/v1/invitations/lookup", { token }, pub),
   },
   teams: {
     ...crud<T.Team, TeamBody>("/v1/teams"),
@@ -334,6 +335,8 @@ export const api = {
     deliveries: (id: string, q?: ListQuery) =>
       http.get<T.Page<T.WebhookDelivery>>(`/v1/webhooks/${id}/deliveries`, { query: q }),
     test: (id: string) => http.post<T.WebhookDelivery>(`/v1/webhooks/${id}/test`),
+    /** With a code: verifies the address with the code it received. Without: sends a new challenge. */
+    verify: (id: string, code?: string) => http.post<T.Webhook>(`/v1/webhooks/${id}/verify`, code ? { code } : {}),
   },
   integrations: {
     catalog: () => http.get<{ data: T.IntegrationProvider[] }>("/v1/integrations/catalog"),
@@ -349,10 +352,17 @@ export const api = {
   },
   supportChannels: {
     providers: () => http.get<{ data: T.SupportChannelProvider[] }>("/v1/support-channels/providers"),
+    accounts: (provider: string, credentials: Record<string, string>) =>
+      http.post<{ data: T.SupportChannelAccount[] }>(`/v1/support-channels/providers/${provider}/accounts`, { credentials }),
     connections: () => http.get<{ data: T.SupportChannelConnection[] }>("/v1/support-channels/connections"),
     connect: (b: { provider: string; name?: string; credentials: Record<string, string> }) =>
       http.create<T.SupportChannelConnection>("/v1/support-channels/connections", b),
+    rotate: (id: string, b: { name?: string; credentials: Record<string, string> }) =>
+      http.patch<T.SupportChannelConnection>(`/v1/support-channels/connections/${id}`, b),
+    test: (id: string) => http.post<T.SupportChannelConnection>(`/v1/support-channels/connections/${id}/test`),
     disconnect: (id: string) => http.del(`/v1/support-channels/connections/${id}`),
+    availableDestinations: (id: string) =>
+      http.get<{ data: T.SupportChannelAvailableDestination[] }>(`/v1/support-channels/connections/${id}/destinations`),
     destinations: () => http.get<{ data: T.SupportChannelDestination[] }>("/v1/support-channels/destinations"),
     addDestination: (b: { connection_id: string; team_id?: string; external_channel_id: string; external_channel_name?: string; include_notes?: boolean }) =>
       http.create<T.SupportChannelDestination>("/v1/support-channels/destinations", b),
@@ -398,7 +408,7 @@ export const api = {
   tickets: {
     list: (q: TicketListQuery) => http.get<T.Page<T.Ticket>>("/v1/tickets", { query: listQuery(q) }),
     counts: () => http.get<T.TicketCounts>("/v1/tickets/counts"),
-    create: (b: CreateTicketBody) => http.create<T.Ticket>("/v1/tickets", b),
+    create: (b: CreateTicketBody) => creatingTicket(http.create<T.Ticket>("/v1/tickets", b)),
     get: (id: string) => http.get<T.Ticket>(`/v1/tickets/${encodeURIComponent(id)}`),
     update: (id: string, patch: T.TicketPatch) => http.patch<T.Ticket>(`/v1/tickets/${id}`, patch),
     delete: (id: string) => http.del(`/v1/tickets/${id}`),
@@ -407,6 +417,8 @@ export const api = {
     merge: (id: string, into_id: string) => http.post<T.Ticket>(`/v1/tickets/${id}/merge`, { into_id }),
     messages: (id: string) => http.get<T.Page<T.Message>>(`/v1/tickets/${id}/messages`),
     send: (id: string, b: SendMessageBody) => http.create<T.Message>(`/v1/tickets/${id}/messages`, b),
+    editMessage: (id: string, messageId: string, b: { body_html: string }) => http.patch<T.Message>(`/v1/tickets/${id}/messages/${messageId}`, b),
+    deleteMessage: (id: string, messageId: string) => http.del(`/v1/tickets/${id}/messages/${messageId}`),
     activities: (id: string) => http.get<T.Page<T.Activity>>(`/v1/tickets/${id}/activities`),
     threads: (id: string) => http.get<{ data: T.Thread[] }>(`/v1/tickets/${id}/threads`),
     startThread: (id: string, b: StartThreadBody) => http.create<{ thread: T.Thread; message: T.Message }>(`/v1/tickets/${id}/threads`, b),
@@ -497,7 +509,7 @@ export const api = {
     oauthStart: (provider: "google" | "microsoft", b: { mailbox_id?: string; name: string; email?: string; receive?: MailboxReceive; sync_start?: T.SyncStart }) =>
       http.post<{ url: string }>(`/v1/mailboxes/oauth/${provider}/start`, b),
     connectOptions: () => http.get<T.MailboxConnectOptions>("/v1/mailboxes/connect-options"),
-    detect: (email: string) => http.get<T.MailDetection>("/v1/mailboxes/detect", { query: { email } }),
+    detect: (email: string) => http.post<T.MailDetection>("/v1/mailboxes/detect", { email }),
   },
   billing: {
     get: () => http.get<T.Billing>("/v1/billing"),
@@ -659,8 +671,8 @@ export const api = {
   },
   public: {
     csat: (token: string) =>
-      http.get<T.CsatSurvey>(`/v1/public/csat/${token}`, pub),
-    submitCsat: (token: string, b: { score: number; comment?: string }) => http.post<void>(`/v1/public/csat/${token}`, b, pub),
+      http.post<T.CsatSurvey>("/v1/public/csat/survey", { token }, pub),
+    submitCsat: (token: string, b: { score: number; comment?: string }) => http.post<void>("/v1/public/csat/rating", { token, ...b }, pub),
   },
 };
 
