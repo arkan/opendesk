@@ -1,6 +1,6 @@
 // Language for the customer-facing pages (help center, CSAT): `?lang=` first,
 // then the visitor's browser, then the workspace default, then English.
-// The agent app stays English, so the choice is undone on unmount.
+// The agent app follows the browser, so the public choice is undone on unmount.
 
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { Check, Globe } from "lucide-react";

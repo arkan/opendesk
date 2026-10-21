@@ -1,0 +1,351 @@
+{
+  "title": "Importation",
+  "description": "Importez l’historique de votre équipe depuis un autre outil d’assistance ou un fichier CSV : chaque ticket avec toute sa conversation, les personnes qui vous ont écrit et votre centre d’aide.",
+  "pick": {
+    "title": "Où se trouve votre historique actuellement ?",
+    "again": "Importer depuis une autre source",
+    "hint": "Connectez le compte que vous utilisez aujourd’hui. Rien n’y change et vous pouvez continuer à l’utiliser jusqu’à votre transition.",
+    "oneAtATime": "Une seule importation peut s’exécuter à la fois. Lancez-en une autre une fois celle-ci terminée.",
+    "adminsOnly": "Les administrateurs peuvent importer l’historique.",
+    "guide": "Comment fonctionne l’importation"
+  },
+  "promise": {
+    "quiet": {
+      "title": "En toute discrétion.",
+      "body": "Aucun client ne reçoit d’e-mail et les automatisations, compteurs SLA, webhooks et notifications restent inactifs pour les tickets importés."
+    },
+    "people": {
+      "title": "Des correspondances pour chacun.",
+      "body": "Les agents deviennent des membres et les groupes deviennent des équipes, associés par e-mail et par nom. Vous vérifiez chaque correspondance avant le lancement."
+    },
+    "undo": {
+      "title": "Annulez à tout moment.",
+      "body": "Un clic supprime ce qu’une importation a ajouté et préserve ce que votre équipe a écrit depuis."
+    }
+  },
+  "sources": {
+    "zendesk": {
+      "with": "Jeton API",
+      "blurb": "Tickets avec réponses et notes, utilisateurs, organisations et articles Guide."
+    },
+    "helpscout": {
+      "with": "Identifiant et secret de l’application",
+      "blurb": "Conversations de chaque boîte de réception, clients et articles Docs."
+    },
+    "freshdesk": {
+      "with": "Clé API",
+      "blurb": "Tickets avec réponses et notes, contacts, entreprises et articles de solution."
+    },
+    "intercom": {
+      "with": "Jeton d’accès",
+      "blurb": "Conversations avec notes et fichiers, contacts, entreprises et articles."
+    },
+    "csv": {
+      "with": "Tout outil d’assistance",
+      "blurb": "Un export de tout autre outil d’assistance, avec une ligne par ticket ou par message."
+    }
+  },
+  "steps": {
+    "connect": "Connexion",
+    "upload": "Envoi",
+    "columns": "Colonnes",
+    "review": "Vérification",
+    "options": "Choix et lancement"
+  },
+  "wizard": {
+    "title": "Importer depuis {{name}}",
+    "description": "Connectez votre compte {{name}}. Nous le consultons sans jamais rien y modifier.",
+    "csvDescription": "Envoyez un export de votre outil d’assistance actuel, puis indiquez le contenu de chaque colonne.",
+    "whatComes": "Ce qui sera importé",
+    "facts": {
+      "conversations": "Chaque ticket avec toutes ses réponses, notes et pièces jointes, à leurs dates d’origine.",
+      "people": "Clients et entreprises, agents en tant que membres et groupes en tant qu’équipes.",
+      "articles": "Collections et articles du centre d’aide.",
+      "quiet": "Personne ne reçoit d’e-mail et aucune automatisation ne s’exécute."
+    },
+    "guide": "Lire le guide d’importation",
+    "connect": "Connecter",
+    "checking": "Vérification de {{name}}",
+    "preview": "Aperçu",
+    "continue": "Continuer",
+    "start": "Lancer l’importation",
+    "back": "Retour",
+    "cancel": "Annuler",
+    "startedToast": "Importation lancée. Vous pouvez quitter cette page, nous vous préviendrons une fois l’importation terminée.",
+    "leaveTitle": "Quitter cette importation ?",
+    "leaveBody": "Rien n’a encore été importé. Vos choix sur cette page seront perdus.",
+    "leave": "Quitter"
+  },
+  "connect": {
+    "whereToFind": "Où le trouver",
+    "show": "Afficher",
+    "hide": "Masquer",
+    "safety": "Lecture seule. Vos identifiants sont chiffrés et utilisés uniquement pour lire {{name}}. Ils sont supprimés 30 jours après la dernière exécution, ou quand vous le souhaitez.",
+    "same": "Comme précédemment"
+  },
+  "review": {
+    "connected": "Connecté",
+    "tickets_one": "{{n}} ticket",
+    "tickets_other": "{{n}} tickets",
+    "ticketsUnknown": "Tickets comptés au fil de l’importation",
+    "articles_one": "{{n}} article",
+    "articles_other": "{{n}} articles",
+    "agents_one": "{{count}} agent",
+    "agents_other": "{{count}} agents",
+    "sampleTitle": "L’apparence de vos tickets",
+    "noSamples": "Aucun ticket à prévisualiser pour le moment. L’importation récupérera tout de même ce qu’elle trouve.",
+    "noSubject": "(sans objet)",
+    "previous": "Ticket précédent",
+    "next": "Ticket suivant",
+    "messages_one": "{{count}} message",
+    "messages_other": "{{count}} messages",
+    "more_one": "et {{count}} message de plus",
+    "more_other": "et {{count}} messages de plus",
+    "note": "Note interne",
+    "unknown": "Inconnu",
+    "empty": "Aucun texte",
+    "agentsTitle": "Agents",
+    "agentsHint": "Leurs réponses, notes et tickets sont attribués au membre choisi. Les personnes sans correspondance conservent leur nom sur ce qu’elles ont écrit.",
+    "matched": "{{n}} sur {{total}} associés",
+    "sameEmail": "Même adresse e-mail",
+    "keepName": "Conserver comme nom",
+    "agentFor": "Membre pour {{name}}",
+    "groupsTitle": "Groupes",
+    "groupsHint": "Les tickets de chaque groupe sont attribués à l’équipe choisie.",
+    "noTeam": "Aucune équipe",
+    "teamFor": "Équipe pour {{name}}",
+    "ready": "Prêt",
+    "tickets_many": "{{n}} tickets",
+    "articles_many": "{{n}} articles",
+    "agents_many": "{{count}} agents",
+    "messages_many": "{{count}} messages",
+    "more_many": "et {{count}} messages de plus"
+  },
+  "csv": {
+    "drop": "Déposez votre fichier CSV ici ou cliquez pour en choisir un",
+    "dropNow": "Déposez-le pour l’envoyer",
+    "dropHint": "Une ligne par ticket ou une ligne par message avec un identifiant de ticket pour les regrouper. Une ligne d’en-tête nomme les colonnes.",
+    "reading": "Lecture de {{name}}",
+    "formats": "UTF-8 ou UTF-16, avec des virgules, points-virgules ou tabulations comme séparateurs. Jusqu’à 50 Mo et 500 000 lignes.",
+    "template": "Télécharger un modèle",
+    "tooLarge": "Ce fichier dépasse 50 Mo. Divisez-le en fichiers plus petits et importez-les l’un après l’autre.",
+    "wrongType": "Choisissez un fichier .csv. Les tableurs permettent d’enregistrer au format CSV via Fichier, puis Télécharger ou Exporter.",
+    "summary": "{{rows}} lignes, {{columns}} colonnes",
+    "replace": "Choisir un autre fichier",
+    "notInFile": "Absent du fichier",
+    "emptyColumn": "Cette colonne est vide dans les premières lignes",
+    "needBody": "Choisissez la colonne contenant le message, ou au moins l’objet.",
+    "grouping": "Les lignes ayant le même identifiant de ticket forment un ticket, chaque ligne devenant un message dans l’ordre chronologique. Sans colonne d’identifiant de ticket, chaque ligne devient un ticket distinct.",
+    "fields": {
+      "ticket_id": {
+        "label": "Identifiant du ticket",
+        "hint": "Regroupe les lignes en tickets"
+      },
+      "subject": {
+        "label": "Objet",
+        "hint": "Le titre du ticket"
+      },
+      "body": {
+        "label": "Message",
+        "hint": "Le texte, brut ou HTML"
+      },
+      "created_at": {
+        "label": "Date",
+        "hint": "Quand le message a été écrit"
+      },
+      "from_email": {
+        "label": "E-mail de l’expéditeur",
+        "hint": "La personne qui a écrit"
+      },
+      "from_name": {
+        "label": "Nom de l’expéditeur",
+        "hint": "Son nom"
+      },
+      "author": {
+        "label": "Type d’auteur",
+        "hint": "customer, agent ou note"
+      },
+      "status": {
+        "label": "Statut",
+        "hint": "open, pending, solved, closed"
+      },
+      "priority": {
+        "label": "Priorité",
+        "hint": "low, normal, high, urgent"
+      },
+      "tags": {
+        "label": "Étiquettes",
+        "hint": "Séparées par des virgules"
+      },
+      "assignee_email": {
+        "label": "E-mail du responsable",
+        "hint": "Associé à un membre"
+      },
+      "team": {
+        "label": "Équipe",
+        "hint": "Associée à une équipe par son nom"
+      },
+      "company": {
+        "label": "Entreprise",
+        "hint": "L’entreprise du client"
+      },
+      "message_id": {
+        "label": "Message-ID",
+        "hint": "L’identifiant propre à l’e-mail, pour regrouper les réponses"
+      },
+      "in_reply_to": {
+        "label": "In-Reply-To",
+        "hint": "Le Message-ID auquel il répond"
+      },
+      "references": {
+        "label": "References",
+        "hint": "Les Message-ID précédents dans la conversation"
+      }
+    }
+  },
+  "options": {
+    "what": "Éléments à importer",
+    "tickets": "Tickets",
+    "ticketsHint_one": "{{n}} ticket avec sa conversation.",
+    "ticketsHint_other": "{{n}} tickets avec leurs conversations.",
+    "ticketsHintUnknown": "Chaque ticket avec sa conversation.",
+    "articles": "Articles du centre d’aide",
+    "articlesHint_one": "{{n}} article avec sa collection. Les images sont aussi importées.",
+    "articlesHint_other": "{{n}} articles avec leurs collections. Les images sont aussi importées.",
+    "articlesHintUnknown": "Chaque article avec sa collection.",
+    "articlesNone": "Ce compte n’a pas de centre d’aide à importer.",
+    "articlesNoDocs": "Ajoutez une clé API Docs à la première étape pour importer vos articles Docs.",
+    "drafts": "Importer les articles comme brouillons",
+    "draftsHint": "Relisez-les avant leur publication sur votre centre d’aide.",
+    "attachments": "Pièces jointes",
+    "attachmentsHint": "Fichiers de 25 Mo maximum chacun. Désactivez pour accélérer l’importation.",
+    "how": "Méthode",
+    "since": "Depuis quand",
+    "sinceHint": "Les tickets plus anciens ne sont pas importés. Les articles sont toujours importés dans leur intégralité.",
+    "allHistory": "Tout l’historique",
+    "fromDate": "À partir d’une date",
+    "statuses": "Statuts",
+    "keep": "Les conserver",
+    "closeAll": "Tous les fermer",
+    "keepHint": "Les tickets ouverts restent ouverts et arrivent dans vos files.",
+    "closedHint": "Tous les tickets arrivent fermés, vos files restent donc en l’état.",
+    "label": "Étiquette",
+    "labelHint": "Ajoutée à chaque ticket importé pour vous permettre de les retrouver.",
+    "noLabel": "Aucune étiquette",
+    "mailbox": "Répondre depuis",
+    "mailboxHint": "Les réponses aux tickets par e-mail importés sont envoyées depuis cette boîte de réception.",
+    "noMailbox": "Choisir au moment de répondre",
+    "ticketsHint_many": "{{n}} tickets avec leurs conversations.",
+    "articlesHint_many": "{{n}} articles avec leurs collections. Les images sont aussi importées."
+  },
+  "summary": {
+    "lead": "Cette opération importe {{what}}.",
+    "and": " et ",
+    "tickets_one": "{{n}} ticket",
+    "tickets_other": "{{n}} tickets",
+    "ticketsUnknown": "chaque ticket",
+    "articles_one": "{{n}} article",
+    "articles_other": "{{n}} articles",
+    "articlesUnknown": "chaque article",
+    "quiet": "Personne ne reçoit d’e-mail et les automatisations, compteurs SLA et webhooks restent inactifs.",
+    "after": "Les comptes volumineux prennent du temps. L’opération s’exécute de notre côté, vous pouvez donc fermer cette page. Nous vous préviendrons une fois l’importation terminée et vous pourrez importer les modifications ultérieures à tout moment.",
+    "tickets_many": "{{n}} tickets",
+    "articles_many": "{{n}} articles"
+  },
+  "current": {
+    "running": "En cours",
+    "runningHint": "Mise à jour en temps réel. Vous pouvez quitter cette page et revenir.",
+    "latest": "Dernière importation"
+  },
+  "state": {
+    "running": "Importation en cours",
+    "paused": "En pause",
+    "completed": "Terminé",
+    "failed": "Arrêté",
+    "canceled": "Annulé",
+    "undoing": "Annulation en cours",
+    "undone": "Annulé",
+    "waiting": "En attente",
+    "needsCredentials": "Identifiants nécessaires"
+  },
+  "status": {
+    "open": "Ouvert",
+    "pending": "En attente",
+    "on_hold": "En suspens",
+    "solved": "Résolu",
+    "closed": "Fermé"
+  },
+  "progress": {
+    "run": "Mise à jour {{n}}",
+    "startedBy": "Lancé par {{name}} {{when}}",
+    "started": "Lancé {{when}}",
+    "finished": "terminé {{when}}",
+    "articles": "Importation des articles du centre d’aide",
+    "tickets": "Importation des tickets",
+    "changes": "Importation des modifications",
+    "undoing": "Suppression des éléments importés",
+    "paused": "En pause. L’opération continuera à partir d’ici lorsque vous la reprendrez.",
+    "waiting": "{{name}} nous a demandé de ralentir. Reprise dans {{seconds}}s.",
+    "left": "encore environ {{time}}",
+    "lessThanMinute": "une minute",
+    "minutes_one": "{{count}} minute",
+    "minutes_other": "{{count}} minutes",
+    "hours_one": "{{count}} heure",
+    "hours_other": "{{count}} heures",
+    "pause": "Mettre en pause",
+    "resume": "Reprendre",
+    "retry": "Réessayer",
+    "sync": "Importer les modifications",
+    "actions": "Actions d’importation",
+    "openSource": "Ouvrir {{name}}",
+    "cancel": "Annuler l’importation",
+    "cancelTitle": "Annuler cette importation ?",
+    "cancelBody": "Les éléments déjà importés sont conservés. Les identifiants sont supprimés et vous pourrez annuler les ajouts plus tard.",
+    "canceledToast": "Importation annulée",
+    "undo": "Annuler les ajouts de l’importation",
+    "undoPauseFirst": "Mettre en pause pour annuler les ajouts",
+    "undoTitle": "Annuler les ajouts de l’importation {{name}} ?",
+    "undoBody_one": "Cette action supprime le {{tickets}} ticket et les {{articles}} articles importés, ainsi que les contacts, entreprises et étiquettes inutilisés ailleurs. Les tickets sur lesquels votre équipe a écrit depuis sont conservés.",
+    "undoBody_other": "Cette action supprime les {{tickets}} tickets et les {{articles}} articles importés, ainsi que les contacts, entreprises et étiquettes inutilisés ailleurs. Les tickets sur lesquels votre équipe a écrit depuis sont conservés.",
+    "undoneHint": "Ajouts annulés. Les éléments ajoutés par cette importation ont été supprimés.",
+    "forget": "Supprimer les identifiants",
+    "forgetTitle": "Supprimer les identifiants ?",
+    "forgetBody": "L’importation ne pourra plus récupérer les modifications depuis {{name}}. Les éléments importés sont conservés.",
+    "credentialsRemoved": "Identifiants supprimés",
+    "needsCredentials": "{{name}} n’accepte plus les identifiants.",
+    "resumeWith": "Reprendre avec ces identifiants",
+    "failedHint": "Les éléments importés sont conservés. Réessayez pour reprendre là où l’opération s’est arrêtée.",
+    "done": "Tout le contenu de {{name}} est ici.",
+    "syncDone_one": "{{count}} ticket mis à jour.",
+    "syncDone_other": "{{count}} tickets mis à jour.",
+    "seeTickets": "Voir les tickets importés",
+    "problems_one": "{{count}} élément n’a pas pu être importé",
+    "problems_other": "{{count}} éléments n’ont pas pu être importés",
+    "moreProblems_one": "et {{count}} de plus",
+    "moreProblems_other": "et {{count}} de plus",
+    "kept": "Les identifiants sont conservés pour que vous puissiez importer les modifications jusqu’à votre transition. Ils sont supprimés 30 jours après la dernière exécution.",
+    "minutes_many": "{{count}} minutes",
+    "hours_many": "{{count}} heures",
+    "undoBody_many": "Cette action supprime les {{tickets}} tickets et les {{articles}} articles importés, ainsi que les contacts, entreprises et étiquettes inutilisés ailleurs. Les tickets sur lesquels votre équipe a écrit depuis sont conservés.",
+    "syncDone_many": "{{count}} tickets mis à jour.",
+    "problems_many": "{{count}} éléments n’ont pas pu être importés",
+    "moreProblems_many": "et {{count}} de plus"
+  },
+  "figures": {
+    "tickets": "Tickets",
+    "messages": "Messages",
+    "contacts": "Contacts",
+    "articles": "Articles",
+    "attachments": "Fichiers",
+    "updated": "Mis à jour"
+  },
+  "history": {
+    "title": "Importations précédentes",
+    "hint": "Ouvrez une importation pour récupérer les modifications, annuler ses ajouts ou voir les éléments qui n’ont pas pu être importés.",
+    "brought_one": "{{tickets}} ticket, {{articles}} articles",
+    "brought_other": "{{tickets}} tickets, {{articles}} articles",
+    "undone": "Supprimé",
+    "none": "Aucune importation pour le moment.",
+    "brought_many": "{{tickets}} tickets, {{articles}} articles"
+  }
+}

@@ -2,7 +2,7 @@
 // ./locales/<lng>/<ns>.json. English is bundled; other languages load on demand,
 // so a page only downloads the catalogs it shows.
 //
-// The agent app ships English (every string lives in the en catalogs). The
+// The agent app ships English and French, following the browser's language. The
 // customer-facing surfaces (help center, CSAT, widget) ship every SUPPORTED
 // language, picked from the visitor's browser with the workspace default as
 // the fallback (see pickLocale).
@@ -52,6 +52,11 @@ export function pickLocale(opts: { explicit?: string | null; browser?: readonly 
   return matchLocale(opts.explicit) ?? browser.map(matchLocale).find((x): x is Locale => !!x) ?? matchLocale(opts.workspaceDefault) ?? "en";
 }
 
+/** Agent catalogs are complete in English and French only. */
+export function pickAgentLocale(browser?: readonly string[]): "en" | "fr" {
+  return pickLocale({ browser }) === "fr" ? "fr" : "en";
+}
+
 const loaders = import.meta.glob<{ default: Record<string, unknown> }>(["./locales/*/*.json", "!./locales/en/*.json"]);
 
 const lazyBackend: BackendModule = {
@@ -71,7 +76,7 @@ void i18n
   .use(lazyBackend)
   .use(initReactI18next)
   .init({
-    lng: "en",
+    lng: pickAgentLocale(),
     fallbackLng: "en",
     supportedLngs: [...SUPPORTED],
     ns: [...NAMESPACES],
@@ -86,28 +91,36 @@ void i18n
 // The language a customer-facing page chose, so Intl formatting follows the
 // page (an English page for a German browser formats dates in English).
 let pageLocale: string | null = null;
+let localeVersion = 0;
 
 /** Switch language for the page (customer surfaces) and set <html lang dir>. */
 export async function setLocale(lng: Locale, ns: Namespace[] = ["common"]): Promise<void> {
+  const version = ++localeVersion;
   pageLocale = lng;
   await i18n.loadLanguages(lng);
   await i18n.loadNamespaces(ns);
+  if (version !== localeVersion) return;
   await i18n.changeLanguage(lng);
+  if (version !== localeVersion) return;
   if (typeof document !== "undefined") {
     document.documentElement.lang = lng;
     document.documentElement.dir = RTL.has(lng) ? "rtl" : "ltr";
   }
 }
 
-/** Back to the agent app's language (English) when leaving a public page. */
+/** Restore the browser's agent language when leaving a public page. */
 export function resetLocale() {
+  ++localeVersion;
   pageLocale = null;
-  if (i18n.language !== "en") void i18n.changeLanguage("en");
+  const lng = pickAgentLocale();
+  if (i18n.language !== lng) void i18n.changeLanguage(lng);
   if (typeof document !== "undefined") {
-    document.documentElement.lang = "en";
+    document.documentElement.lang = lng;
     document.documentElement.dir = "ltr";
   }
 }
+
+resetLocale();
 
 /** The active locale for Intl formatting. Agent app: the browser's locale; public pages: the page language. */
 export function intlLocale(): string {
