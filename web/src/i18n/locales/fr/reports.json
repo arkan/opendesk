@@ -1,0 +1,136 @@
+{
+  "title": "Rapports",
+  "compared_one": "Par rapport au jour précédent",
+  "compared_other": "Par rapport aux {{count}} jours précédents",
+  "compared_many": "Par rapport aux {{count}} jours précédents",
+  "loading": "Chargement des rapports",
+  "error": {
+    "title": "Impossible de charger les rapports",
+    "description": "Vérifiez votre connexion et réessayez.",
+    "retry": "Réessayer"
+  },
+  "empty": {
+    "title": "Rien à rapporter pour le moment",
+    "description": "Les rapports se remplissent à l'arrivée des tickets. Les chiffres derrière cette carte sont des données d'exemple.",
+    "sample": "Données d'exemple",
+    "sampleHint": "Un aperçu de cette page après l'arrivée de tickets. Aucun de ces chiffres n'est réel."
+  },
+  "unit": {
+    "tickets_one": "{{count}} ticket",
+    "tickets_other": "{{count}} tickets",
+    "tickets_many": "{{count}} tickets"
+  },
+  "kpi": {
+    "created": "Créés",
+    "solved": "Résolus",
+    "openNow": "Ouverts actuellement",
+    "rightNow": "Actuellement",
+    "firstResponse": "Première réponse",
+    "resolution": "Résolution",
+    "median": "Médiane",
+    "csat": "CSAT",
+    "ratings_one": "{{count}} évaluation",
+    "ratings_other": "{{count}} évaluations",
+    "ratings_many": "{{count}} évaluations",
+    "slaBreached": "SLA non respectés"
+  },
+  "delta": {
+    "none": "Aucun changement",
+    "title": "Par rapport à la période précédente",
+    "better": "mieux que la période précédente",
+    "worse": "moins bien que la période précédente"
+  },
+  "volume": {
+    "title": "Évolution du volume",
+    "subtitle": "Tickets créés et résolus chaque jour",
+    "chart": "Graphique",
+    "table": "Tableau",
+    "avg": "Moyenne quotidienne",
+    "perDay": "créés par jour",
+    "busiest": "Jour le plus chargé",
+    "solveRate": "Taux de résolution",
+    "solvedOfCreated": "résolus parmi les tickets créés"
+  },
+  "backlog": {
+    "title": "Tickets à traiter",
+    "subtitle": "Tickets actuellement ouverts, par statut",
+    "open": "Tickets ouverts",
+    "tickets": "tickets",
+    "unassigned": "Non attribués",
+    "emptyTitle": "Boîte de réception vide",
+    "emptyDescription": "Aucun ticket ouvert actuellement."
+  },
+  "channel": {
+    "title": "Par canal",
+    "subtitle": "Tickets créés sur la période"
+  },
+  "open": {
+    "subtitle": "Tickets actuellement ouverts",
+    "sample": "Les {{count}} tickets ouverts les plus récents"
+  },
+  "priority": {
+    "title": "Par priorité"
+  },
+  "severity": {
+    "title": "Par gravité",
+    "subtitle": "Tickets créés sur la période",
+    "none": "Aucune gravité"
+  },
+  "tags": {
+    "title": "Par étiquette",
+    "emptyTitle": "Aucune étiquette sur les tickets ouverts",
+    "emptyDescription": "Étiquetez les tickets pour voir les sujets des demandes."
+  },
+  "agents": {
+    "title": "Classement",
+    "subtitle": "Tickets résolus sur la période",
+    "caption": "Tickets résolus et délai de première réponse par agent",
+    "agent": "Agent",
+    "solved": "Résolus",
+    "share": "Part",
+    "firstResponse": "Première réponse",
+    "emptyTitle": "Aucun ticket résolu",
+    "emptyDescription": "Les agents apparaissent ici dès qu'ils résolvent des tickets sur cette période."
+  },
+  "response": {
+    "title": "Délais de réponse",
+    "subtitle": "Médianes sur la période",
+    "fastest": "Première réponse la plus rapide",
+    "none": "Aucune réponse sur cette période pour le moment."
+  },
+  "filter": {
+    "teamLabel": "Équipe : {{value}}",
+    "brandLabel": "Marque : {{value}}",
+    "allTeams": "Toutes les équipes",
+    "noTeam": "Aucune équipe",
+    "private": "Privée",
+    "allBrands": "Toutes les marques",
+    "searchTeams": "Rechercher des équipes",
+    "searchBrands": "Rechercher des marques"
+  },
+  "groups": {
+    "narrow": "Afficher uniquement ce groupe dans le rapport"
+  },
+  "byTeam": {
+    "title": "Par équipe",
+    "subtitle": "Tickets créés et résolus sur la période, ouverts actuellement",
+    "caption": "Tickets créés, résolus et ouverts, et délai de première réponse, par équipe",
+    "team": "Équipe",
+    "hidden": "Les équipes privées dont vous ne faites pas partie ne figurent pas ici. Les totaux ci-dessus incluent leurs tickets.",
+    "emptyTitle": "Aucune activité d'équipe sur cette période",
+    "emptyDescription": "Les équipes apparaissent ici dès que leurs tickets arrivent ou sont résolus."
+  },
+  "byBrand": {
+    "title": "Par marque",
+    "subtitle": "Tickets créés et résolus sur la période, ouverts actuellement",
+    "caption": "Tickets créés, résolus et ouverts, et délai de première réponse, par marque",
+    "brand": "Marque",
+    "emptyTitle": "Aucune activité de marque sur cette période",
+    "emptyDescription": "Les marques apparaissent ici dès que leurs tickets arrivent ou sont résolus."
+  },
+  "filtered": {
+    "emptyTitle": "Aucun résultat sur cette période",
+    "emptyDescription": "Aucun ticket ne correspond à cette équipe et à cette marque sur la période. Essayez une période plus longue ou effacez les filtres.",
+    "clear": "Effacer les filtres"
+  }
+}

@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { matchLocale, pickLocale, RTL, SUPPORTED } from "./index";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { i18n, matchLocale, pickAgentLocale, pickLocale, resetLocale, RTL, setLocale, SUPPORTED } from "./index";
+import { NAMESPACES } from "./resources";
 
 const files = import.meta.glob<Record<string, unknown>>("./locales/*/*.json", { eager: true, import: "default" });
 const PLURAL = /_(zero|one|two|few|many|other)$/;
@@ -55,6 +56,49 @@ describe("pickLocale", () => {
   });
 });
 
+describe("agent language", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    resetLocale();
+  });
+
+  it("selects French regional variants and falls back to English for other languages", () => {
+    expect(pickAgentLocale(["fr-FR", "en-US"])).toBe("fr");
+    expect(pickAgentLocale(["fr-CA"])).toBe("fr");
+    expect(pickAgentLocale(["en-US"])).toBe("en");
+    expect(pickAgentLocale(["de-DE"])).toBe("en");
+    expect(pickAgentLocale(["ar-EG"])).toBe("en");
+    expect(pickAgentLocale([])).toBe("en");
+  });
+
+  it("loads French agent catalogs and restores them after a public page", async () => {
+    vi.spyOn(navigator, "languages", "get").mockReturnValue(["fr-FR"]);
+    await i18n.changeLanguage(pickAgentLocale());
+    expect(i18n.t("nav.inbox", { ns: "shell" })).toBe("Boîte de réception");
+    await setLocale("ar", ["public", "common"]);
+    expect(document.documentElement.dir).toBe("rtl");
+    resetLocale();
+    expect(i18n.language).toBe("fr");
+    expect(document.documentElement.lang).toBe("fr");
+    expect(document.documentElement.dir).toBe("ltr");
+    expect(i18n.t("nav.inbox", { ns: "shell" })).toBe("Boîte de réception");
+  });
+
+  it("does not apply a public language that finishes loading after leaving the page", async () => {
+    vi.spyOn(navigator, "languages", "get").mockReturnValue(["fr-FR"]);
+    await i18n.changeLanguage("fr");
+    let finish!: () => void;
+    vi.spyOn(i18n, "loadLanguages").mockImplementationOnce(() => new Promise<void>((resolve) => { finish = resolve; }));
+    const pending = setLocale("ar", ["public", "common"]);
+    resetLocale();
+    finish();
+    await pending;
+    expect(i18n.language).toBe("fr");
+    expect(document.documentElement.lang).toBe("fr");
+    expect(document.documentElement.dir).toBe("ltr");
+  });
+});
+
 describe("catalogs", () => {
   it("ships a folder for every supported language", () => {
     const langs = new Set(Object.keys(files).map((k) => k.split("/")[2]));
@@ -84,5 +128,22 @@ describe("catalogs", () => {
         }
       });
     }
+  }
+
+  for (const ns of NAMESPACES.filter((ns) => ns !== "common" && ns !== "public")) {
+    it(`fr/${ns}.json translates every agent key and preserves variables and Ollie`, () => {
+      const en = read("en", ns);
+      const fr = read("fr", ns);
+      expect(flatten(fr).sort()).toEqual(expected("fr", flatten(en)));
+      const get = (o: Record<string, unknown>, path: string): string => String(path.split(".").reduce<unknown>((x, k) => (x as Record<string, unknown>)?.[k], o));
+      for (const k of flatten(fr)) {
+        const sourceKey = k.endsWith("_many") ? k.replace(/_many$/, "_other") : k;
+        const source = get(en, sourceKey);
+        const translated = get(fr, k);
+        if (source.trim()) expect(translated.trim(), `${ns}.${k}`).not.toBe("");
+        expect((translated.match(/\{\{[^}]+\}\}/g) ?? []).sort(), `${ns}.${k}`).toEqual((source.match(/\{\{[^}]+\}\}/g) ?? []).sort());
+        expect(translated.match(/Ollie/g) ?? [], `${ns}.${k}`).toEqual(source.match(/Ollie/g) ?? []);
+      }
+    });
   }
 });
