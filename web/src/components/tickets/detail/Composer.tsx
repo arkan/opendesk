@@ -1,3 +1,4 @@
+import { i18n } from "@/i18n";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRightLeft, Check, ChevronDown, Loader2, Lock, MessageSquareText, MessagesSquare, Paperclip, TriangleAlert, X } from "lucide-react";
 import { Morph } from "@/components/motion";
@@ -27,7 +28,7 @@ import { floatingPanel } from "@/components/ui/popover";
 import { toast } from "@/components/ui/toast";
 import { RichEditor, type RichEditorHandle } from "@/components/editor/RichEditor";
 import { mentionExtension, savedReplyExtension, SuggestionPopup } from "./suggestions";
-import { GROUP_LABELS, useCatalog } from "@/components/templates/catalog";
+import { templateGroupLabel, useCatalog } from "@/components/templates/catalog";
 import { matchVars, refreshTags, templateExtension, VarSuggestPopup, type VarItem } from "@/components/templates/extension";
 import { variableText } from "./composerTemplates";
 import { SignaturePreview } from "./SignaturePreview";
@@ -88,6 +89,7 @@ export type ComposerHandle = {
 const emailRe = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
 
 function EmailChips({ label, values, onChange, wide }: { label: string; values: string[]; onChange: (v: string[]) => void; wide?: boolean }) {
+  const { t } = useTranslation("indicators");
   const [text, setText] = useState("");
   const commit = () => {
     const parts = text.split(/[\s,;]+/).filter(Boolean);
@@ -102,7 +104,7 @@ function EmailChips({ label, values, onChange, wide }: { label: string; values: 
         {values.map((v) => (
           <span key={v} className="mono inline-flex h-5 items-center gap-1 rounded-sm bg-hover pl-1.5 pr-0.5 text-[11.5px] animate-pop-in motion-reduce:animate-none" data-ph-mask>
             {v}
-            <button type="button" aria-label={`Remove ${v}`} onClick={() => onChange(values.filter((x) => x !== v))} className="flex size-4 items-center justify-center rounded-xs text-fg-4 hover:text-fg">
+            <button type="button" aria-label={t("tickets.remove", { name: v })} onClick={() => onChange(values.filter((x) => x !== v))} className="flex size-4 items-center justify-center rounded-xs text-fg-4 hover:text-fg">
               <X className="size-3" />
             </button>
           </span>
@@ -192,6 +194,7 @@ function useSend(ticket: Ticket, ctx: TeamsCtx) {
 function useSendThread(ticket: Ticket) {
   const qc = useQueryClient();
   const { t } = useTranslation("inbox");
+  useTranslation("indicators");
   const updateTicket = useUpdateTicket();
   const keep = (m: Message, th?: Thread) => {
     qc.setQueryData<Message[]>(qk.messages(ticket.id), (old) => {
@@ -234,7 +237,7 @@ function useSendThread(ticket: Ticket) {
       }));
       if (v.status) updateTicket.mutate({ id: ticket.id, patch: { status: v.status } });
       const to = r.message.to.join(", ");
-      toast.success(v.status ? t("composer.sideSentAndMarked", { to, status: statusLabel[v.status].toLowerCase() }) : t("composer.sideSent", { to }));
+      toast.success(v.status ? t("composer.sideSentAndMarked", { to, status: statusLabel(v.status).toLowerCase() }) : t("composer.sideSent", { to }));
     },
     onError: (e) => toast.error(e, t("composer.threadFailed")),
   });
@@ -242,6 +245,8 @@ function useSendThread(ticket: Ticket) {
 
 export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: boolean }>(function Composer({ ticket, disabled }, ref) {
   const { t } = useTranslation("inbox");
+  useTranslation("indicators");
+  useTranslation("ui");
   const reduced = useReducedMotion();
   // Writing: focus went into the editor and has not left the composer since.
   // Focus on the controls above the editor (mode, Cc, the reply address) does not
@@ -271,14 +276,10 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
   // Variables in replies: "{{" offers them with this ticket's values, from the address the reply goes out from.
   const catalog = useCatalog("reply");
   const { data: vars } = useQuery({ ...q.ticketVariables(ticket.id, draft.mailboxId ?? ticket.mailbox_id), enabled: mode === "reply" });
-  const varItems = useMemo<VarItem[]>(
-    () =>
-      catalog.variables.map((v) => {
-        const value = vars?.values[v.key];
-        return { key: v.key, label: v.label, group: GROUP_LABELS[v.group] ?? v.group, value: vars ? (v.html && value ? t("composer.valueSet") : (value ?? "")) : undefined };
-      }),
-    [catalog.variables, vars, t],
-  );
+  const varItems: VarItem[] = catalog.variables.map((v) => {
+    const value = vars?.values[v.key];
+    return { key: v.key, label: v.label, group: templateGroupLabel(v.group), value: vars ? (v.html && value ? t("composer.valueSet") : (value ?? "")) : undefined };
+  });
 
   const editor = useRef<RichEditorHandle>(null);
   const membersRef = useRef<Member[]>([]);
@@ -484,7 +485,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
     setDraft({ html: "", cc: [], bcc: [], showCc: false, mailboxId: undefined });
     editor.current?.clear();
     ai.dismissSources();
-    if (status) toast.success(t(mode === "note" ? "composer.noteAndMarked" : "composer.sentAndMarked", { status: statusLabel[status].toLowerCase() }));
+    if (status) toast.success(t(mode === "note" ? "composer.noteAndMarked" : "composer.sentAndMarked", { status: statusLabel(status).toLowerCase() }));
   };
 
   const onKeyDown = (e: KeyboardEvent) => {
@@ -702,7 +703,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
                   <Tooltip content={t("composer.attach")}>
                     <button
                       type="button"
-                      aria-label="Attach files"
+                      aria-label={t("composer.attach")}
                       onClick={() => fileInput.current?.click()}
                       className="flex size-7 items-center justify-center rounded-md text-fg-3 transition-colors hover:bg-hover hover:text-fg active:scale-95"
                     >
@@ -723,7 +724,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
                     }}
                     trigger={
                       <Tooltip content={t("composer.savedReplies")}>
-                        <button type="button" aria-label="Saved replies" aria-busy={filling > 0} className="flex size-7 items-center justify-center rounded-md text-fg-3 transition-colors hover:bg-hover hover:text-fg active:scale-95">
+                        <button type="button" aria-label={t("composer.savedReplies")} aria-busy={filling > 0} className="flex size-7 items-center justify-center rounded-md text-fg-3 transition-colors hover:bg-hover hover:text-fg active:scale-95">
                           {filling > 0 ? <Loader2 className="size-[15px] animate-spin motion-reduce:animate-none" /> : <MessageSquareText className="size-[15px]" />}
                         </button>
                       </Tooltip>
@@ -759,7 +760,7 @@ export const Composer = forwardRef<ComposerHandle, { ticket: Ticket; disabled?: 
                   {u.status === "uploading" ? (
                     <Loader2 className="size-3.5 shrink-0 animate-spin text-fg-4" />
                   ) : (
-                    <button type="button" aria-label={`Remove ${u.file.name}`} onClick={() => setUploads((x) => x.filter((y) => y.key !== u.key))} className="flex size-5 shrink-0 items-center justify-center rounded-sm text-fg-4 hover:bg-hover hover:text-fg">
+                    <button type="button" aria-label={i18n.t("indicators:tickets.remove", { name: u.file.name })} onClick={() => setUploads((x) => x.filter((y) => y.key !== u.key))} className="flex size-5 shrink-0 items-center justify-center rounded-sm text-fg-4 hover:bg-hover hover:text-fg">
                       <X className="size-3" />
                     </button>
                   )}
@@ -901,6 +902,7 @@ function SendButton({
   phase: "idle" | "sending" | "sent";
 }) {
   const { t } = useTranslation("inbox");
+  useTranslation("indicators");
   const side = !!sideTo;
   const label = note ? t("composer.addNote") : t("composer.send");
   const options: TicketStatus[] = (side ? (["on_hold"] as TicketStatus[]) : (["pending", "on_hold", "solved"] as TicketStatus[])).filter((s) => s !== current);
@@ -958,7 +960,7 @@ function SendButton({
               {options.map((s) => (
                 <M.Item key={s} disabled={disabled} onSelect={() => onSend(s)} className="flex h-8 cursor-default items-center gap-2 rounded-md px-2 text-[12.5px] outline-none data-[disabled]:opacity-50 data-[highlighted]:bg-hover">
                   <StatusIcon status={s} />
-                  <span className="flex-1 whitespace-nowrap">{t("composer.andMark", { label, status: statusLabel[s].toLowerCase() })}</span>
+                  <span className="flex-1 whitespace-nowrap">{t("composer.andMark", { label, status: statusLabel(s).toLowerCase() })}</span>
                   {s === "solved" && <Kbd className="ml-3 shrink-0">mod shift enter</Kbd>}
                 </M.Item>
               ))}

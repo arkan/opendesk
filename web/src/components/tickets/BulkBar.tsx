@@ -1,3 +1,4 @@
+import { i18n } from "@/i18n";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { AnimatedNumber } from "@/components/motion";
@@ -40,6 +41,7 @@ const Act = forwardRef<HTMLButtonElement, { compact?: boolean; icon: ReactNode; 
 
 export function BulkBar({ ids, onClear, spamView, compact }: { ids: string[]; onClear: () => void; spamView?: boolean; compact?: boolean }) {
   const { t } = useTranslation("inbox");
+  useTranslation("indicators");
   const bulk = useBulkUpdate();
   const confirm = useConfirm();
   const { data: members } = useQuery(q.members());
@@ -63,7 +65,7 @@ export function BulkBar({ ids, onClear, spamView, compact }: { ids: string[]; on
           exit={{ opacity: 0, y: 8, scale: 0.98 }}
           transition={springs.pop}
           role="toolbar"
-          aria-label="Bulk actions"
+          aria-label={i18n.t("indicators:tickets.bulkActions")}
           className="absolute bottom-5 left-1/2 z-20 flex max-w-[calc(100%-24px)] -translate-x-1/2 items-center gap-0.5 overflow-x-auto rounded-lg border border-line bg-raised p-1 pl-3 shadow-float"
         >
           <span className="mr-2 whitespace-nowrap text-[12px] text-fg-2">
@@ -104,7 +106,7 @@ export function BulkBar({ ids, onClear, spamView, compact }: { ids: string[]; on
             placeholder={t("bulk.setStatus")}
             value={null}
             items={statusOrder.map((s) => ({ value: s, label: display.status(s), icon: <StatusIcon status={s} /> }))}
-            onSelect={(v) => run({ ids, patch: { status: v as TicketStatus } }, t("bulk.marked", { count: n, status: statusLabel[v as TicketStatus].toLowerCase() }))}
+            onSelect={(v) => run({ ids, patch: { status: v as TicketStatus } }, t("bulk.marked", { count: n, status: statusLabel(v as TicketStatus).toLowerCase() }))}
             trigger={
               <Act compact={compact} icon={<CircleDot className="size-3.5" />} label={t("bulk.status")} />
             }
@@ -114,7 +116,7 @@ export function BulkBar({ ids, onClear, spamView, compact }: { ids: string[]; on
             placeholder={t("bulk.setPriority")}
             value={null}
             items={priorityOrder.map((p) => ({ value: p, label: display.priority(p), icon: <PriorityIcon priority={p} /> }))}
-            onSelect={(v) => run({ ids, patch: { priority: v as Priority } }, t("bulk.prioritised", { count: n, priority: priorityLabel[v as Priority].toLowerCase() }))}
+            onSelect={(v) => run({ ids, patch: { priority: v as Priority } }, t("bulk.prioritised", { count: n, priority: priorityLabel(v as Priority).toLowerCase() }))}
             trigger={
               <Act compact={compact} icon={<Signal className="size-3.5" />} label={t("bulk.priority")} />
             }
@@ -124,13 +126,13 @@ export function BulkBar({ ids, onClear, spamView, compact }: { ids: string[]; on
             placeholder={t("bulk.setSeverity")}
             value={null}
             items={[
-              ...severityOrder.map((v) => ({ value: v, label: severityLabel[v], hint: severityHint[v], icon: <SeverityChip severity={v} /> })),
+              ...severityOrder.map((v) => ({ value: v, label: severityLabel(v), hint: severityHint(v), icon: <SeverityChip severity={v} /> })),
               { value: "__none", label: t("bulk.noSeverity"), icon: <span className="h-[16px] w-[22px] rounded-[4px] border border-dashed border-line-strong" /> },
             ]}
             onSelect={(v) =>
               v === "__none"
                 ? run({ ids, patch: { severity: null } }, t("bulk.severityCleared", { count: n }))
-                : run({ ids, patch: { severity: v as Severity } }, t("bulk.severitySet", { count: n, severity: severityLabel[v as Severity] }))
+                : run({ ids, patch: { severity: v as Severity } }, t("bulk.severitySet", { count: n, severity: severityLabel(v as Severity) }))
             }
             trigger={
               <Act compact={compact} icon={<Siren className="size-3.5" />} label={t("bulk.severity")} />
@@ -139,7 +141,7 @@ export function BulkBar({ ids, onClear, spamView, compact }: { ids: string[]; on
           <Picker
             side="top"
             multi
-            placeholder="Add labels"
+            placeholder={i18n.t("indicators:tickets.addLabels")}
             values={tagSel}
             onChange={(v) => setTagSel(labelChoices.resolve(tagSel, v))}
             onCreate={(name) => setTagSel((s) => [...s, name])}
@@ -177,7 +179,7 @@ export function BulkBar({ ids, onClear, spamView, compact }: { ids: string[]; on
               variant="ghost"
               size="sm"
               square
-              aria-label="Delete"
+              aria-label={t("bulk.delete")}
               icon={<Trash2 className="size-3.5" />}
               onClick={() =>
                 confirm.show(
@@ -194,7 +196,7 @@ export function BulkBar({ ids, onClear, spamView, compact }: { ids: string[]; on
           </Tooltip>
           <span className="mx-1 h-5 w-px bg-line" />
           <Tooltip content={t("bulk.clear")} shortcut="esc">
-            <Button variant="ghost" size="sm" square aria-label="Clear selection" icon={<X className="size-3.5" />} onClick={onClear} />
+            <Button variant="ghost" size="sm" square aria-label={t("bulk.clear")} icon={<X className="size-3.5" />} onClick={onClear} />
           </Tooltip>
         </motion.div>
       )}

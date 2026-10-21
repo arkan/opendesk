@@ -36,6 +36,7 @@ function health(h: Webhook, rows: WebhookDelivery[] | undefined): Health {
 }
 
 export default function Webhooks() {
+  const { t: ui } = useTranslation("ui");
   const { t } = useTranslation("settingsDev");
   const role = useRole();
   const admin = atLeast(role, "admin");
@@ -200,7 +201,7 @@ export default function Webhooks() {
                           <MenuTrigger asChild>
                             <button
                               type="button"
-                              aria-label="Webhook actions"
+                              aria-label={ui("webhookActions")}
                               className="flex size-7 items-center justify-center rounded-md text-fg-3 transition-colors hover:bg-hover hover:text-fg"
                             >
                               <MoreHorizontal className="size-4" />

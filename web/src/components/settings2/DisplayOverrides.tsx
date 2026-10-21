@@ -32,6 +32,7 @@ export function DisplayOverridesEditor({
   disabled?: boolean;
 }) {
   const { t } = useTranslation("settings");
+  useTranslation("indicators");
   return (
     <div className="grid gap-x-8 md:grid-cols-2">
       <OverrideList
@@ -70,7 +71,7 @@ function OverrideList<K extends string>({
 }: {
   title: string;
   keys: K[];
-  defaults: Record<K, string>;
+  defaults: (key: K) => string;
   tones: Record<K, Tone>;
   icon: (k: K) => React.ReactNode;
   value: Overrides<K>;
@@ -78,6 +79,7 @@ function OverrideList<K extends string>({
   disabled?: boolean;
 }) {
   const { t } = useTranslation("settings");
+  useTranslation("indicators");
   const set = (k: K, patch: DisplayOverride) => {
     const next: DisplayOverride = { ...value[k], ...patch };
     if (!next.label) delete next.label;
@@ -102,11 +104,11 @@ function OverrideList<K extends string>({
               <TextInput
                 inputSize="sm"
                 value={o.label ?? ""}
-                placeholder={defaults[k]}
+                placeholder={defaults(k)}
                 maxLength={40}
                 invalid={bad}
                 disabled={disabled}
-                aria-label={t("display.labelFor", { name: defaults[k] })}
+                aria-label={t("display.labelFor", { name: defaults(k) })}
                 onChange={(e) => set(k, { label: e.target.value })}
                 className="min-w-0 flex-1"
               />
@@ -117,19 +119,19 @@ function OverrideList<K extends string>({
                   <button
                     type="button"
                     disabled={disabled}
-                    aria-label={t("display.colourFor", { name: defaults[k] })}
+                    aria-label={t("display.colourFor", { name: defaults(k) })}
                     className="flex size-7 shrink-0 items-center justify-center rounded-md border border-line bg-surface transition-colors hover:border-line-strong disabled:opacity-50"
                   >
                     <span className={cn("size-3.5 rounded-xs", tones[hue].solid)} />
                   </button>
                 }
               >
-                <ColorSwatchPicker value={hue} onChange={(c) => set(k, { color: c })} size="sm" className="w-[124px]" label={t("display.colourFor", { name: defaults[k] })} />
+                <ColorSwatchPicker value={hue} onChange={(c) => set(k, { color: c })} size="sm" className="w-[124px]" label={t("display.colourFor", { name: defaults(k) })} />
               </Popover>
               <Tooltip content={t("display.reset")}>
                 <button
                   type="button"
-                  aria-label={t("display.resetFor", { name: defaults[k] })}
+                  aria-label={t("display.resetFor", { name: defaults(k) })}
                   disabled={disabled || !changed}
                   onClick={() => {
                     const out = { ...value };

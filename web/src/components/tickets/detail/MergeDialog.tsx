@@ -19,6 +19,7 @@ import { EmptyState } from "@/components/ui/empty";
 
 export function MergeDialog({ ticket, open, onOpenChange }: { ticket: Ticket; open: boolean; onOpenChange: (o: boolean) => void }) {
   const { t: tr } = useTranslation("inbox");
+  const { t } = useTranslation("indicators");
   const [term, setTerm] = useState("");
   const deferred = useDeferredValue(term.trim());
   const [target, setTarget] = useState<Ticket | null>(null);
@@ -71,7 +72,7 @@ export function MergeDialog({ ticket, open, onOpenChange }: { ticket: Ticket; op
         </>
       }
     >
-      <SearchInput value={term} onChange={setTerm} placeholder="Search by subject, customer or #number" inputSize="md" autoFocus />
+      <SearchInput value={term} onChange={setTerm} placeholder={t("tickets.mergeSearch")} inputSize="md" autoFocus />
       <div className="mt-3 flex min-h-[220px] flex-col gap-0.5">
         {!deferred && <p className="label-caps px-1 pb-1">{ticket.contact ? tr("merge.fromContact", { name: ticket.contact.name || ticket.contact.email }) : tr("merge.recent")}</p>}
         {results.isPending ? (

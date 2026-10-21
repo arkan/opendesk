@@ -77,6 +77,7 @@ export function ListToolbar({
   onLayout?: (l: InboxLayout) => void;
 }) {
   const { t } = useTranslation("inbox");
+  useTranslation("indicators");
   const reduced = useReducedMotion();
   const { data: tags } = useQuery(q.tags());
   const teams = useTeamsCtx();
@@ -220,7 +221,7 @@ export function ListToolbar({
         )}
         {!searchOpen && (
           <Tooltip content={t("toolbar.search")} shortcut="/">
-            <Button variant="ghost" size="sm" square aria-label="Search" icon={<Search className="size-3.5" />} onClick={() => setSearchOpen(true)} />
+            <Button variant="ghost" size="sm" square data-inbox-search aria-label={t("toolbar.search")} icon={<Search className="size-3.5" />} onClick={() => setSearchOpen(true)} />
           </Tooltip>
         )}
         <Menu>
@@ -230,7 +231,7 @@ export function ListToolbar({
                 variant="ghost"
                 size="sm"
                 square={compact || !activeFilters}
-                aria-label="Filter"
+                aria-label={t("toolbar.filter")}
                 icon={<Filter className="size-3.5" />}
                 className={cn(activeFilters > 0 && "bg-hover text-fg")}
               >
@@ -250,14 +251,14 @@ export function ListToolbar({
             <MenuSub label={t("filter.priority")}>
               {priorityOrder.map((p) => (
                 <MenuCheckItem key={p} checked={priorities.includes(p)} onSelect={() => togglePriority(p)} icon={<PriorityIcon priority={p} />}>
-                  {priorityLabel[p]}
+                  {priorityLabel(p)}
                 </MenuCheckItem>
               ))}
             </MenuSub>
             <MenuSub label={t("filter.severity")}>
               {severityOrder.map((v) => (
                 <MenuCheckItem key={v} checked={severities.includes(v)} onSelect={() => toggleSeverity(v)} icon={<SeverityChip severity={v} />}>
-                  {severityLabel[v]}
+                  {severityLabel(v)}
                 </MenuCheckItem>
               ))}
               <MenuCheckItem checked={severities.includes("none")} onSelect={() => toggleSeverity("none")} icon={noSeverityMark}>
@@ -272,7 +273,7 @@ export function ListToolbar({
                   onSelect={() => onSearch({ ...search, channel: search.channel === c ? undefined : c })}
                   icon={<ChannelIcon channel={c} />}
                 >
-                  {channelLabel[c]}
+                  {channelLabel(c)}
                 </MenuCheckItem>
               ))}
             </MenuSub>
@@ -410,7 +411,7 @@ export function ListToolbar({
                 variant="ghost"
                 size="sm"
                 square
-                aria-label="Sort"
+                aria-label={t("toolbar.sort")}
                 icon={order === "asc" ? <ArrowUpNarrowWide className="size-3.5" /> : <ArrowDownWideNarrow className="size-3.5" />}
                 className={cn(sort !== "last_message_at" && "bg-hover text-fg")}
               />
@@ -475,19 +476,19 @@ export function ListToolbar({
                 {priorities.map((p) => (
                   <Chip key={p} label={t("filter.remove")} onRemove={() => togglePriority(p)}>
                     <PriorityIcon priority={p} />
-                    {priorityLabel[p]}
+                    {priorityLabel(p)}
                   </Chip>
                 ))}
                 {severities.map((v) => (
                   <Chip key={`sev-${v}`} label={t("filter.remove")} onRemove={() => toggleSeverity(v)}>
                     {v === "none" ? noSeverityMark : <SeverityChip severity={v} />}
-                    {v === "none" ? t("filter.noSeverity") : severityLabel[v]}
+                    {v === "none" ? t("filter.noSeverity") : severityLabel(v)}
                   </Chip>
                 ))}
                 {search.channel && (
                   <Chip key="channel" label={t("filter.remove")} onRemove={() => onSearch({ ...search, channel: undefined })}>
                     <ChannelIcon channel={search.channel as Channel} />
-                    {channelLabel[search.channel as Channel] ?? search.channel}
+                    {["email", "chat", "api", "portal"].includes(search.channel) ? channelLabel(search.channel as Channel) : search.channel}
                   </Chip>
                 )}
                 {search.tag && (

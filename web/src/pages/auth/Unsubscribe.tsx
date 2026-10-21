@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "react-i18next";
 // The footer link of notification emails (contracts/api.md "Notification preferences
 // and emails"). Mail scanners open links on their own, so the page only asks; the
 // token is spent on the button, never on load.
@@ -18,6 +19,7 @@ const route = getRouteApi("/auth/unsubscribe");
 type State = { kind: "ask" } | { kind: "done"; workspace: { id: string; name: string } } | { kind: "invalid" } | { kind: "error"; message: string };
 
 export default function Unsubscribe() {
+  const { t: a } = useTranslation("auth");
   const { token } = route.useSearch();
   const [state, setState] = useState<State>({ kind: "ask" });
   const [busy, setBusy] = useState(false);
@@ -42,8 +44,8 @@ export default function Unsubscribe() {
           <X className="size-[18px]" />
         </Glyph>
         <AuthHeading
-          title="This link is not valid any more"
-          subtitle="It may be incomplete or too old. You can turn notification emails off in your notification settings instead."
+          title={a("thisLinkIsNotValidAnyMore")}
+          subtitle={a("itMayBeIncompleteOrTooOldYou")}
         />
         <ManageLink />
       </div>
@@ -56,12 +58,9 @@ export default function Unsubscribe() {
           <Check className="size-[18px]" strokeWidth={2.5} />
         </Glyph>
         <AuthHeading
-          title="You are unsubscribed"
+          title={a("youAreUnsubscribed")}
           subtitle={
-            <>
-              You will not get notification emails from <span className="font-medium text-fg">{state.workspace.name}</span> any more. You still see
-              notifications in the app. Changed your mind? Turn email back on in your notification settings; the choices you had are kept.
-            </>
+            <Trans ns="auth" i18nKey="unsubscribedBody" values={{ name: state.workspace.name }} components={{ workspace: <span className="font-medium text-fg" /> }} />
           }
         />
         <ManageLink workspaceId={state.workspace.id} />
@@ -74,12 +73,12 @@ export default function Unsubscribe() {
         <BellOff className="size-[18px]" />
       </Glyph>
       <AuthHeading
-        title="Stop notification emails?"
-        subtitle="You will stop getting notification emails from this workspace. Notifications still show in the app, and you can turn emails back on in your settings."
+        title={a("stopNotificationEmails")}
+        subtitle={a("youWillStopGettingNotificationEmailsFromThis")}
       />
       {state.kind === "error" && <Notice className="mb-5">{state.message}</Notice>}
       <Button variant="primary" size="lg" className="w-full" loading={busy} onClick={unsubscribe}>
-        Unsubscribe
+        {a("unsubscribe")}
       </Button>
     </div>
   );
@@ -87,6 +86,7 @@ export default function Unsubscribe() {
 
 /** To the settings page, in the workspace the email was about (`?ws=`) when known. */
 function ManageLink({ workspaceId }: { workspaceId?: string }) {
+  const { t: a } = useTranslation("auth");
   const router = useRouter();
   const href = workspaceId ? `/settings/notifications?ws=${encodeURIComponent(workspaceId)}` : "/settings/notifications";
   return (
@@ -99,7 +99,7 @@ function ManageLink({ workspaceId }: { workspaceId?: string }) {
           router.history.push(href);
         }}
       >
-        Notification settings
+        {a("notificationSettings")}
       </a>
     </Button>
   );

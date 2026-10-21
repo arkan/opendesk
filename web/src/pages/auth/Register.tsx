@@ -1,9 +1,10 @@
+import type { TFunction } from "i18next";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useRouter } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { z } from "zod";
 import { AuthHeading } from "@/app/AuthLayout";
 import { Button } from "@/components/ui/button";
@@ -26,18 +27,20 @@ function inviteTokenFrom(next: string | undefined): string | undefined {
   return u.pathname === "/invite" ? (u.searchParams.get("token") ?? undefined) : undefined;
 }
 
-const schema = z.object({
-  name: z.string().trim().min(1, "Tell us your name.").max(80, "Use at most 80 characters."),
-  email: z.string().trim().min(1, "Enter your email.").email("Enter a valid email address."),
+const createSchema = (a: TFunction<"auth">) => z.object({
+  name: z.string().trim().min(1, a("tellUsYourName")).max(80, a("useAtMost80Characters")),
+  email: z.string().trim().min(1, a("enterYourEmail")).email(a("enterAValidEmailAddress")),
   // Counted in characters (code points), as the server counts them.
   password: z
     .string()
-    .refine((s) => [...s].length >= 12, "Use at least 12 characters.")
-    .refine((s) => [...s].length <= 128, "Use at most 128 characters."),
+    .refine((s) => [...s].length >= 12, a("useAtLeast12Characters"))
+    .refine((s) => [...s].length <= 128, a("useAtMost128Characters")),
 });
-type Values = z.infer<typeof schema>;
+type Values = z.infer<ReturnType<typeof createSchema>>;
 
 export default function Register() {
+  const { t: a } = useTranslation("auth");
+  const schema = createSchema(a);
   const search = route.useSearch();
   const router = useRouter();
   const { t } = useTranslation("shell");
@@ -77,13 +80,13 @@ export default function Register() {
       if (isApiError(err, "email_taken") || isApiError(err, "conflict"))
         setError(
           <>
-            An account already uses this email.{" "}
+             {a("anAccountAlreadyUsesThisEmail")}{" "}
             <Link to="/login" search={{ next: search.next, add }} className="font-medium text-fg underline underline-offset-2">
-              Log in instead
+              {a("logInInstead")}
             </Link>
           </>,
         );
-      else if (isApiError(err, "signup_disabled")) setError("New sign-ups are turned off. Ask an admin for an invitation.");
+      else if (isApiError(err, "signup_disabled")) setError(a("newSignupsAreTurnedOffAskAnAdmin"));
       else if (isApiError(err, "too_many_accounts")) setError(t("accounts.limit", { count: MAX_ACCOUNTS }));
       else setError(errorMessage(err));
     }
@@ -92,16 +95,16 @@ export default function Register() {
   if (closed)
     return (
       <div>
-        <AuthHeading title="Sign-ups are closed" subtitle="This opendesk instance only accepts new accounts by invitation." />
+        <AuthHeading title={a("signupsAreClosed")} subtitle={a("thisOpendeskInstanceOnlyAcceptsNewAccountsBy")} />
         <Button variant="secondary" size="lg" className="w-full" asChild>
-          <Link to="/login">Back to log in</Link>
+          <Link to="/login">{a("backToLogIn")}</Link>
         </Button>
       </div>
     );
 
   return (
     <div>
-      <AuthHeading title="Create your account" subtitle={invite ? "You're joining a workspace. Create an account to accept." : "Set up a shared inbox for your team in a few minutes."} />
+      <AuthHeading title={a("createYourAccount")} subtitle={invite ? a("youreJoiningAWorkspaceCreateAnAccountTo") : a("setUpASharedInboxForYourTeam")} />
       {!invite && (
         <>
           <ProviderButtons next={search.next} verb="Sign up" />
@@ -110,7 +113,7 @@ export default function Register() {
       )}
       {error && <Notice className="mb-4">{error}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-        <AuthField label="Name">
+        <AuthField label={a("name")}>
           {(id) => (
             <div className="flex flex-col gap-1.5">
               <TextInput id={id} inputSize="lg" autoComplete="name" autoFocus placeholder="Ada Lovelace" invalid={!!errors.name} {...register("name")} />
@@ -118,7 +121,7 @@ export default function Register() {
             </div>
           )}
         </AuthField>
-        <AuthField label="Work email">
+        <AuthField label={a("workEmail")}>
           {(id) => (
             <div className="flex flex-col gap-1.5">
               <TextInput id={id} inputSize="lg" type="email" autoComplete="email" readOnly={!!invite && !!search.email} placeholder="you@company.com" invalid={!!errors.email} {...register("email")} />
@@ -126,7 +129,7 @@ export default function Register() {
             </div>
           )}
         </AuthField>
-        <AuthField label="Password">
+        <AuthField label={a("password")}>
           {(id) => (
             <div className="flex flex-col gap-2">
               <PasswordInput id={id} autoComplete="new-password" invalid={!!errors.password} {...register("password")} />
@@ -136,18 +139,16 @@ export default function Register() {
         </AuthField>
         <Turnstile ref={turnstile} onToken={setToken} action="register" />
         <Button type="submit" variant="primary" size="lg" className="mt-1 w-full" loading={isSubmitting}>
-          Create account
+          {a("createAccount")}
         </Button>
         <p className="text-center text-[11.5px] leading-4 text-fg-4">
-          By continuing you agree to the{" "}
-          <a href="https://opendesk.sh/terms" className="underline underline-offset-2 hover:text-fg-2">terms</a> and{" "}
-          <a href="https://opendesk.sh/privacy" className="underline underline-offset-2 hover:text-fg-2">privacy policy</a>.
+          <Trans ns="auth" i18nKey="termsAgreement" components={{ terms: <a href="https://opendesk.sh/terms" className="underline underline-offset-2 hover:text-fg-2" />, privacy: <a href="https://opendesk.sh/privacy" className="underline underline-offset-2 hover:text-fg-2" /> }} />
         </p>
       </form>
       <p className="mt-7 text-center text-[12.5px] text-fg-3">
-        Already have an account?{" "}
+         {a("alreadyHaveAnAccount")}{" "}
         <Link to="/login" search={{ next: search.next, add }} className="font-medium text-fg hover:underline">
-          Log in
+          {a("logIn")}
         </Link>
       </p>
       {adding && (

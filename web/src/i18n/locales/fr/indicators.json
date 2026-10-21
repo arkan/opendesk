@@ -1,0 +1,89 @@
+{
+  "status": {
+    "open": "Ouvert",
+    "pending": "En attente",
+    "on_hold": "En pause",
+    "solved": "Résolu",
+    "closed": "Fermé"
+  },
+  "priority": {
+    "urgent": "Urgente",
+    "high": "Élevée",
+    "normal": "Normale",
+    "low": "Faible"
+  },
+  "severity": {
+    "sev1": "Gravité 1",
+    "sev2": "Gravité 2",
+    "sev3": "Gravité 3",
+    "sev4": "Gravité 4"
+  },
+  "severityHint": {
+    "sev1": "Panne critique",
+    "sev2": "Impact majeur",
+    "sev3": "Impact mineur",
+    "sev4": "Impact faible"
+  },
+  "channel": {
+    "email": "E-mail",
+    "chat": "Chat",
+    "api": "API",
+    "portal": "Portail"
+  },
+  "sentiment": {
+    "positive": "Positif",
+    "neutral": "Neutre",
+    "negative": "Négatif",
+    "frustrated": "Frustré"
+  },
+  "spam": "Indésirable",
+  "noPriority": "Aucune priorité",
+  "sla": {
+    "over": "{{duration}} de retard",
+    "firstResponse": {
+      "on_track": "Première réponse attendue",
+      "due_soon": "Première réponse attendue bientôt",
+      "breached": "Première réponse en retard"
+    },
+    "resolution": {
+      "on_track": "Résolution attendue",
+      "due_soon": "Résolution attendue bientôt",
+      "breached": "Résolution en retard"
+    }
+  },
+  "reports": {
+    "created": "Créés",
+    "solved": "Résolus",
+    "day": "Jour",
+    "tableCaption": "Tickets créés et résolus par jour",
+    "chartLabel_one": "Tickets créés et résolus par jour, {{count}} jour. Utilisez les touches fléchées pour consulter chaque jour.",
+    "chartLabel_many": "Tickets créés et résolus par jour, {{count}} jours. Utilisez les touches fléchées pour consulter chaque jour.",
+    "chartLabel_other": "Tickets créés et résolus par jour, {{count}} jours. Utilisez les touches fléchées pour consulter chaque jour.",
+    "range": {
+      "last7": "7 derniers jours",
+      "last30": "30 derniers jours",
+      "last90": "90 derniers jours",
+      "thisMonth": "Ce mois-ci",
+      "lastMonth": "Le mois dernier",
+      "label": "Période",
+      "custom": "Période personnalisée",
+      "from": "Du",
+      "to": "Au",
+      "apply": "Appliquer la période"
+    }
+  },
+  "tickets": {
+    "bulkActions": "Actions groupées",
+    "addLabels": "Ajouter des étiquettes",
+    "closeTicket": "Fermer le ticket",
+    "previousTicket": "Ticket précédent",
+    "nextTicket": "Ticket suivant",
+    "moreActions": "Plus d’actions",
+    "toggleDetails": "Afficher ou masquer les détails",
+    "ticketDetails": "Détails du ticket",
+    "conversation": "Conversation",
+    "mentionTeammate": "Mentionner un collègue",
+    "mergeSearch": "Rechercher par objet, client ou numéro",
+    "remove": "Retirer {{name}}"
+  }
+}

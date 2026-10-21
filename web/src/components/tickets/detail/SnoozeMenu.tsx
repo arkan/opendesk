@@ -45,7 +45,7 @@ export function SnoozeMenu({ onSnooze, disabled, open: openProp, onOpenChange }:
       className="w-[264px] p-1"
       trigger={
         <Tooltip content={t("snooze.title")} shortcut="h">
-          <Button variant="ghost" size="sm" square aria-label="Snooze" disabled={disabled} icon={<AlarmClock className="size-3.5" />} />
+          <Button variant="ghost" size="sm" square aria-label={t("snooze.title")} disabled={disabled} icon={<AlarmClock className="size-3.5" />} />
         </Tooltip>
       }
     >

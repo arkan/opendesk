@@ -4,33 +4,24 @@
 // variants, and they snap in softly when their value changes.
 
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import { i18n } from "@/i18n";
 import type { Channel, Priority, Sentiment, Severity, TicketStatus } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { minutes } from "@/lib/format";
 import { channelTone, isTone, priorityTone, sentimentTone, severityTone, statusTone, tone, toneVar, type Tone } from "@/lib/tones";
 import { Tooltip } from "@/components/ui/tooltip";
 
-export const statusLabel: Record<TicketStatus, string> = {
-  open: "Open",
-  pending: "Pending",
-  on_hold: "On hold",
-  solved: "Solved",
-  closed: "Closed",
-};
+export const statusLabel = (value: TicketStatus) => i18n.t(`indicators:status.${value}`);
 export const statusOrder: TicketStatus[] = ["open", "pending", "on_hold", "solved", "closed"];
-export const priorityLabel: Record<Priority, string> = { urgent: "Urgent", high: "High", normal: "Normal", low: "Low" };
+export const priorityLabel = (value: Priority) => i18n.t(`indicators:priority.${value}`);
 export const priorityOrder: Priority[] = ["urgent", "high", "normal", "low"];
-export const severityLabel: Record<Severity, string> = { sev1: "Sev 1", sev2: "Sev 2", sev3: "Sev 3", sev4: "Sev 4" };
+export const severityLabel = (value: Severity) => i18n.t(`indicators:severity.${value}`);
 /** What each level means, for pickers and tooltips. */
-export const severityHint: Record<Severity, string> = {
-  sev1: "Critical outage",
-  sev2: "Major impact",
-  sev3: "Minor impact",
-  sev4: "Low impact",
-};
+export const severityHint = (value: Severity) => i18n.t(`indicators:severityHint.${value}`);
 export const severityOrder: Severity[] = ["sev1", "sev2", "sev3", "sev4"];
-export const channelLabel: Record<Channel, string> = { email: "Email", chat: "Chat", api: "API", portal: "Portal" };
-export const sentimentLabel: Record<Sentiment, string> = { positive: "Positive", neutral: "Neutral", negative: "Negative", frustrated: "Frustrated" };
+export const channelLabel = (value: Channel) => i18n.t(`indicators:channel.${value}`);
+export const sentimentLabel = (value: Sentiment) => i18n.t(`indicators:sentiment.${value}`);
 
 const SW = 1.5;
 
@@ -53,9 +44,10 @@ function Glyph({ k, label, className, children }: { k: string; label: string; cl
 // Status: rings that fill as the ticket moves along, in the status tone.
 
 export function StatusIcon({ status, className }: { status: TicketStatus; className?: string }) {
+  useTranslation("indicators");
   const c = toneVar(statusTone[status]);
   return (
-    <Glyph k={status} label={statusLabel[status]} className={className}>
+    <Glyph k={status} label={statusLabel(status)} className={className}>
       {status === "open" && (
         <>
           <circle cx="8" cy="8" r="5.75" stroke={c} strokeWidth={SW} />
@@ -86,9 +78,10 @@ export function StatusIcon({ status, className }: { status: TicketStatus; classN
 
 /** Spam is a folder rather than a status; it gets a matching glyph. */
 export function SpamIcon({ className }: { className?: string }) {
+  useTranslation("indicators");
   const c = toneVar("red");
   return (
-    <Glyph k="spam" label="Spam" className={className}>
+    <Glyph k="spam" label={i18n.t("indicators:spam")} className={className}>
       <circle cx="8" cy="8" r="5.75" stroke={c} strokeWidth={SW} />
       <path d="M4 12l8-8" stroke={c} strokeWidth={SW} strokeLinecap="round" />
     </Glyph>
@@ -97,10 +90,11 @@ export function SpamIcon({ className }: { className?: string }) {
 
 /** `label` and `hue` carry the workspace's display overrides (status_labels). */
 export function StatusPill({ status, className, label, hue }: { status: TicketStatus; className?: string; label?: string; hue?: string | null }) {
+  useTranslation("indicators");
   return (
     <span className={cn("inline-flex h-[19px] shrink-0 items-center gap-1 rounded-sm pl-1 pr-1.5 text-[10.5px] font-medium", tone[isTone(hue) ? hue : statusTone[status]].chip, className)}>
       <StatusIcon status={status} className="size-3" />
-      {label || statusLabel[status]}
+      {label || statusLabel(status)}
     </span>
   );
 }
@@ -109,16 +103,17 @@ export function StatusPill({ status, className, label, hue }: { status: TicketSt
 // filled square with an exclamation, the one mark that shouts.
 
 export function PriorityIcon({ priority, className, muted }: { priority: Priority | null | undefined; className?: string; muted?: boolean }) {
+  useTranslation("indicators");
   // No priority yet: a faint dashed outline holds the slot so columns align.
   if (!priority)
     return (
-      <Glyph k="none" label="No priority" className={className}>
+      <Glyph k="none" label={i18n.t("indicators:noPriority")} className={className}>
         <rect x="2" y="2" width="12" height="12" rx="3" stroke="var(--line-strong)" strokeWidth={SW} strokeDasharray="2.2 2" />
       </Glyph>
     );
   if (priority === "urgent")
     return (
-      <Glyph k={priority} label={priorityLabel.urgent} className={className}>
+      <Glyph k={priority} label={priorityLabel("urgent")} className={className}>
         <rect x="1.5" y="1.5" width="13" height="13" rx="3" fill={toneVar("red")} />
         <path d="M8 4.6v4.1" stroke="white" strokeWidth="1.75" strokeLinecap="round" />
         <circle cx="8" cy="11.1" r="1" fill="white" />
@@ -127,7 +122,7 @@ export function PriorityIcon({ priority, className, muted }: { priority: Priorit
   const level = { low: 1, normal: 2, high: 3 }[priority];
   const on = muted ? "var(--fg-3)" : toneVar(priorityTone[priority]);
   return (
-    <Glyph k={priority} label={priorityLabel[priority]} className={className}>
+    <Glyph k={priority} label={priorityLabel(priority)} className={className}>
       {[0, 1, 2].map((i) => (
         <rect key={i} x={2.25 + i * 4.25} y={10 - i * 3.5} width="3" height={4 + i * 3.5} rx="0.9" fill={i < level ? on : "var(--line-strong)"} />
       ))}
@@ -137,11 +132,12 @@ export function PriorityIcon({ priority, className, muted }: { priority: Priorit
 
 /** `label` and `hue` carry the workspace's display overrides (priority_labels). */
 export function PriorityPill({ priority, className, label, hue: override }: { priority: Priority; className?: string; label?: string; hue?: string | null }) {
+  useTranslation("indicators");
   const hue: Tone = isTone(override) ? override : priorityTone[priority];
   return (
     <span className={cn("inline-flex h-[19px] shrink-0 items-center gap-1 rounded-sm pl-1 pr-1.5 text-[10.5px] font-medium", tone[hue].chip, className)}>
       <PriorityIcon priority={priority} className="size-3" />
-      {label || priorityLabel[priority]}
+      {label || priorityLabel(priority)}
     </span>
   );
 }
@@ -150,13 +146,14 @@ export function PriorityPill({ priority, className, label, hue: override }: { pr
 // beside the priority glyph and stays out of the way when a ticket has none.
 
 export function SeverityChip({ severity, className, title }: { severity: Severity | null | undefined; className?: string; title?: string }) {
+  useTranslation("indicators");
   if (!severity) return null;
   const hue: Tone = severityTone[severity];
   return (
     <span
       key={severity}
       role="img"
-      aria-label={title ?? severityLabel[severity]}
+      aria-label={title ?? severityLabel(severity)}
       className={cn(
         "mono inline-flex h-[16px] min-w-[22px] shrink-0 items-center justify-center rounded-[4px] px-1 text-[10px] font-semibold leading-none tabular-nums animate-indicator-in motion-reduce:animate-none",
         tone[hue].chip,
@@ -170,10 +167,11 @@ export function SeverityChip({ severity, className, title }: { severity: Severit
 
 /** The chip with its name, for pickers and the ticket header. */
 export function SeverityPill({ severity, className }: { severity: Severity; className?: string }) {
+  useTranslation("indicators");
   return (
     <span className={cn("inline-flex shrink-0 items-center gap-1.5 text-[12px]", className)}>
       <SeverityChip severity={severity} />
-      {severityLabel[severity]}
+      {severityLabel(severity)}
     </span>
   );
 }
@@ -201,18 +199,19 @@ export function slaState(t: SlaInput, now = Date.now()): SlaState | null {
 }
 
 const slaLook = {
-  on_track: { chip: "text-fg-3", dot: tone.green.solid, word: "due" },
-  due_soon: { chip: tone.amber.chip, dot: tone.amber.solid, word: "due soon" },
-  breached: { chip: tone.red.chip, dot: tone.red.solid, word: "overdue" },
+  on_track: { chip: "text-fg-3", dot: tone.green.solid },
+  due_soon: { chip: tone.amber.chip, dot: tone.amber.solid },
+  breached: { chip: tone.red.chip, dot: tone.red.solid },
 } as const;
 
 export function SlaPill({ ticket, className }: { ticket: SlaInput; className?: string }) {
+  useTranslation("indicators");
   const s = slaState(ticket);
   if (!s) return null;
   const look = slaLook[s.state];
-  const label = s.left < 0 ? `${minutes(-s.left)} over` : minutes(s.left);
+  const label = s.left < 0 ? i18n.t("indicators:sla.over", { duration: minutes(-s.left) }) : minutes(s.left);
   return (
-    <Tooltip content={`${s.kind} ${look.word}`}>
+    <Tooltip content={i18n.t(`indicators:sla.${s.kind === "First response" ? "firstResponse" : "resolution"}.${s.state}`)}>
       <span
         key={s.state}
         className={cn(
@@ -231,7 +230,8 @@ export function SlaPill({ ticket, className }: { ticket: SlaInput; className?: s
 // Sentiment: a small face, coloured by mood.
 
 export function SentimentIcon({ sentiment, className }: { sentiment: Sentiment | string; className?: string }) {
-  const s = (sentiment in sentimentLabel ? sentiment : "neutral") as Sentiment;
+  useTranslation("indicators");
+  const s = (["positive", "neutral", "negative", "frustrated"].includes(sentiment) ? sentiment : "neutral") as Sentiment;
   const hue: Tone = s === "frustrated" ? "red" : s === "negative" ? "amber" : sentimentTone[s as "positive" | "neutral"];
   const c = toneVar(hue);
   const mouth = {
@@ -241,7 +241,7 @@ export function SentimentIcon({ sentiment, className }: { sentiment: Sentiment |
     frustrated: "M5.6 11c1.3-1.6 3.5-1.6 4.8 0",
   }[s];
   return (
-    <Glyph k={s} label={sentimentLabel[s]} className={className}>
+    <Glyph k={s} label={sentimentLabel(s)} className={className}>
       <circle cx="8" cy="8" r="6.25" stroke={c} strokeWidth={SW} />
       {s === "frustrated" ? (
         <path d="M5.2 6l1.6.7M10.8 6l-1.6.7" stroke={c} strokeWidth={SW} strokeLinecap="round" />
@@ -259,9 +259,10 @@ export function SentimentIcon({ sentiment, className }: { sentiment: Sentiment |
 // Channel: envelope, bubble, braces, globe; drawn to match the family.
 
 export function ChannelIcon({ channel, className, plain }: { channel: Channel; className?: string; plain?: boolean }) {
+  useTranslation("indicators");
   const c = plain ? "var(--fg-3)" : toneVar(channelTone[channel]);
   return (
-    <Glyph k={channel} label={channelLabel[channel]} className={className}>
+    <Glyph k={channel} label={channelLabel(channel)} className={className}>
       {channel === "email" && (
         <>
           <rect x="1.75" y="3.25" width="12.5" height="9.5" rx="2" stroke={c} strokeWidth={SW} />

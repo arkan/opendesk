@@ -1,12 +1,13 @@
+import { useTranslation } from "react-i18next";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-const steps = ["Workspace", "Mailbox"] as const;
-
 /** Two-step progress for onboarding: 1 Workspace, 2 Mailbox. */
 export function OnboardingSteps({ current }: { current: 1 | 2 }) {
+  const { t: a } = useTranslation("auth");
+  const steps = [a("workspace"), a("mailbox")] as const;
   return (
-    <ol className="mb-8 flex items-center gap-2" aria-label="Setup progress">
+    <ol className="mb-8 flex items-center gap-2" aria-label={a("setupProgress")}>
       {steps.map((label, i) => {
         const n = i + 1;
         const done = n < current;

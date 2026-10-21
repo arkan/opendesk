@@ -12,10 +12,11 @@ import { errorMessage } from "@/lib/api/client";
 import { reloadSession, selectWorkspace, useSession, useWorkspace } from "@/lib/session";
 import { DeleteAccountDialog } from "@/components/account/DeleteAccountDialog";
 import { track } from "@/lib/analytics";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { useAccountActions, useSwitcherEntries } from "@/app/useAccounts";
 
 export default function Workspace() {
+  const { t: a } = useTranslation("auth");
   const navigate = useNavigate();
   const qc = useQueryClient();
   const current = useWorkspace();
@@ -33,7 +34,7 @@ export default function Workspace() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return setError("Give your workspace a name.");
+    if (!name.trim()) return setError(a("giveYourWorkspaceAName"));
     setBusy(true);
     setError(null);
     try {
@@ -54,30 +55,30 @@ export default function Workspace() {
       {hasWorkspaces && current && (
         <Link to="/" className="-ml-1 mb-6 inline-flex h-6 items-center gap-0.5 rounded-md pl-0.5 pr-1.5 text-[12.5px] text-fg-3 hover:bg-hover hover:text-fg">
           <ChevronLeft className="size-3.5" />
-          Back to {current.name}
+          {a("backTo", { name: current.name })}
         </Link>
       )}
       <OnboardingSteps current={1} />
-      <AuthHeading title="Create your workspace" subtitle="A workspace holds your team's inboxes, contacts and help center. You can rename it and set up your help center address later." />
+      <AuthHeading title={a("createYourWorkspace")} subtitle={a("aWorkspaceHoldsYourTeamsInboxesContactsAnd")} />
       {error && <Notice className="mb-4">{error}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-        <AuthField label="Workspace name">
-          {(id) => <TextInput id={id} className="h-9" autoFocus value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Acme support" />}
+        <AuthField label={a("workspaceName")}>
+          {(id) => <TextInput id={id} className="h-9" autoFocus value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder={a("acmeSupport")} />}
         </AuthField>
         <Button type="submit" variant="primary" size="lg" className="mt-1 w-full" loading={busy}>
-          Continue
+          {a("continue")}
         </Button>
       </form>
       {!hasWorkspaces && (
         // Without a workspace the app's account menu and settings are out of reach.
         <p className="mt-8 text-center text-[12px] text-fg-3">
-          Signed in as <span className="text-fg-2">{email}</span> ·{" "}
+          <Trans ns="auth" i18nKey="signedInAs" values={{ email }} components={{ email: <span className="text-fg-2" /> }} /> ·{" "}
           <button
             type="button"
             className="underline-offset-2 hover:text-fg hover:underline"
             onClick={() => void logOut()}
           >
-            Log out
+            {a("logOut")}
           </button>{" "}
           {other && (
             <>
@@ -93,7 +94,7 @@ export default function Workspace() {
           )}
           ·{" "}
           <button type="button" className="underline-offset-2 hover:text-fg hover:underline" onClick={() => setDeleting(true)}>
-            Delete account
+            {a("deleteAccount")}
           </button>
         </p>
       )}

@@ -284,6 +284,7 @@ function Overview({ c, onEdit }: { c: Contact; onEdit?: () => void }) {
 
 function Tickets({ contactId }: { contactId: string }) {
   const { t } = useTranslation("contacts");
+  useTranslation("indicators");
   const { data, isLoading } = useQuery(q.contactTickets(contactId));
   if (isLoading)
     return (
@@ -306,12 +307,12 @@ function Tickets({ contactId }: { contactId: string }) {
           >
             {/* Fixed icon slots so priority and status line up down the list. */}
             <span className="flex shrink-0 items-center gap-2">
-              <Tooltip content={priorityLabel[tk.priority]}>
+              <Tooltip content={priorityLabel(tk.priority)}>
                 <span className="flex size-4 items-center justify-center">
                   <PriorityIcon priority={tk.priority} />
                 </span>
               </Tooltip>
-              <Tooltip content={statusLabel[tk.status]}>
+              <Tooltip content={statusLabel(tk.status)}>
                 <span className="flex size-4 items-center justify-center">
                   <StatusIcon status={tk.status} />
                 </span>
@@ -323,7 +324,7 @@ function Tickets({ contactId }: { contactId: string }) {
               </span>
               <span className="mt-1 flex items-center gap-2 text-xs text-fg-3">
                 <TicketNumber n={tk.number} />
-                <span>{statusLabel[tk.status]}</span>
+                <span>{statusLabel(tk.status)}</span>
                 {tk.assignee && <span className="truncate">{tk.assignee.name}</span>}
               </span>
             </span>

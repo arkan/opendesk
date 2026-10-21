@@ -25,6 +25,7 @@ const noop = () => {};
 
 export function TicketPreview({ ticket: t, onOpen, onReply }: { ticket: Ticket; onOpen: () => void; onReply?: () => void }) {
   const { t: tr } = useTranslation("inbox");
+  useTranslation("indicators");
   const messages = useQuery(q.messages(t.id));
   const activities = useQuery(q.activities(t.id));
   const display = useDisplay();
@@ -94,7 +95,7 @@ export function TicketPreview({ ticket: t, onOpen, onReply }: { ticket: Ticket; 
                   <span className="truncate text-fg-2" data-ph-mask>
                     {contact}
                   </span>
-                  <span className="text-fg-4">· {channelLabel[t.channel]}</span>
+                  <span className="text-fg-4">· {channelLabel(t.channel)}</span>
                 </span>
                 {sla && sla.state === "on_track" && <SlaPill ticket={t} />}
                 {t.tags.map((tag) => (

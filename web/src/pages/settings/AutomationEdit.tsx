@@ -585,6 +585,7 @@ function DecideQuestion({ c, invalid, onChange }: { c: Condition; invalid: boole
 
 function ConditionValue({ c, invalid, onChange }: { c: Condition; invalid: boolean; onChange: (v: string) => void }) {
   const { t } = useTranslation("ai");
+  useTranslation("indicators");
   const { t: ts } = useTranslation("settingsInbox");
   const { t: tt } = useTranslation("settingsTeams");
   const mailboxes = useMailboxItems();
@@ -593,10 +594,10 @@ function ConditionValue({ c, invalid, onChange }: { c: Condition; invalid: boole
   const { data: widgets } = useQuery({ ...q.widgets(), enabled: c.field === "widget_id" });
   switch (c.field) {
     case "status":
-      return <SinglePick items={statusItems} value={c.value} onChange={onChange} placeholder={ts("edit.chooseStatus")} invalid={invalid} className="w-full" />;
+      return <SinglePick items={statusItems()} value={c.value} onChange={onChange} placeholder={ts("edit.chooseStatus")} invalid={invalid} className="w-full" />;
     case "priority":
       return (
-        <SinglePick items={priorityItems} value={c.value} onChange={onChange} placeholder={ts("edit.choosePriority")} invalid={invalid} className="w-full" />
+        <SinglePick items={priorityItems()} value={c.value} onChange={onChange} placeholder={ts("edit.choosePriority")} invalid={invalid} className="w-full" />
       );
     case "severity":
       return (
@@ -622,7 +623,7 @@ function ConditionValue({ c, invalid, onChange }: { c: Condition; invalid: boole
     }
     case "channel":
       return (
-        <SinglePick items={channelItems} value={c.value} onChange={onChange} placeholder={ts("edit.chooseChannel")} invalid={invalid} className="w-full" />
+        <SinglePick items={channelItems()} value={c.value} onChange={onChange} placeholder={ts("edit.chooseChannel")} invalid={invalid} className="w-full" />
       );
     case "mailbox_id":
       return (
@@ -690,6 +691,7 @@ function ConditionValue({ c, invalid, onChange }: { c: Condition; invalid: boole
 
 function ActionRow({ a, invalid, onChange, onRemove }: { a: Action; invalid: boolean; onChange: (a: Action) => void; onRemove: () => void }) {
   const { t } = useTranslation("ai");
+  useTranslation("indicators");
   const { t: ts } = useTranslation("settingsInbox");
   const { cost } = useAI();
   const actionItems = useActionItems(a.type);
@@ -705,7 +707,7 @@ function ActionRow({ a, invalid, onChange, onRemove }: { a: Action; invalid: boo
     case "set_status":
       control = (
         <SinglePick
-          items={statusItems.filter((s) => s.value !== "closed")}
+          items={statusItems().filter((s) => s.value !== "closed")}
           value={a.value}
           onChange={set}
           placeholder={ts("edit.chooseStatus")}
@@ -716,12 +718,12 @@ function ActionRow({ a, invalid, onChange, onRemove }: { a: Action; invalid: boo
       break;
     case "set_priority":
       control = (
-        <SinglePick items={priorityItems} value={a.value} onChange={set} placeholder={ts("edit.choosePriority")} invalid={invalid} className="w-full" />
+        <SinglePick items={priorityItems()} value={a.value} onChange={set} placeholder={ts("edit.choosePriority")} invalid={invalid} className="w-full" />
       );
       break;
     case "set_severity":
       control = (
-        <SinglePick items={severityItems} value={a.value} onChange={set} placeholder={ts("edit.chooseSeverity")} invalid={invalid} width={300} className="w-full" />
+        <SinglePick items={severityItems()} value={a.value} onChange={set} placeholder={ts("edit.chooseSeverity")} invalid={invalid} width={300} className="w-full" />
       );
       break;
     case "assign_user":

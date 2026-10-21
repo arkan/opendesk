@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "react-i18next";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { Check, MailCheck, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -15,6 +16,7 @@ import { tone, type Tone } from "@/lib/tones";
 const route = getRouteApi("/auth/verify");
 
 export default function Verify() {
+  const { t: a } = useTranslation("auth");
   const { token } = route.useSearch();
   const status = useSession((s) => s.status);
   const email = useSession((s) => s.user?.email);
@@ -34,16 +36,16 @@ export default function Verify() {
       .verifyEmail(token)
       .then(() => setState("ok"))
       .catch((e) => {
-        setError(errorMessage(e, "This link has expired or was already used."));
+        setError(errorMessage(e, a("thisLinkHasExpiredOrWasAlreadyUsed")));
         setState("failed");
       });
-  }, [token]);
+  }, [token, a]);
 
   const resend = async () => {
     setResending(true);
     try {
       await api.auth.resendVerification();
-      toast.success("Verification email sent");
+      toast.success(a("verificationEmailSent"));
     } catch (e) {
       toast.error(e);
     } finally {
@@ -54,12 +56,12 @@ export default function Verify() {
   const resendBlock =
     status === "authed" ? (
       <Button variant="secondary" size="lg" className="w-full" loading={resending} onClick={resend}>
-        Send a new link
+        {a("sendANewLink")}
       </Button>
     ) : (
       <Button variant="secondary" size="lg" className="w-full" asChild>
         <Link to="/login" search={{ next: "/verify" }}>
-          Log in to resend
+          {a("logInToResend")}
         </Link>
       </Button>
     );
@@ -68,7 +70,7 @@ export default function Verify() {
     return (
       <div>
         <Glyph hue="blue"><MailCheck className="size-[18px]" /></Glyph>
-        <AuthHeading title="Verify your email" subtitle={<>We sent a link to {email ? <span className="font-medium text-fg">{email}</span> : "your inbox"}. Open it to confirm your address.</>} />
+        <AuthHeading title={a("verifyYourEmail")} subtitle={<Trans ns="auth" i18nKey="verifyEmailSent" values={{ email: email || a("yourInbox") }} components={{ email: <span className="font-medium text-fg" /> }} />} />
         {resendBlock}
       </div>
     );
@@ -77,7 +79,7 @@ export default function Verify() {
     return (
       <div className="flex flex-col items-center gap-3 py-10 text-[13px] text-fg-3" aria-live="polite">
         <Spinner />
-        Verifying your email
+        {a("verifyingYourEmail")}
       </div>
     );
 
@@ -85,9 +87,9 @@ export default function Verify() {
     return (
       <div>
         <Glyph solid><Check className="size-[18px]" strokeWidth={2.5} /></Glyph>
-        <AuthHeading title="Email verified" subtitle="Thanks. Your address is confirmed." />
+        <AuthHeading title={a("emailVerified")} subtitle={a("thanksYourAddressIsConfirmed")} />
         <Button variant="primary" size="lg" className="w-full" asChild>
-          <Link to="/">Continue</Link>
+          <Link to="/">{a("continue")}</Link>
         </Button>
       </div>
     );
@@ -95,7 +97,7 @@ export default function Verify() {
   return (
     <div>
       <Glyph hue="red"><X className="size-[18px]" /></Glyph>
-      <AuthHeading title="That link didn't work" />
+      <AuthHeading title={a("thatLinkDidntWork")} />
       {error && <Notice className="mb-5">{error}</Notice>}
       {resendBlock}
     </div>

@@ -1,3 +1,6 @@
+import { useTranslation } from "react-i18next";
+import { i18n } from "@/i18n";
+import { fr } from "date-fns/locale";
 import { format, parseISO } from "date-fns";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
@@ -18,9 +21,9 @@ const ML = 36;
 const MR = 40;
 const MT = 12;
 
-export const series = [
-  { key: "created", label: "Created", color: toneVar(SERIES[0]) },
-  { key: "solved", label: "Solved", color: toneVar(SERIES[2]) },
+export const series = () => [
+  { key: "created", label: i18n.t("indicators:reports.created"), color: toneVar(SERIES[0]) },
+  { key: "solved", label: i18n.t("indicators:reports.solved"), color: toneVar(SERIES[2]) },
 ] as const;
 
 /**
@@ -29,13 +32,15 @@ export const series = [
  */
 export function VolumeChart<D extends Row = Day>({
   days,
-  series: lines = series as unknown as LineSeries<D>[],
-  label = `Tickets created and solved per day, ${days.length} days. Use the arrow keys to read each day.`,
+  series: customLines,
+  label,
 }: {
   days: D[];
   series?: LineSeries<D>[];
   label?: string;
 }) {
+  const { t } = useTranslation("indicators");
+  const lines = customLines ?? series() as unknown as LineSeries<D>[];
   const val = (d: D, k: keyof D) => Number(d[k]) || 0;
   const [ref, width] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
@@ -89,7 +94,7 @@ export function VolumeChart<D extends Row = Day>({
           <line x1={ML} x2={ML + plotW} y1={y(0)} y2={y(0)} stroke="var(--line)" strokeWidth={1} shapeRendering="crispEdges" />
           {xTicks.map(({ d, i }) => (
             <text key={d.date} x={x(i)} y={MT + H + 18} textAnchor="middle" className="mono" fontSize={10.5} fill="var(--fg-4)">
-              {format(parseISO(d.date), "MMM d")}
+              {format(parseISO(d.date), (i18n.language.startsWith("fr") ? "d MMM" : "MMM d"), { locale: i18n.language.startsWith("fr") ? fr : undefined })}
             </text>
           ))}
 
@@ -137,7 +142,7 @@ export function VolumeChart<D extends Row = Day>({
       <div
         role="img"
         tabIndex={0}
-        aria-label={label}
+        aria-label={label ?? t("reports.chartLabel", { count: days.length })}
         className="absolute rounded-md outline-none focus-visible:shadow-[0_0_0_2px_var(--focus)]"
         style={{ left: ML, top: MT, width: plotW, height: H }}
         onPointerMove={(e) => pick(e.clientX, e.currentTarget.parentElement!.getBoundingClientRect())}
@@ -159,7 +164,7 @@ export function VolumeChart<D extends Row = Day>({
           className="pointer-events-none absolute z-10 min-w-[148px] rounded-lg border border-line bg-raised px-3 py-2 shadow-pop transition-[left] duration-100 ease-out motion-reduce:transition-none"
           style={{ left: flip ? tipLeft - 12 : tipLeft + 12, top: MT + 4, transform: flip ? "translateX(-100%)" : undefined }}
         >
-          <div className="mono mb-1.5 text-[10.5px] text-fg-3">{format(parseISO(h.date), "EEE, MMM d")}</div>
+          <div className="mono mb-1.5 text-[10.5px] text-fg-3">{format(parseISO(h.date), (i18n.language.startsWith("fr") ? "EEE d MMM" : "EEE, MMM d"), { locale: i18n.language.startsWith("fr") ? fr : undefined })}</div>
           {lines.map((s) => (
             <div key={s.key} className="flex items-center gap-2 py-px">
               <span className="size-2 rounded-xs" style={{ background: s.color }} />
@@ -173,7 +178,9 @@ export function VolumeChart<D extends Row = Day>({
   );
 }
 
-export function VolumeLegend<D extends Row = Day>({ series: lines = series as unknown as LineSeries<D>[] }: { series?: LineSeries<D>[] } = {}) {
+export function VolumeLegend<D extends Row = Day>({ series: customLines }: { series?: LineSeries<D>[] } = {}) {
+  useTranslation("indicators");
+  const lines = customLines ?? series() as unknown as LineSeries<D>[];
   return (
     <div className="flex items-center gap-3">
       {lines.map((s) => (
@@ -187,21 +194,22 @@ export function VolumeLegend<D extends Row = Day>({ series: lines = series as un
 }
 
 export function VolumeTable({ days }: { days: Day[] }) {
+  const { t } = useTranslation("indicators");
   return (
     <div className="max-h-[268px] overflow-y-auto">
       <table className="w-full text-[12.5px]">
-        <caption className="sr-only">Tickets created and solved per day</caption>
+        <caption className="sr-only">{t("reports.tableCaption")}</caption>
         <thead className="sticky top-0 bg-surface">
           <tr className="border-b border-line text-left">
-            <th className="label-caps py-2 font-normal">Day</th>
-            <th className="label-caps py-2 text-right font-normal">Created</th>
-            <th className="label-caps py-2 text-right font-normal">Solved</th>
+            <th className="label-caps py-2 font-normal">{t("reports.day")}</th>
+            <th className="label-caps py-2 text-right font-normal">{t("reports.created")}</th>
+            <th className="label-caps py-2 text-right font-normal">{t("reports.solved")}</th>
           </tr>
         </thead>
         <tbody>
           {[...days].reverse().map((d) => (
             <tr key={d.date} className="border-b border-line-soft">
-              <td className="py-1.5 text-fg-2">{format(parseISO(d.date), "EEE, MMM d")}</td>
+              <td className="py-1.5 text-fg-2">{format(parseISO(d.date), (i18n.language.startsWith("fr") ? "EEE d MMM" : "EEE, MMM d"), { locale: i18n.language.startsWith("fr") ? fr : undefined })}</td>
               <td className="mono py-1.5 text-right tabular-nums">{d.created}</td>
               <td className="mono py-1.5 text-right tabular-nums text-fg-2">{d.solved}</td>
             </tr>

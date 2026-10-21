@@ -18,6 +18,7 @@ import { q } from "@/lib/queries";
  * the ticket side panel and anywhere a contact needs summarising.
  */
 export function ContactCard({ contactId, compact, excludeTicketId }: { contactId: string; compact?: boolean; excludeTicketId?: string }) {
+  const { t: ui } = useTranslation("ui");
   const { t } = useTranslation("inbox");
   const { data: c, isLoading } = useQuery(q.contact(contactId));
   const tickets = useQuery(q.contactTickets(contactId));
@@ -66,7 +67,7 @@ export function ContactCard({ contactId, compact, excludeTicketId }: { contactId
             to="/contacts/{-$contactId}"
             params={{ contactId: c.id }}
             search={{ q: undefined, company: undefined }}
-            aria-label="Edit contact"
+            aria-label={ui("editContact")}
             className="flex size-6 shrink-0 items-center justify-center rounded-md text-fg-3 outline-none transition-colors hover:bg-hover hover:text-fg focus-visible:shadow-[0_0_0_2px_var(--focus)]"
           >
             <Pencil className="size-3.5" />

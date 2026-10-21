@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 // Template tags in the rich editor: every {{ variable }} and {% tag %} shows as a
 // soft pill (red when unknown), and typing "{{" offers the variables. The
 // document keeps tags as plain text, so what is saved is what was typed.
@@ -226,6 +227,7 @@ export function matchVars<T extends { key: string; label: string; group: string 
 
 /** The floating list; mount once next to the editor. */
 export function VarSuggestPopup() {
+  const { t: ui } = useTranslation("ui");
   const { open, items, index, getRect, anchorEl, pick, valueLabel, title } = useVarSuggest();
   const ref = useRef<HTMLDivElement>(null);
   const rect = useCaretAnchor({ open, getRect, anchorEl, popupRef: ref, onDismiss: dismiss });
@@ -235,26 +237,26 @@ export function VarSuggestPopup() {
   if (!open || !rect) return null;
   const tip =
     title === "Variables"
-      ? "Type | after a variable for helpers, or {% for logic"
+      ? ui("templateSyntaxHint")
       : title === "Logic"
-        ? "Inserts working code with the part to change selected"
-        : "Helpers change a value, left to right";
+        ? ui("insertsWorkingCodeWithThePartToChangeSelected")
+        : ui("helpersChangeAValueLeftToRight");
   return createPortal(
     <div
       ref={ref}
       role="listbox"
-      aria-label={title}
+      aria-label={title === "Variables" ? ui("variables") : title === "Logic" ? ui("logic") : ui("helpers")}
       data-floating
       style={placeBelowOrAbove(rect, 340, 320)}
       className="pointer-events-auto z-[80] flex max-h-[320px] w-[340px] flex-col overflow-hidden rounded-lg border border-line bg-raised shadow-pop animate-pop-in motion-reduce:animate-none"
     >
       <div className="label-caps flex shrink-0 items-center justify-between px-3 pb-1 pt-2">
-        <span>{title}</span>
+        <span>{title === "Variables" ? ui("variables") : title === "Logic" ? ui("logic") : ui("helpers")}</span>
         {valueLabel && <span className="normal-case tracking-normal text-fg-4">{valueLabel}</span>}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-1">
         {items.length === 0 ? (
-          <div className="px-2 py-3 text-xs text-fg-3">Nothing matches</div>
+          <div className="px-2 py-3 text-xs text-fg-3">{ui("nothingMatches")}</div>
         ) : (
           items.map((it, i) => (
             <button
@@ -312,7 +314,7 @@ export function VarSuggestPopup() {
           onMouseDown={(e) => e.preventDefault()}
           className="shrink-0 text-fg-3 underline-offset-2 hover:text-fg hover:underline"
         >
-          Guide
+          {ui("guide")}
         </a>
       </div>
     </div>,

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   addDays,
   addMonths,
@@ -15,6 +16,7 @@ import {
   startOfWeek,
 } from "date-fns";
 import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { fr } from "date-fns/locale";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { cn } from "@/lib/cn";
 import { inputBase, TextInput } from "./input";
@@ -45,6 +47,8 @@ export function Calendar({
   max?: Date | null;
   className?: string;
 }) {
+  const { t: ui, i18n } = useTranslation("ui");
+  const locale = i18n.resolvedLanguage === "fr" ? fr : undefined;
   const [focus, setFocus] = useState(() => startOfDay(value ?? new Date()));
   const [month, setMonth] = useState(() => startOfMonth(focus));
   const grid = useRef<HTMLDivElement>(null);
@@ -92,13 +96,13 @@ export function Calendar({
   return (
     <div className={cn("w-[224px] select-none", className)}>
       <div className="mb-1.5 flex items-center justify-between">
-        <span className="pl-1 text-[12.5px] font-medium">{format(month, "MMMM yyyy")}</span>
+        <span className="pl-1 text-[12.5px] font-medium">{format(month, "MMMM yyyy", { locale })}</span>
         <div className="flex">
           {[-1, 1].map((n) => (
             <button
               key={n}
               type="button"
-              aria-label={n < 0 ? "Previous month" : "Next month"}
+              aria-label={n < 0 ? ui("previousMonth") : ui("nextMonth")}
               onClick={() => setMonth((m) => addMonths(m, n))}
               className="grid size-7 place-items-center rounded-md text-fg-3 outline-none transition-colors hover:bg-hover hover:text-fg focus-visible:bg-hover"
             >
@@ -110,7 +114,7 @@ export function Calendar({
       <div className="grid grid-cols-7 text-center">
         {days.slice(0, 7).map((d) => (
           <span key={d.toISOString()} className="pb-1 text-[10.5px] font-medium uppercase text-fg-4">
-            {format(d, "EEEEEE")}
+            {format(d, "EEEEEE", { locale })}
           </span>
         ))}
       </div>
@@ -124,7 +128,7 @@ export function Calendar({
               type="button"
               role="gridcell"
               aria-selected={selected}
-              aria-label={format(d, "PPPP")}
+              aria-label={format(d, "PPPP", { locale })}
               disabled={disabled}
               tabIndex={isSameDay(d, focus) ? 0 : -1}
               onClick={() => {
@@ -154,7 +158,7 @@ export function DateField({
   onChange,
   min,
   max,
-  placeholder = "Pick a date",
+  placeholder,
   invalid,
   clearable,
   size = "md",
@@ -174,6 +178,8 @@ export function DateField({
   autoFocus?: boolean;
   "aria-label"?: string;
 }) {
+  const { t: ui, i18n } = useTranslation("ui");
+  const locale = i18n.resolvedLanguage === "fr" ? fr : undefined;
   const [open, setOpen] = useState(false);
   const day = parseDay(value);
   return (
@@ -196,7 +202,7 @@ export function DateField({
             )}
           >
             <CalendarDays className="size-3.5 shrink-0 text-fg-3" />
-            <span className={cn("mono truncate", !day && "font-sans text-fg-4")}>{day ? format(day, "d MMM yyyy") : placeholder}</span>
+            <span className={cn("mono truncate", !day && "font-sans text-fg-4")}>{day ? format(day, "d MMM yyyy", { locale }) : (placeholder ?? ui("pickADate"))}</span>
           </button>
         }
       >
@@ -213,7 +219,7 @@ export function DateField({
       {clearable && day && (
         <button
           type="button"
-          aria-label="Clear date"
+          aria-label={ui("clearDate")}
           onClick={() => onChange("")}
           className="absolute right-1 top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded text-fg-4 hover:bg-hover hover:text-fg"
         >

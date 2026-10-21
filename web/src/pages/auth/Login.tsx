@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useRouter } from "@tanstack/react-router";
@@ -24,13 +25,15 @@ import { MAX_ACCOUNTS, switchAccount, useSession, useWorkspace } from "@/lib/ses
 
 const route = getRouteApi("/auth/login");
 
-const schema = z.object({
-  email: z.string().trim().min(1, "Enter your email.").email("Enter a valid email address."),
-  password: z.string().min(1, "Enter your password."),
+const createSchema = (a: TFunction<"auth">) => z.object({
+  email: z.string().trim().min(1, a("enterYourEmail")).email(a("enterAValidEmailAddress")),
+  password: z.string().min(1, a("enterYourPassword")),
 });
-type Values = z.infer<typeof schema>;
+type Values = z.infer<ReturnType<typeof createSchema>>;
 
 export default function Login() {
+  const { t: a } = useTranslation("auth");
+  const schema = createSchema(a);
   const search = route.useSearch();
   const router = useRouter();
   const { t } = useTranslation("shell");
@@ -43,7 +46,7 @@ export default function Login() {
   const full = adding && accounts.length >= MAX_ACCOUNTS;
   const { data: cfg, isLoading } = useQuery(q.authConfig());
   const [token, setToken] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(oauthErrorMessage(search.error));
+  const [error, setError] = useState<string | null | undefined>(undefined);
   const [mfa, setMfa] = useState<string | null>(null);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
   const turnstile = useRef<TurnstileHandle>(null);
@@ -83,7 +86,7 @@ export default function Login() {
         .then((r) => (live ? answer(r, "passkey") : undefined))
         // Autofill waits quietly; only a refused sign-in after a pick is worth saying.
         .catch((e) => {
-          if (live && isApiError(e)) setError(e.status === 401 ? "That passkey didn't work. Try another way to sign in." : errorMessage(e));
+          if (live && isApiError(e)) setError(e.status === 401 ? a("thatPasskeyDidntWorkTryAnotherWayTo") : errorMessage(e));
         });
     });
     return () => {
@@ -99,7 +102,7 @@ export default function Login() {
     try {
       await answer(await signInWithPasskey(), "passkey");
     } catch (e) {
-      if (!isPasskeyCancel(e)) setError(isApiError(e) && e.status === 401 ? "That passkey didn't work. Try another way to sign in." : errorMessage(e));
+      if (!isPasskeyCancel(e)) setError(isApiError(e) && e.status === 401 ? a("thatPasskeyDidntWorkTryAnotherWayTo") : errorMessage(e));
     } finally {
       setPasskeyBusy(false);
     }
@@ -117,9 +120,9 @@ export default function Login() {
       await answer(await api.auth.login({ email: email.trim(), password, turnstile_token: token ?? undefined }), "password");
     } catch (err) {
       turnstile.current?.reset();
-      if (isApiError(err, "invalid_credentials") || (isApiError(err) && err.status === 401)) setError("Wrong email or password.");
+      if (isApiError(err, "invalid_credentials") || (isApiError(err) && err.status === 401)) setError(a("wrongEmailOrPassword"));
       else if (isApiError(err, "too_many_accounts")) setError(t("accounts.limit", { count: MAX_ACCOUNTS }));
-      else if (isApiError(err, "captcha_failed")) setError("We couldn't verify you're human. Try the check again.");
+      else if (isApiError(err, "captcha_failed")) setError(a("weCouldntVerifyYoureHumanTryTheCheck"));
       else setError(errorMessage(err));
     }
   });
@@ -136,6 +139,7 @@ export default function Login() {
       />
     );
 
+  const message = error === undefined ? oauthErrorMessage(search.error) : error;
   const passwordLogin = cfg?.password_login ?? true;
   const hasAlternatives = !!cfg?.providers.length || passkeysOn;
 
@@ -169,7 +173,7 @@ export default function Login() {
           }
         />
       ) : (
-        <AuthHeading title="Log in to opendesk" subtitle="Welcome back. Pick up where your team left off." />
+        <AuthHeading title={a("logInToOpendesk")} subtitle={a("welcomeBackPickUpWhereYourTeamLeft")} />
       )}
       {isLoading ? (
         <div className="flex flex-col gap-3">
@@ -182,16 +186,16 @@ export default function Login() {
           <div className="flex flex-col gap-2">
             {passkeysOn && (
               <Button variant="secondary" size="lg" className="w-full" icon={<KeyRound className="size-4" />} loading={passkeyBusy} onClick={() => void passkey()}>
-                Sign in with a passkey
+                {a("signInWithAPasskey")}
               </Button>
             )}
             <ProviderButtons next={search.next} />
           </div>
           {passwordLogin && hasAlternatives && <OrDivider />}
-          {error && <Notice className="mb-4">{error}</Notice>}
+          {message && <Notice className="mb-4">{message}</Notice>}
           {passwordLogin && (
             <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-              <AuthField label="Email">
+              <AuthField label={a("email")}>
                 {(id) => (
                   <div className="flex flex-col gap-1.5">
                     <TextInput
@@ -209,10 +213,10 @@ export default function Login() {
                 )}
               </AuthField>
               <AuthField
-                label="Password"
+                label={a("password")}
                 aside={
                   <Link to="/forgot" className="text-xs text-fg-3 transition-colors hover:text-fg">
-                    Forgot password?
+                    {a("forgotPassword")}
                   </Link>
                 }
               >
@@ -225,15 +229,15 @@ export default function Login() {
               </AuthField>
               <Turnstile ref={turnstile} onToken={setToken} action="login" />
               <Button type="submit" variant="primary" size="lg" className="mt-1 w-full" loading={isSubmitting}>
-                Log in
+                {a("logIn")}
               </Button>
             </form>
           )}
           {cfg?.signup_enabled !== false && (
             <p className="mt-7 text-center text-[12.5px] text-fg-3">
-              New to opendesk?{" "}
+               {a("newToOpendesk")}{" "}
               <Link to="/register" search={{ next: search.next, add: adding ? "1" : undefined }} className="font-medium text-fg hover:underline">
-                Create an account
+                {a("createAnAccount")}
               </Link>
             </p>
           )}

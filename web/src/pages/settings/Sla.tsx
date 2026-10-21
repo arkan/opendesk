@@ -301,6 +301,7 @@ function DurationField({
 
 function PolicyDialog({ policy, nextPosition, onClose }: { policy: SlaPolicy | null; nextPosition: number; onClose: () => void }) {
   const { t } = useTranslation("settingsInbox");
+  useTranslation("indicators");
   const qc = useQueryClient();
   const [name, setName] = useState(policy?.name ?? "");
   const [priority, setPriority] = useState<Priority | "any">(policy?.priority ?? "any");
@@ -385,7 +386,7 @@ function PolicyDialog({ policy, nextPosition, onClose }: { policy: SlaPolicy | n
                 ...priorityOrder.map((x) => ({
                   value: x,
                   label: t("sla.priorityOption", {
-                    priority: priorityLabel[x],
+                    priority: priorityLabel(x),
                   }),
                   icon: <PriorityIcon priority={x} />,
                 })),

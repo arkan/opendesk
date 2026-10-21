@@ -235,16 +235,18 @@ type Row = {
 type AskedKey = "priority" | "severity" | "team" | "tags" | "new_tags";
 
 function SeverityValue({ s }: { s: Severity }) {
+  useTranslation("indicators");
   return (
     <span className="flex items-center gap-1.5">
       <SeverityChip severity={s} />
-      {severityLabel[s]}
+      {severityLabel(s)}
     </span>
   );
 }
 
 function useSuggestions(ticket: Ticket, run: Run, say: (s: string) => void) {
   const { t } = useTranslation("aiTicket");
+  useTranslation("indicators");
   const qc = useQueryClient();
   const me = useSession((s) => s.user?.id ?? "");
   const name = useAssistantName();
@@ -300,7 +302,7 @@ function useSuggestions(ticket: Ticket, run: Run, say: (s: string) => void) {
     if (result.priority !== ticket.priority)
       asked.push(askedRow("priority", t("suggest.fields.priority"), <PriorityPill priority={result.priority} label={display.priority(result.priority)} hue={display.priorityTone(result.priority)} />, display.priority(result.priority), { priority: result.priority }));
     if (result.severity && result.severity !== ticket.severity)
-      asked.push(askedRow("severity", t("suggest.fields.severity"), <SeverityValue s={result.severity} />, severityLabel[result.severity], { severity: result.severity }));
+      asked.push(askedRow("severity", t("suggest.fields.severity"), <SeverityValue s={result.severity} />, severityLabel(result.severity), { severity: result.severity }));
     if (result.team_id && result.team_id !== ticket.team_id)
       asked.push(askedRow("team", t("suggest.fields.team"), <span className="truncate">{teamName(result.team_id)}</span>, teamName(result.team_id), { team_id: result.team_id }));
     if (addTags.length) asked.push(askedRow("tags", t("suggest.fields.labels"), tagList(addTags), addTags.join(", "), { add_tags: addTags }));
@@ -334,7 +336,7 @@ function useSuggestions(ticket: Ticket, run: Run, say: (s: string) => void) {
           value = <PriorityPill priority={s.value as Priority} label={text} hue={display.priorityTone(s.value as Priority)} />;
           break;
         case "severity":
-          text = severityLabel[s.value as Severity];
+          text = severityLabel(s.value as Severity);
           value = <SeverityValue s={s.value as Severity} />;
           break;
         case "team":

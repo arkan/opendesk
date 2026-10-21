@@ -192,15 +192,16 @@ function describe(e: Entry): ReactNode {
 
 /** Who did it. The row's tile already says what kind of change it was, so the actor stays text. */
 function Actor({ e }: { e: Entry }) {
+  const { t: ui } = useTranslation("ui");
   if (e.actor.type === "user" && e.actor.user) return <span className="truncate font-medium text-fg">{e.actor.user.name || e.actor.user.email}</span>;
   if (e.actor.type === "api_key")
     return (
       <span className="flex items-center gap-1.5">
-        <span className="font-medium text-fg">API key</span>
+        <span className="font-medium text-fg">{ui("apiKey")}</span>
         {e.actor.api_key_id && <span className="mono text-[11px] text-fg-4">{e.actor.api_key_id.slice(0, 8)}</span>}
       </span>
     );
-  return <span className="font-medium text-fg">{e.actor.type === "user" ? "Someone" : "System"}</span>;
+  return <span className="font-medium text-fg">{e.actor.type === "user" ? ui("someone") : ui("system")}</span>;
 }
 
 function formatValue(v: unknown): string {

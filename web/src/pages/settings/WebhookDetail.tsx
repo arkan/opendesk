@@ -37,6 +37,7 @@ function CodePill({ code }: { code: number | null }) {
 const grid = "grid grid-cols-[96px_minmax(0,1fr)_64px_56px] items-center gap-3 px-4 sm:grid-cols-[104px_minmax(0,1fr)_80px_80px_72px_72px]";
 
 export default function WebhookDetail() {
+  const { t: ui } = useTranslation("ui");
   const { t } = useTranslation("settingsDev");
   const { webhookId } = useParams({ from: "/app/settings/webhooks/$webhookId" });
   const role = useRole();
@@ -116,16 +117,16 @@ export default function WebhookDetail() {
         <>
           <label className="mr-1 flex items-center gap-2 text-[12.5px] text-fg-2">
             <StatePill state={state === "unverified" ? "pending" : state}>{t(`webhooks.state.${state}`)}</StatePill>
-            <Switch checked={hook.enabled} onCheckedChange={(v) => toggle.mutate(v)} aria-label="Webhook active" />
+            <Switch checked={hook.enabled} onCheckedChange={(v) => toggle.mutate(v)} aria-label={ui("webhookActive")} />
           </label>
           <Button icon={<Send className="size-3.5" />} loading={test.isPending} onClick={() => test.mutate()} disabled={!hook.enabled || !hook.verified}>
             {t("webhook.sendTest")}
           </Button>
-          <Button square aria-label="Edit webhook" icon={<Pencil className="size-3.5" />} onClick={() => setEditing(true)} />
+          <Button square aria-label={ui("editWebhook")} icon={<Pencil className="size-3.5" />} onClick={() => setEditing(true)} />
           <Button
             square
             variant="danger"
-            aria-label="Delete webhook"
+            aria-label={ui("deleteWebhook")}
             icon={<Trash2 className="size-3.5" />}
             onClick={() =>
               confirm.show(
@@ -180,7 +181,7 @@ export default function WebhookDetail() {
             <Tooltip content={t("webhook.refresh")}>
               <button
                 type="button"
-                aria-label="Refresh deliveries"
+                aria-label={ui("refreshDeliveries")}
                 onClick={() => void deliveries.refetch()}
                 className="flex size-7 items-center justify-center rounded-md text-fg-3 transition-colors hover:bg-hover hover:text-fg"
               >

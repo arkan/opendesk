@@ -1,6 +1,7 @@
 // Value pickers shared by the view filter builder and the automation builder.
 
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { ChevronDown, Inbox, Lock, MessageSquareReply, PencilLine, Reply, SquarePlus } from "lucide-react";
 import { forwardRef, type ReactNode } from "react";
 import { Avatar } from "@/components/ui/avatar";
@@ -28,31 +29,31 @@ import { sentimentLabel, sentiments, triggerLabel, triggerTone } from "./automat
 import { q } from "@/lib/queries";
 import { cn } from "@/lib/cn";
 
-export const statusItems: PickerItem[] = statusOrder.map((s) => ({
+export const statusItems = (): PickerItem[] => statusOrder.map((s) => ({
   value: s,
-  label: statusLabel[s],
+  label: statusLabel(s),
   icon: <StatusIcon status={s} />,
 }));
-export const priorityItems: PickerItem[] = priorityOrder.map((p) => ({
+export const priorityItems = (): PickerItem[] => priorityOrder.map((p) => ({
   value: p,
-  label: priorityLabel[p],
+  label: priorityLabel(p),
   icon: <PriorityIcon priority={p} />,
 }));
 /** Severity levels, sev1 first, each with what it means. */
-export const severityItems: PickerItem[] = severityOrder.map((s) => ({
+export const severityItems = (): PickerItem[] => severityOrder.map((s) => ({
   value: s,
-  label: severityLabel[s],
-  hint: severityHint[s],
+  label: severityLabel(s),
+  hint: severityHint(s),
   icon: <SeverityChip severity={s} />,
 }));
 /** Severity levels plus "no severity" ("none"), for conditions and filters. */
 export const severityFilterItems = (): PickerItem[] => [
-  ...severityItems,
+  ...severityItems(),
   { value: "none", label: i18n.t("settingsInbox:edit.noSeverity"), icon: <span className="h-[16px] w-[22px] rounded-[4px] border border-dashed border-line-strong" /> },
 ];
-export const channelItems: PickerItem[] = (Object.keys(channelLabel) as Channel[]).map((c) => ({
+export const channelItems = (): PickerItem[] => (["email", "chat", "api", "portal"] as Channel[]).map((c) => ({
   value: c,
-  label: channelLabel[c],
+  label: channelLabel(c),
   icon: <ChannelIcon channel={c} />,
 }));
 
@@ -102,12 +103,13 @@ export function useMemberItems(): PickerItem[] {
 }
 
 export function useTeamItems(): PickerItem[] {
+  const { t: tr } = useTranslation("inbox");
   const { data } = useQuery(q.teams());
   return (data ?? []).map((t) => ({
     value: t.id,
     label: t.name,
     icon: <span aria-hidden className={cn("size-2 shrink-0 rounded-[3px]", tone[isTone(t.color) ? t.color : toneFor(t.name)].solid)} />,
-    hint: t.private ? <Lock className="size-3 text-fg-4" aria-label="Private" /> : undefined,
+    hint: t.private ? <Lock className="size-3 text-fg-4" aria-label={tr("teams.private")} /> : undefined,
   }));
 }
 
@@ -202,6 +204,7 @@ export function SinglePick({
   /** Draw the chosen value in the trigger yourself (a tag chip, say); the icon is then left out. */
   renderValue?: (value: string) => ReactNode;
 }) {
+  useTranslation("settingsInbox");
   const cur = items.find((i) => i.value === value);
   const custom = value && renderValue ? renderValue(value) : null;
   const trigger = (
@@ -241,6 +244,7 @@ export function MultiPick({
   className?: string;
   size?: PickSize;
 }) {
+  useTranslation("settingsInbox");
   const chosen = items.filter((i) => values.includes(i.value));
   const summary =
     chosen.length === 0

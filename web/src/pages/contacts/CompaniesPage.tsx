@@ -193,8 +193,9 @@ export default function CompaniesPage() {
 }
 
 function TableSkeleton({ rows = 10 }: { rows?: number }) {
+  const { t: ui } = useTranslation("ui");
   return (
-    <div aria-busy="true" aria-label="Loading">
+    <div aria-busy="true" aria-label={ui("loading")}>
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className={`${colsPlain} h-11 border-b border-line-soft px-4 md:px-5`} style={{ opacity: 1 - i * (0.75 / rows) }}>
           <span className="flex items-center gap-2.5">

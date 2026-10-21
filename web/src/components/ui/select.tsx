@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Select as S } from "radix-ui";
 import { Check, ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
@@ -10,7 +11,7 @@ export function Select<V extends string>({
   value,
   onChange,
   options,
-  placeholder = "Select",
+  placeholder,
   className,
   size = "md",
   id,
@@ -27,6 +28,7 @@ export function Select<V extends string>({
   disabled?: boolean;
   "aria-label"?: string;
 }) {
+  const { t } = useTranslation("ui");
   return (
     <S.Root value={value} onValueChange={(v) => onChange(v as V)} disabled={disabled}>
       <S.Trigger
@@ -39,7 +41,7 @@ export function Select<V extends string>({
         )}
       >
         <span className="flex min-w-0 items-center gap-2 truncate">
-          <S.Value placeholder={placeholder} />
+          <S.Value placeholder={placeholder ?? t("select")} />
         </span>
         <S.Icon className="text-fg-3 transition-transform duration-150 group-data-[state=open]:rotate-180 motion-reduce:transition-none">
           <ChevronDown />

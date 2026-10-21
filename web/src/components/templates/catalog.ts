@@ -1,3 +1,4 @@
+import { i18n } from "@/i18n";
 // The template variable list (contracts/templates.md), from the server so the
 // app never keeps its own copy, plus helpers to read tags in a template.
 
@@ -6,17 +7,10 @@ import { useMemo } from "react";
 import type { TemplateGroup, TemplateKind, TemplateSlot, TemplateVariable } from "@/lib/api/types";
 import { q } from "@/lib/queries";
 
-export const GROUP_LABELS: Record<TemplateGroup, string> = {
-  contact: "Customer",
-  company: "Company",
-  ticket: "Ticket",
-  agent: "Sender",
-  team: "Team",
-  brand: "Brand",
-  mailbox: "Address",
-  workspace: "Workspace",
-  date: "Date",
-};
+/** Template group labels follow the active interface language. */
+export function templateGroupLabel(group: string): string {
+  return GROUP_ORDER.includes(group as TemplateGroup) ? i18n.t(`templateGroups.${group as TemplateGroup}`, { ns: "ui" }) : group;
+}
 
 export const GROUP_ORDER: TemplateGroup[] = ["contact", "company", "ticket", "agent", "team", "brand", "mailbox", "workspace", "date"];
 

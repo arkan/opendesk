@@ -286,6 +286,7 @@ function keyState(k: ApiKey, now: number): "active" | "expiring" | "expired" {
 }
 
 function InlineName({ initial, onDone }: { initial: string; onDone: (v: string | null) => void }) {
+  const { t: ui } = useTranslation("ui");
   const [v, setV] = useState(initial);
   const cancelled = useRef(false);
   return (
@@ -294,7 +295,7 @@ function InlineName({ initial, onDone }: { initial: string; onDone: (v: string |
       inputSize="sm"
       value={v}
       maxLength={80}
-      aria-label="Key name"
+      aria-label={ui("keyName")}
       className="max-w-[260px]"
       onChange={(e) => setV(e.target.value)}
       onBlur={() => onDone(cancelled.current ? null : v.trim())}

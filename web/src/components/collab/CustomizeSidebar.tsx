@@ -193,6 +193,7 @@ function ItemRow({ item, prefs, onChange }: { item: Item; prefs: SidebarPrefs; o
 }
 
 export function CustomizeSidebar() {
+  const { t: tNav } = useTranslation("navigation");
   const { t } = useTranslation("collab");
   const open = useCollabUi((s) => s.customizeOpen);
   const prefs = useSidebarPrefs(true);
@@ -239,7 +240,7 @@ export function CustomizeSidebar() {
       case "inbox":
         return ticketFolders.map((f) => ({
           key: f.id,
-          label: f.label,
+          label: tNav(f.labelKey),
           icon: <Layers />,
           hideId: hid.ticketFolder(f.id),
           pin: { kind: "ticket_folder", id: f.id },
@@ -275,8 +276,10 @@ export function CustomizeSidebar() {
         return views?.find((v) => v.id === p.id)?.name ?? null;
       case "team":
         return teams.team(p.id)?.name ?? null;
-      case "ticket_folder":
-        return folderById(p.id)?.label ?? null;
+      case "ticket_folder": {
+        const folder = folderById(p.id);
+        return folder ? tNav(folder.labelKey) : null;
+      }
       default:
         return null;
     }

@@ -1,15 +1,17 @@
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AuthHeading } from "@/app/AuthLayout";
 import { OnboardingSteps } from "@/components/auth/OnboardingSteps";
 import { AddMailboxWizard } from "@/components/mailboxes/AddMailboxWizard";
 
 export default function Mailbox() {
+  const { t: a } = useTranslation("auth");
   const navigate = useNavigate();
   const toInbox = () => void navigate({ to: "/inbox/$folder/{-$ticketId}", params: { folder: "unassigned", ticketId: undefined } });
   return (
     <div>
       <OnboardingSteps current={2} />
-      <AuthHeading title="Connect your first mailbox" subtitle="Mail sent to this address becomes tickets your team can answer together." />
+      <AuthHeading title={a("connectYourFirstMailbox")} subtitle={a("mailSentToThisAddressBecomesTicketsYour")} />
       <AddMailboxWizard
         compact
         onDone={toInbox}
@@ -19,7 +21,7 @@ export default function Mailbox() {
             params={{ folder: "unassigned", ticketId: undefined }}
             className="rounded-md px-2 py-1 text-[12.5px] text-fg-3 hover:bg-hover hover:text-fg"
           >
-            Skip for now
+            {a("skipForNow")}
           </Link>
         }
       />

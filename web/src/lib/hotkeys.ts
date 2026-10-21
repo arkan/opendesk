@@ -1,3 +1,4 @@
+import type navigation from "@/i18n/locales/en/navigation.json";
 import { useEffect, useRef } from "react";
 
 export type HotkeyMap = Record<string, (e: KeyboardEvent) => void>;
@@ -70,47 +71,47 @@ export function useHotkeys(map: HotkeyMap, enabled = true) {
   }, [enabled]);
 }
 
-export const shortcutGroups: { title: string; items: { keys: string; label: string }[] }[] = [
+export const shortcutGroups: { title: keyof typeof navigation.shortcuts; items: { keys: string; label: keyof typeof navigation.shortcuts }[] }[] = [
   {
-    title: "General",
+    title: "general",
     items: [
-      { keys: "mod k", label: "Command menu" },
-      { keys: "mod j", label: "Ask Ollie" },
-      { keys: "/", label: "Search tickets" },
-      { keys: "c", label: "New ticket" },
-      { keys: "?", label: "Keyboard shortcuts" },
-      { keys: "g i", label: "Go to inbox" },
-      { keys: "g t", label: "Switch team" },
-      { keys: "g c", label: "Go to contacts" },
-      { keys: "g k", label: "Go to knowledge base" },
-      { keys: "g s", label: "Go to settings" },
+      { keys: "mod k", label: "commandMenu" },
+      { keys: "mod j", label: "askOllie" },
+      { keys: "/", label: "searchTickets" },
+      { keys: "c", label: "newTicket" },
+      { keys: "?", label: "keyboardShortcuts" },
+      { keys: "g i", label: "goToInbox" },
+      { keys: "g t", label: "switchTeam" },
+      { keys: "g c", label: "goToContacts" },
+      { keys: "g k", label: "goToKnowledgeBase" },
+      { keys: "g s", label: "goToSettings" },
     ],
   },
   {
-    title: "Ticket list",
+    title: "ticketList",
     items: [
-      { keys: "j", label: "Next ticket" },
-      { keys: "k", label: "Previous ticket" },
-      { keys: "enter", label: "Open ticket" },
-      { keys: "x", label: "Select ticket" },
-      { keys: "e", label: "Solve focused ticket" },
-      { keys: "r", label: "Open and reply" },
-      { keys: "escape", label: "Close ticket or clear selection" },
+      { keys: "j", label: "nextTicket" },
+      { keys: "k", label: "previousTicket" },
+      { keys: "enter", label: "openTicket" },
+      { keys: "x", label: "selectTicket" },
+      { keys: "e", label: "solveFocusedTicket" },
+      { keys: "r", label: "openAndReply" },
+      { keys: "escape", label: "closeTicketOrClearSelection" },
     ],
   },
   {
-    title: "Ticket",
+    title: "ticket",
     items: [
-      { keys: "r", label: "Reply" },
-      { keys: "n", label: "Add a note" },
-      { keys: "a", label: "Assign" },
-      { keys: "s", label: "Change status" },
-      { keys: "p", label: "Change priority" },
-      { keys: "t", label: "Move to team" },
-      { keys: "h", label: "Snooze" },
-      { keys: "e", label: "Solve" },
-      { keys: "mod enter", label: "Send" },
-      { keys: "mod j", label: "Draft a reply with Ollie, in the reply box" },
+      { keys: "r", label: "reply" },
+      { keys: "n", label: "addANote" },
+      { keys: "a", label: "assign" },
+      { keys: "s", label: "changeStatus" },
+      { keys: "p", label: "changePriority" },
+      { keys: "t", label: "moveToTeam" },
+      { keys: "h", label: "snooze" },
+      { keys: "e", label: "solve" },
+      { keys: "mod enter", label: "send" },
+      { keys: "mod j", label: "draftWithOllie" },
     ],
   },
 ];

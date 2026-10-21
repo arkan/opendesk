@@ -7,11 +7,12 @@ import { quickSwitchKeys } from "./useAccounts";
 import { useCollab } from "@/lib/collab/hooks";
 
 export function ShortcutsSheet() {
+  const { t: tNav } = useTranslation("navigation");
   const open = useShell((s) => s.shortcutsOpen);
   const { t } = useTranslation("shell");
   // Shortcuts bound in AppLayout that the shared list may not name yet.
   const extra: Record<string, { keys: string; label: string }[]> = {
-    General: [
+    general: [
       { keys: "b", label: t("shortcuts.toggleSidebar") },
       { keys: "g m", label: t("shortcuts.goMine") },
       { keys: "g r", label: t("shortcuts.goReports") },
@@ -20,13 +21,21 @@ export function ShortcutsSheet() {
   };
   const collab = useCollab();
   const { t: tc } = useTranslation("collab");
-  const groups = shortcutGroups.map((g) => {
+  const groups: { id: string; title: string; items: { keys: string; label: string }[] }[] = shortcutGroups.map((g) => {
     const have = new Set(g.items.map((i) => i.keys));
-    return { ...g, items: [...g.items, ...(extra[g.title] ?? []).filter((i) => !have.has(i.keys))] };
+    return {
+      id: g.title,
+      title: tNav(`shortcuts.${g.title}`),
+      items: [
+        ...g.items.map((i) => ({ ...i, label: tNav(`shortcuts.${i.label}`) })),
+        ...(extra[g.title] ?? []).filter((i) => !have.has(i.keys)),
+      ],
+    };
   });
   // Collab's mail list and conversation, while the workspace has it.
   if (collab.enabled)
     groups.push({
+      id: "mail",
       title: tc("shortcuts.title"),
       items: [
         { keys: "j k", label: tc("shortcuts.move") },
@@ -49,10 +58,10 @@ export function ShortcutsSheet() {
       ],
     });
   return (
-    <Dialog open={open} onOpenChange={(o) => shell.shortcuts(o)} title="Keyboard shortcuts" description="Most things in opendesk work without a mouse." size="lg">
+    <Dialog open={open} onOpenChange={(o) => shell.shortcuts(o)} title={tNav("shortcuts.keyboardShortcuts")} description={tNav("shortcuts.description")} size="lg">
       <div className="grid grid-cols-1 gap-x-8 gap-y-6 pb-2 sm:grid-cols-2">
         {groups.map((g) => (
-          <section key={g.title} className={g.title === "General" ? "sm:row-span-2" : undefined}>
+          <section key={g.id} className={g.id === "general" ? "sm:row-span-2" : undefined}>
             <h3 className="label-caps mb-1.5">{g.title}</h3>
             <ul className="flex flex-col">
               {g.items.map((i) => (

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { AlertDialog as A } from "radix-ui";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { Button } from "./button";
@@ -19,6 +20,7 @@ type ConfirmApi = { show: (text: ReactNode, onSubmit: () => unknown | Promise<un
 const Ctx = createContext<ConfirmApi | null>(null);
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
+  const { t: ui } = useTranslation("ui");
   const [pending, setPending] = useState<Pending | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,14 +56,14 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         <A.Portal>
           <A.Overlay className="fixed inset-0 z-[70] bg-scrim backdrop-blur-[1.5px] data-[state=open]:animate-fade-in" />
           <A.Content className="fixed left-1/2 top-[22vh] z-[70] w-[calc(100vw-32px)] max-w-[420px] -translate-x-1/2 overflow-hidden rounded-xl border border-line bg-raised shadow-float outline-none data-[state=open]:animate-dialog-in">
-            <div className="px-5 pb-4 pt-5"><A.Title className="text-[15px] font-semibold tracking-[-0.015em]">{pending?.title ?? "Are you sure?"}</A.Title>
+            <div className="px-5 pb-4 pt-5"><A.Title className="text-[15px] font-semibold tracking-[-0.015em]">{pending?.title ?? ui("areYouSure")}</A.Title>
             <A.Description className="mt-1.5 text-[13px] leading-5 text-fg-2">{pending?.text}</A.Description>
             {pending?.typeToConfirm && (
               <div className="mt-4 flex flex-col gap-1.5">
                 <label className="text-xs text-fg-3">
-                  Type <span className="mono font-medium text-fg">{pending.typeToConfirm}</span> to confirm
+                  {ui("type")} <span className="mono font-medium text-fg">{pending.typeToConfirm}</span> {ui("toConfirm")}
                 </label>
-                <TextInput autoFocus value={typed} onChange={(e) => setTyped(e.target.value)} aria-label="Confirmation text" />
+                <TextInput autoFocus value={typed} onChange={(e) => setTyped(e.target.value)} aria-label={ui("confirmationText")} />
               </div>
             )}
             {error && <p className="mt-3 text-xs text-danger-fg">{error}</p>}
@@ -69,7 +71,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             <div className="flex justify-end gap-2 border-t border-line bg-sunken px-5 py-3">
               <A.Cancel asChild>
                 <Button variant="ghost" disabled={busy}>
-                  Cancel
+                  {ui("cancel")}
                 </Button>
               </A.Cancel>
               <Button
@@ -79,7 +81,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 onClick={run}
                 autoFocus={!pending?.typeToConfirm}
               >
-                {pending?.confirmLabel ?? "Confirm"}
+                {pending?.confirmLabel ?? ui("confirm")}
               </Button>
             </div>
           </A.Content>

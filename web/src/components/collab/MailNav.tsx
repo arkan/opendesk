@@ -391,6 +391,7 @@ function MailSection({ prefs, rail, first }: { prefs: SidebarPrefs; rail: boolea
 type PinTarget = { label: string; icon: ReactNode; row: (rail: boolean) => ReactNode };
 
 function FavoritesSection({ prefs, rail, first }: { prefs: SidebarPrefs; rail: boolean; first: boolean }) {
+  const { t: tNav } = useTranslation("navigation");
   const { t } = useTranslation("collab");
   const waitingFor = useWaitingFor();
   const { data: accounts } = useMailAccounts();
@@ -574,7 +575,7 @@ function FavoritesSection({ prefs, rail, first }: { prefs: SidebarPrefs; rail: b
         const nums = ticketRowNumbers(ticketCounts, key);
         const n = counted ? ticketShown(prefs, key, ["favorites", "inbox"], "ticket", nums) : undefined;
         return {
-          label: f.label,
+          label: tNav(f.labelKey),
           icon: ticketFolderIcons[f.id],
           row: (r) =>
             ticketRow(
@@ -584,19 +585,19 @@ function FavoritesSection({ prefs, rail, first }: { prefs: SidebarPrefs; rail: b
                 params={{ folder: f.id, ticketId: undefined }}
                 className={cn(rowBase, rowShape(r), rowIdle)}
                 activeProps={{ className: rowActive, "data-status": "active" } as Record<string, string>}
-                aria-label={r ? f.label : undefined}
+                aria-label={r ? tNav(f.labelKey) : undefined}
               >
                 {withPill(
                   <>
                     {ticketFolderIcons[f.id]}
-                    <Label rail={r}>{f.label}</Label>
+                    <Label rail={r}>{tNav(f.labelKey)}</Label>
                     <WaitingBadge n={waitingFor({ kind: "ticket_folder", id: f.id })} rail={r} />
                     {n !== undefined && <Count n={n} rail={r} />}
                   </>,
                 )}
               </Link>,
               counted ? ticketMenu(key, pin, "inbox", nums) : { pin },
-              f.label,
+              tNav(f.labelKey),
             ),
         };
       }

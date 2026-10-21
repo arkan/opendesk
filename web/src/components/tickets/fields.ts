@@ -3,6 +3,7 @@
 // overrides, and helpers for values and the 422 errors these writes answer.
 
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { create } from "zustand";
 import { isApiError } from "@/lib/api/client";
 import type { CustomField, FieldValue, Priority, Tag, TagGroup, Ticket, TicketPatch, TicketStatus } from "@/lib/api/types";
@@ -35,13 +36,14 @@ type DisplaySettings = { label_creation?: "anyone" | "admins"; status_labels?: R
 
 /** The workspace's display overrides for status and priority names and colours, and who may create labels. */
 export function useDisplay() {
+  useTranslation("indicators");
   const { data } = useQuery(q.workspace());
   const s = (data?.settings ?? {}) as DisplaySettings;
   return {
     labelCreation: s.label_creation ?? "anyone",
     priorityTone: (v: Priority): Tone | undefined => (isTone(s.priority_labels?.[v]?.color) ? (s.priority_labels![v]!.color as Tone) : undefined),
-    status: (v: TicketStatus) => s.status_labels?.[v]?.label || statusLabel[v],
-    priority: (v: Priority) => s.priority_labels?.[v]?.label || priorityLabel[v],
+    status: (v: TicketStatus) => s.status_labels?.[v]?.label || statusLabel(v),
+    priority: (v: Priority) => s.priority_labels?.[v]?.label || priorityLabel(v),
     statusTone: (v: TicketStatus): Tone | undefined => (isTone(s.status_labels?.[v]?.color) ? (s.status_labels![v]!.color as Tone) : undefined),
   };
 }

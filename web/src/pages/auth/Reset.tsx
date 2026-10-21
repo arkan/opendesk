@@ -1,3 +1,5 @@
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,18 +16,20 @@ import { cn } from "@/lib/cn";
 
 const route = getRouteApi("/auth/reset");
 
-const schema = z
+const createSchema = (a: TFunction<"auth">) => z
   .object({
     password: z
       .string()
-      .refine((s) => [...s].length >= 12, "Use at least 12 characters.")
-      .refine((s) => [...s].length <= 128, "Use at most 128 characters."),
+      .refine((s) => [...s].length >= 12, a("useAtLeast12Characters"))
+      .refine((s) => [...s].length <= 128, a("useAtMost128Characters")),
     confirm: z.string(),
   })
-  .refine((v) => v.password === v.confirm, { message: "The passwords don't match.", path: ["confirm"] });
-type Values = z.infer<typeof schema>;
+  .refine((v) => v.password === v.confirm, { message: a("thePasswordsDontMatch"), path: ["confirm"] });
+type Values = z.infer<ReturnType<typeof createSchema>>;
 
 export default function Reset() {
+  const { t: a } = useTranslation("auth");
+  const schema = createSchema(a);
   const { token } = route.useSearch();
   const {
     register,
@@ -40,9 +44,9 @@ export default function Reset() {
   if (!token)
     return (
       <div>
-        <AuthHeading title="This link is incomplete" subtitle="Open the reset link from your email again, or request a new one." />
+        <AuthHeading title={a("thisLinkIsIncomplete")} subtitle={a("openTheResetLinkFromYourEmailAgain")} />
         <Button variant="secondary" size="lg" className="w-full" asChild>
-          <Link to="/forgot">Request a new link</Link>
+          <Link to="/forgot">{a("requestANewLink")}</Link>
         </Button>
       </div>
     );
@@ -53,9 +57,9 @@ export default function Reset() {
         <span className={cn("mb-5 flex size-10 animate-indicator-in items-center justify-center rounded-lg", tone.green.chip)}>
           <Check className="size-[18px]" strokeWidth={2.5} />
         </span>
-        <AuthHeading title="Password updated" subtitle="You were signed out everywhere. Log in with your new password." />
+        <AuthHeading title={a("passwordUpdated")} subtitle={a("youWereSignedOutEverywhereLogInWith")} />
         <Button variant="primary" size="lg" className="w-full" asChild>
-          <Link to="/login">Log in</Link>
+          <Link to="/login">{a("logIn")}</Link>
         </Button>
       </div>
     );
@@ -66,17 +70,17 @@ export default function Reset() {
       await api.auth.reset(token, password);
       setDone(true);
     } catch (err) {
-      if (isApiError(err) && (err.code === "invalid_token" || err.code === "not_found")) setError("This reset link has expired or was already used. Request a new one.");
+      if (isApiError(err) && (err.code === "invalid_token" || err.code === "not_found")) setError(a("thisResetLinkHasExpiredOrWasAlready"));
       else setError(errorMessage(err));
     }
   });
 
   return (
     <div>
-      <AuthHeading title="Choose a new password" subtitle="Use 12 or more characters. A short sentence works well." />
+      <AuthHeading title={a("chooseANewPassword")} subtitle={a("use12OrMoreCharactersAShortSentence")} />
       {error && <Notice className="mb-4">{error}</Notice>}
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-        <AuthField label="New password">
+        <AuthField label={a("newPassword")}>
           {(id) => (
             <div className="flex flex-col gap-2">
               <PasswordInput id={id} autoFocus autoComplete="new-password" invalid={!!errors.password} {...register("password")} />
@@ -84,7 +88,7 @@ export default function Reset() {
             </div>
           )}
         </AuthField>
-        <AuthField label="Confirm password">
+        <AuthField label={a("confirmPassword")}>
           {(id) => (
             <div className="flex flex-col gap-1.5">
               <PasswordInput id={id} autoComplete="new-password" invalid={!!errors.confirm} {...register("confirm")} />
@@ -93,7 +97,7 @@ export default function Reset() {
           )}
         </AuthField>
         <Button type="submit" variant="primary" size="lg" className="mt-1 w-full" loading={isSubmitting}>
-          Update password
+          {a("updatePassword")}
         </Button>
       </form>
     </div>

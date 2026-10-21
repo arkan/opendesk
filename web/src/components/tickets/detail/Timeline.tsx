@@ -14,7 +14,7 @@ import { TagChip } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
 import { AI_TONE, tone } from "@/lib/tones";
 import { Tooltip } from "@/components/ui/tooltip";
-import { PriorityIcon, priorityLabel, SeverityChip, severityLabel, StatusIcon, statusLabel } from "../bits";
+import { PriorityIcon, priorityOrder, SeverityChip, severityLabel, StatusIcon, statusOrder } from "../bits";
 import { isSeverity, pct } from "@/lib/decisions";
 import { MessageItem, type ThreadActions } from "./MessageItem";
 import { LiveAgentReply } from "./AgentReply";
@@ -114,25 +114,25 @@ function describe(a: Activity, t: TFunction<"inbox">, { teams, members, tags, fi
         return {
           icon: <ShieldAlert />,
           hue: "amber",
-          text: line("activity.statusKept", { status: statusLabel[to] ? display.status(to) : String(d.to) }),
+          text: line("activity.statusKept", { status: statusOrder.includes(to) ? display.status(to) : String(d.to) }),
         };
       }
       return {
-        icon: statusLabel[to] ? <StatusIcon status={to} className="size-3" /> : <CircleDot />,
-        text: line("activity.status", { status: (statusLabel[to] ? display.status(to) : String(d.to)).toLowerCase() }),
+        icon: statusOrder.includes(to) ? <StatusIcon status={to} className="size-3" /> : <CircleDot />,
+        text: line("activity.status", { status: (statusOrder.includes(to) ? display.status(to) : String(d.to)).toLowerCase() }),
       };
     }
     case "priority_changed": {
       const to = d.to as Priority;
       return {
-        icon: priorityLabel[to] ? <PriorityIcon priority={to} className="size-3" /> : <CircleDot />,
-        text: line("activity.priority", { priority: priorityLabel[to] ? display.priority(to) : String(d.to) }),
+        icon: priorityOrder.includes(to) ? <PriorityIcon priority={to} className="size-3" /> : <CircleDot />,
+        text: line("activity.priority", { priority: priorityOrder.includes(to) ? display.priority(to) : String(d.to) }),
       };
     }
     case "severity_changed": {
       const to = d.to;
       return isSeverity(to)
-        ? { icon: <SeverityChip severity={to} className="h-[13px] min-w-[18px] px-0.5 text-[8.5px]" />, text: line("activity.severity", { severity: severityLabel[to] }) }
+        ? { icon: <SeverityChip severity={to} className="h-[13px] min-w-[18px] px-0.5 text-[8.5px]" />, text: line("activity.severity", { severity: severityLabel(to) }) }
         : { icon: <CircleDot />, text: line("activity.severityCleared") };
     }
     case "assigned": {
@@ -277,6 +277,7 @@ function describe(a: Activity, t: TFunction<"inbox">, { teams, members, tags, fi
 
 function ActivityLine({ a }: { a: Activity }) {
   const { t } = useTranslation("inbox");
+  useTranslation("indicators");
   const { data: teams } = useQuery(q.teams());
   const { data: members } = useQuery(q.members());
   const { data: tags } = useQuery(q.tags());
@@ -380,6 +381,7 @@ export function Timeline({
   /** Offered on each thread's latest message; absent for viewers. */
   threadActions?: ThreadActions;
 }) {
+  const { t } = useTranslation("indicators");
   const threadById = useMemo(() => new Map((threads ?? []).map((th) => [th.id, th])), [threads]);
   // Each thread's latest message carries its actions; its first says what went along.
   const [firstInThread, lastInThread] = useMemo(() => {
@@ -445,7 +447,7 @@ export function Timeline({
 
   let lastDay = "";
   return (
-    <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto" aria-label="Conversation" role="log">
+    <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto" aria-label={t("tickets.conversation")} role="log">
       <div className="mx-auto flex w-full max-w-[820px] flex-col gap-2 px-5 py-5">
         {loading ? (
           <div className="flex flex-col gap-3">

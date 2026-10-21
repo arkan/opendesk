@@ -204,8 +204,9 @@ export default function Mailboxes() {
 }
 
 function MailboxSkeleton() {
+  const { t: ui } = useTranslation("ui");
   return (
-    <div aria-busy="true" aria-label="Loading">
+    <div aria-busy="true" aria-label={ui("loading")}>
       {[0, 1, 2].map((i) => (
         <div key={i} className="flex min-h-12 items-center gap-3 border-b border-line-soft px-4 py-2.5 last:border-0">
           <Skeleton className="size-8 rounded-md" />
