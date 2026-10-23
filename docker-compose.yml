@@ -89,6 +89,8 @@ services:
       DATABASE_URL: postgres://opendesk:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/opendesk?sslmode=disable
       AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env (make selfhost-env or the installer generates it)}
       CREDENTIALS_KEY: ${CREDENTIALS_KEY:?set CREDENTIALS_KEY in .env (32 bytes hex). Losing it makes stored mailbox credentials unreadable}
+      # Keys CREDENTIALS_KEY replaced, while stored values move to it (docs: self-hosting/hardening).
+      CREDENTIALS_KEY_PREVIOUS: ${CREDENTIALS_KEY_PREVIOUS:-}
       # Embedded NATS, reachable by the gateway on the internal network only.
       NATS_LISTEN: 0.0.0.0:4222
       NATS_TOKEN: ${NATS_TOKEN:?set NATS_TOKEN in .env}

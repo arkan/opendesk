@@ -4,7 +4,7 @@
 #
 #   ./opendesk-ctl status               containers, health, version
 #   ./opendesk-ctl logs [service]       follow logs (opendesk, realtime, postgres, caddy)
-#   ./opendesk-ctl backup [dir]         database dump + data volume + .env, into backups/<time>
+#   ./opendesk-ctl backup [dir]         database dump + data volume + .env + SHA256SUMS, into backups/<time>
 #   ./opendesk-ctl restore <backup>     put a backup back (stops the app while it runs)
 #   ./opendesk-ctl upgrade [version]    back up, then move to a release (default: newest);
 #                                       goes back to the version before if it does not come up
@@ -143,8 +143,9 @@ cmd_logs() {
 # backup writes three things, and all three are needed to restore:
 #   db.dump       pg_dump custom format of the whole database
 #   data.tar.gz   the opendesk data volume (local attachments, NATS store)
-#   env           the .env, which holds CREDENTIALS_KEY. Without it every
-#                 stored mailbox credential in db.dump is unreadable.
+#   env           the .env, which holds CREDENTIALS_KEY. Without it (or that key
+#                 in CREDENTIALS_KEY_PREVIOUS) every stored mailbox credential in
+#                 db.dump is unreadable.
 cmd_backup() {
     backup_to "${1:-$DIR/backups}/$(stamp)"
     say "    It contains the instance's secrets (env). Copy it off this machine and keep it private."
@@ -163,8 +164,21 @@ backup_to() {
     dockerc cp "$cid":/data - | gzip >"$dest/data.tar.gz"
     (umask 077; cp "$DIR/.env" "$dest/env")
     env_get OPENDESK_VERSION >"$dest/VERSION"
+    (cd "$dest" && for f in db.dump data.tar.gz env VERSION; do printf '%s  %s\n' "$(sha256 "$f")" "$f"; done) >"$dest/SHA256SUMS"
     keep_owner "$(dirname "$dest")"
     ok "Backup written to $dest"
+}
+
+# verify_backup checks every file SHA256SUMS lists before anything is replaced.
+verify_backup() {
+    src=$1
+    [ -f "$src/SHA256SUMS" ] || { warn "The backup has no SHA256SUMS (taken before checksums were written), so its files are not checked."; return 0; }
+    while read -r want name; do
+        [ -n "$name" ] || continue
+        [ -f "$src/$name" ] || die "The backup is missing $name, which its SHA256SUMS lists. Nothing was changed."
+        [ "$(sha256 "$src/$name")" = "$want" ] || die "$name does not match its checksum: the backup is damaged or incomplete. Nothing was changed."
+    done <"$src/SHA256SUMS"
+    ok "Backup files match their checksums"
 }
 
 cmd_restore() {
@@ -172,6 +186,7 @@ cmd_restore() {
     if [ -z "$src" ] || [ ! -f "$src/db.dump" ]; then
         die "usage: opendesk-ctl restore <backup dir containing db.dump>"
     fi
+    verify_backup "$src"
     say "This replaces the database and data volume of $DIR with $src."
     if [ "${OPENDESK_YES:-0}" != 1 ]; then
         printf '  Type "restore" to continue: '
@@ -179,10 +194,15 @@ cmd_restore() {
         [ "$answer" = "restore" ] || die "nothing was changed"
     fi
     if [ -f "$src/env" ]; then
-        if [ "$(sed -n 's/^CREDENTIALS_KEY=//p' "$src/env" | tail -1)" != "$(env_get CREDENTIALS_KEY)" ]; then
-            warn "The backup was taken with a different CREDENTIALS_KEY than this .env has."
-            say "    Mailbox credentials will not decrypt unless you restore its env too:"
+        backup_key=$(sed -n 's/^CREDENTIALS_KEY=//p' "$src/env" | tail -1)
+        if [ "$backup_key" != "$(env_get CREDENTIALS_KEY)" ] &&
+            ! printf '%s\n' "$(env_get CREDENTIALS_KEY_PREVIOUS)" | tr ',' '\n' | tr -d ' ' | grep -qxF -- "$backup_key"; then
+            warn "The backup was taken with a CREDENTIALS_KEY that this .env has in neither"
+            say "    CREDENTIALS_KEY nor CREDENTIALS_KEY_PREVIOUS. Stored credentials will not"
+            say "    decrypt until you either restore its env too:"
             say "    cp $src/env $DIR/.env"
+            say "    or add the backup's CREDENTIALS_KEY to CREDENTIALS_KEY_PREVIOUS in $DIR/.env"
+            say "    and run opendesk-ctl start (docs: self-hosting/hardening)."
         fi
     fi
     info "Stopping the app"

@@ -2,6 +2,7 @@
 package config
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
@@ -11,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -43,12 +45,15 @@ type Config struct {
 
 	AuthSecret     []byte
 	CredentialsKey []byte // 32 bytes, AES-256-GCM for mailbox credentials and webhook secrets
-	CookieDomain   string
-	CookieSecure   bool
-	CORSOrigins    []string
-	SignupEnabled  bool
-	TrustProxy     bool
-	ProxyHops      int // TRUSTED_PROXY_HOPS: proxies in front that append to X-Forwarded-For
+	// CredentialsKeyPrevious are keys CREDENTIALS_KEY replaced: values they sealed still
+	// open, and internal/sealed re-encrypts them with CredentialsKey.
+	CredentialsKeyPrevious [][]byte
+	CookieDomain           string
+	CookieSecure           bool
+	CORSOrigins            []string
+	SignupEnabled          bool
+	TrustProxy             bool
+	ProxyHops              int // TRUSTED_PROXY_HOPS: proxies in front that append to X-Forwarded-For
 	// LogLevel is the least severe level logged (LOG_LEVEL): info in production,
 	// debug in development.
 	LogLevel slog.Level
@@ -725,7 +730,7 @@ func Load() (*Config, error) {
 	}
 	c.AuthSecret = []byte(secret)
 
-	key, err := decodeKey(os.Getenv("CREDENTIALS_KEY"))
+	key, err := decodeKey("CREDENTIALS_KEY", os.Getenv("CREDENTIALS_KEY"))
 	if err != nil {
 		return nil, err
 	}
@@ -736,6 +741,9 @@ func Load() (*Config, error) {
 		key = []byte("development-only-credentials-key")
 	}
 	c.CredentialsKey = key
+	if c.CredentialsKeyPrevious, err = previousKeys(os.Getenv("CREDENTIALS_KEY_PREVIOUS"), key); err != nil {
+		return nil, err
+	}
 
 	if c.IsProduction() && c.NATSURL == "" && c.NATSToken == "" && !strings.HasPrefix(c.NATSListen, "127.0.0.1") {
 		return nil, errors.New("NATS_TOKEN is required when the embedded NATS server listens beyond localhost")
@@ -816,7 +824,7 @@ func mailboxOAuth(k, clientID, clientSecret string) bool {
 	return err == nil && b
 }
 
-func decodeKey(s string) ([]byte, error) {
+func decodeKey(name, s string) ([]byte, error) {
 	if s == "" {
 		return nil, nil
 	}
@@ -826,7 +834,28 @@ func decodeKey(s string) ([]byte, error) {
 	if b, err := base64.StdEncoding.DecodeString(s); err == nil && len(b) == 32 {
 		return b, nil
 	}
-	return nil, errors.New("CREDENTIALS_KEY must be 32 bytes, hex or base64 encoded")
+	return nil, errors.New(name + " must be 32 bytes, hex or base64 encoded")
+}
+
+// previousKeys reads CREDENTIALS_KEY_PREVIOUS: keys separated by commas, each in
+// CREDENTIALS_KEY's format. The current key and repeats are dropped, so a key can be
+// listed before it stops being the current one.
+func previousKeys(s string, current []byte) ([][]byte, error) {
+	var keys [][]byte
+	for i, part := range strings.Split(s, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		k, err := decodeKey(fmt.Sprintf("CREDENTIALS_KEY_PREVIOUS (key %d)", i+1), part)
+		if err != nil {
+			return nil, err
+		}
+		if !bytes.Equal(k, current) && !slices.ContainsFunc(keys, func(o []byte) bool { return bytes.Equal(o, k) }) {
+			keys = append(keys, k)
+		}
+	}
+	return keys, nil
 }
 
 func env(k, def string) string {

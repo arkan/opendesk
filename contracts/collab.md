@@ -86,6 +86,20 @@ after a connect, a reconnect, `POST .../sync` or an action. One runs per account
   new UIDs above the stored one and the flags of known ones (`CHANGEDSINCE` with CONDSTORE), with
   UIDVALIDITY resets handled as a first sync of that folder; at most 30 folders are synced
   (the special ones first).
+- **Bursts**: new mail always arrives, and older mail that a change only touches stays out. A
+  pass imports at most 500 new messages (per account on Gmail, per folder on Microsoft and IMAP);
+  the rest come with the next passes. A message never imported that a change only marks read,
+  labels, archives or moves is older mail and is not imported; the first sync of an account, and
+  of a folder that is new or started over, stays capped as above.
+  - Gmail: mail new to the mailbox is what history adds (`messagesAdded`). What does not fit
+    waits in a backlog on the account, at most 5,000 messages (past that the oldest are left
+    out); each pass takes its own new mail first, then the backlog's, the newest first. History
+    longer than a pass (50 pages) goes on from its saved page next pass and then from the history
+    id its first page answered; a saved page that Gmail refuses is read again from the stored id.
+  - Microsoft: mail received since the connect (and in the last 30 days) is new. A pass reads
+    the folder's whole round; when new mail did not fit, the next pass first reads the pages
+    again from the first with mail left out, for that mail alone, then the folder's next round.
+  - IMAP: new UIDs, the oldest first; the stored UID goes on from the last one imported.
 - Changes made at the provider (read elsewhere, moved on the phone, deleted) arrive with the next
   sync. A message gone from every folder is removed from opendesk.
 - Failures are stored on the account (`status: "error"`, a safe `last_error`), retried with

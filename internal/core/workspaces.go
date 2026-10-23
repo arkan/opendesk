@@ -46,6 +46,9 @@ type CoreWorkspaceSettings struct {
 	Locale            *string `json:"locale,omitempty" maxLength:"35" doc:"Default language (BCP 47) of customer-facing pages: help center, CSAT, widget"`
 	LocaleFixed       *bool   `json:"locale_fixed,omitempty" doc:"Customer-facing pages always use locale (a brand's own, else the workspace's), whatever the visitor's browser. Default false"`
 	LabelCreation     *string `json:"label_creation,omitempty" enum:"anyone,admins" doc:"Who may create labels by applying a new name"`
+	MessageDelete     *string `json:"message_delete,omitempty" enum:"off,own,all" doc:"Which messages agents may delete: none, their own internal notes, or any agent's notes and replies. Admins may delete any message. Default own"`
+	UndoSendSeconds   *int    `json:"undo_send_seconds,omitempty" enum:"0,5,10,20,30" doc:"Seconds the app holds an agent's reply on an email (or any other non-chat) ticket, with a way to take it back or make it a note, before sending it. Default 5; 0 sends at once"`
+	UndoSendChatSecs  *int    `json:"undo_send_chat_seconds,omitempty" enum:"0,5,10,20,30" doc:"The same for replies on chat tickets. Default 0: a chat reply goes at once"`
 	// StatusLabels and PriorityLabels rename and recolour the fixed values for display only.
 	StatusLabels   map[string]DisplayOverride `json:"status_labels,omitempty"`
 	PriorityLabels map[string]DisplayOverride `json:"priority_labels,omitempty"`
@@ -234,6 +237,21 @@ func validateSettings(s *CoreWorkspaceSettings) (map[string]any, error) {
 		}
 		out["auto_assign"] = *s.AutoAssign
 	}
+	if s.MessageDelete != nil {
+		if !slices.Contains([]string{"off", "own", "all"}, *s.MessageDelete) {
+			return nil, httpx.Validation("message_delete must be off, own or all.")
+		}
+		out["message_delete"] = *s.MessageDelete
+	}
+	for key, v := range map[string]*int{"undo_send_seconds": s.UndoSendSeconds, "undo_send_chat_seconds": s.UndoSendChatSecs} {
+		if v == nil {
+			continue
+		}
+		if !slices.Contains([]int{0, 5, 10, 20, 30}, *v) {
+			return nil, httpx.Validation(key + " must be 0, 5, 10, 20 or 30.")
+		}
+		out[key] = *v
+	}
 	if s.Gravatar != nil {
 		out["gravatar"] = *s.Gravatar
 	}
@@ -362,7 +380,7 @@ func (s *svc) createWorkspace(ctx context.Context, tx pgx.Tx, p *auth.Principal,
 // fileKeys lists the stored objects of a workspace, removed after the rows are.
 func fileKeys(ctx context.Context, q db.Querier, wid uuid.UUID) ([]string, error) {
 	rows, err := q.Query(ctx, `SELECT storage_key FROM attachments WHERE workspace_id = $1
-		UNION ALL SELECT raw_storage_key FROM inbound_emails WHERE workspace_id = $1
+		UNION ALL SELECT raw_storage_key FROM inbound_emails WHERE workspace_id = $1 AND raw_storage_key <> ''
 		UNION ALL SELECT storage_key || '/256.png' FROM images WHERE workspace_id = $1
 		UNION ALL SELECT storage_key || '/64.png' FROM images WHERE workspace_id = $1
 		UNION ALL SELECT storage_key FROM ai_knowledge_sources WHERE workspace_id = $1 AND storage_key IS NOT NULL

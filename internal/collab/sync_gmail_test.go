@@ -60,19 +60,20 @@ func (m testMail) raw() []byte {
 
 // fakeGmail is a small Gmail API.
 type fakeGmail struct {
-	t       *testing.T
-	mu      sync.Mutex
-	labels  []map[string]any
-	msgs    map[string]*gmailFakeMsg
-	order   []string // oldest first
-	history int
-	changes []map[string]any // history records
-	gone    bool             // history answers 404
-	status  int              // every call answers this when set
-	modify  []map[string]any
-	trashed []string
-	sent    []string // multipart bodies
-	gets    int
+	t               *testing.T
+	mu              sync.Mutex
+	labels          []map[string]any
+	msgs            map[string]*gmailFakeMsg
+	order           []string // oldest first
+	history         int
+	changes         []map[string]any // history records
+	historyPageSize int
+	gone            bool // history answers 404
+	status          int  // every call answers this when set
+	modify          []map[string]any
+	trashed         []string
+	sent            []string // multipart bodies
+	gets            int
 	// settings is the account's sendAs and vacation (settings_test.go).
 	settings fakeGmailSettings
 	// drafts are the drafts API and label colours (drafts_test.go).
@@ -159,12 +160,12 @@ func (g *fakeGmail) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		reply(map[string]any{"messages": list})
 	case r.Method == "GET" && strings.HasPrefix(path, "/messages/"):
 		m := g.msgs[strings.TrimPrefix(path, "/messages/")]
+		if q.Get("format") == "raw" {
+			g.gets++
+		}
 		if m == nil {
 			w.WriteHeader(404)
 			return
-		}
-		if q.Get("format") == "raw" {
-			g.gets++
 		}
 		reply(map[string]any{"id": m.id, "threadId": m.thread, "labelIds": m.labels, "historyId": strconv.Itoa(g.history),
 			"internalDate": strconv.FormatInt(m.date.UnixMilli(), 10), "raw": base64.URLEncoding.EncodeToString(m.raw)})
@@ -173,14 +174,37 @@ func (g *fakeGmail) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(404)
 			return
 		}
+		// A page token holds its place and the newest record of the read: a read sees
+		// what was there when it began, the most Gmail promises.
 		since, _ := strconv.Atoi(q.Get("startHistoryId"))
+		offset, bound := 0, g.history
+		if token := q.Get("pageToken"); token != "" {
+			a, b, ok := strings.Cut(token, ":")
+			offset, _ = strconv.Atoi(a)
+			var err error
+			if bound, err = strconv.Atoi(b); !ok || err != nil {
+				w.WriteHeader(400)
+				_, _ = w.Write([]byte(`{"error":{"code":400,"message":"Invalid pageToken","errors":[{"reason":"invalidArgument"}]}}`))
+				return
+			}
+		}
 		list := []map[string]any{}
 		for _, c := range g.changes {
-			if id, _ := strconv.Atoi(c["id"].(string)); id > since {
+			if id, _ := strconv.Atoi(c["id"].(string)); id > since && id <= bound {
 				list = append(list, c)
 			}
 		}
-		reply(map[string]any{"history": list, "historyId": strconv.Itoa(g.history)})
+		pageSize := len(list)
+		if g.historyPageSize > 0 {
+			pageSize = g.historyPageSize
+		}
+		offset = min(offset, len(list))
+		end := min(offset+pageSize, len(list))
+		next := ""
+		if end < len(list) {
+			next = strconv.Itoa(end) + ":" + strconv.Itoa(bound)
+		}
+		reply(map[string]any{"history": list[offset:end], "historyId": strconv.Itoa(g.history), "nextPageToken": next})
 	case r.Method == "POST" && path == "/messages/batchModify":
 		var in map[string]any
 		_ = json.NewDecoder(r.Body).Decode(&in)
@@ -379,6 +403,259 @@ func TestGmailSync(t *testing.T) {
 	}
 	if _, err := w.d.Storage.Get(context.Background(), m3.RawKey); err == nil {
 		t.Fatal("the raw message is still in storage")
+	}
+}
+
+func gmailStateOf(t *testing.T, a *accountRow) gmailSyncState {
+	t.Helper()
+	var st gmailSyncState
+	if err := json.Unmarshal(a.SyncState, &st); err != nil {
+		t.Fatal(err)
+	}
+	return st
+}
+
+// burst adds n new messages to the inbox, each with its messagesAdded record.
+func (g *fakeGmail) burst(prefix string, n int, to string) {
+	for i := 0; i < n; i++ {
+		id := fmt.Sprintf("%s-%04d", prefix, i)
+		g.add(id, id, []string{"INBOX"}, testMail{from: "sender@example.com", to: to,
+			subject: "Burst", msgID: id + "@example.com", body: "Message"})
+		g.record("messagesAdded", id)
+	}
+}
+
+func TestGmailSyncBurstKeepsNewMailAndLeavesTouchedMailOut(t *testing.T) {
+	w := newWorld(t)
+	g := newFakeGmail(t)
+	w.useGmail(g)
+	a := w.account(w.agent, ProviderGoogle, VisibilityPrivate, Audience{})
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	g.burst("burst", initialMax+1, a.Email)
+	// Old mail never imported, read and moved in bulk elsewhere: history only touches it.
+	for i := 0; i < 5; i++ {
+		id := fmt.Sprintf("old-%d", i)
+		g.add(id, id, []string{"INBOX"}, testMail{from: "old@example.com", to: a.Email, subject: "Old",
+			msgID: id + "@example.com", body: "Old", date: time.Now().Add(-90 * 24 * time.Hour)})
+		g.record("labelsRemoved", id)
+		g.record("labelsAdded", id)
+	}
+	touched := `SELECT count(*) FROM collab_messages WHERE account_id = $1 AND remote_id LIKE 'old-%'`
+
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := w.count(`SELECT count(*) FROM collab_messages WHERE account_id = $1`, a.ID); got != initialMax {
+		t.Fatalf("first pass imported %d messages, want %d", got, initialMax)
+	}
+	if st := gmailStateOf(t, w.reload(a)); !slices.Equal(st.Backlog, []string{"burst-0000"}) || st.HistoryID != strconv.Itoa(g.history) {
+		t.Fatalf("state after the first pass: %+v", st)
+	}
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := w.count(`SELECT count(*) FROM collab_messages WHERE account_id = $1`, a.ID); got != initialMax+1 || w.count(touched, a.ID) != 0 {
+		t.Fatalf("second pass: %d messages, %d touched old ones", got, w.count(touched, a.ID))
+	}
+	if st := gmailStateOf(t, w.reload(a)); len(st.Backlog) != 0 {
+		t.Fatalf("backlog after the second pass: %v", st.Backlog)
+	}
+}
+
+func TestGmailSyncNewMailArrivesBeforeTheBacklog(t *testing.T) {
+	w := newWorld(t)
+	g := newFakeGmail(t)
+	w.useGmail(g)
+	a := w.account(w.agent, ProviderGoogle, VisibilityPrivate, Audience{})
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	g.burst("burst", 2*initialMax+1, a.Email)
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	if st := gmailStateOf(t, w.reload(a)); len(st.Backlog) != initialMax+1 {
+		t.Fatalf("backlog after the burst: %d", len(st.Backlog))
+	}
+	// Mail that arrives while the backlog is longer than a pass comes with the next pass.
+	g.add("fresh", "fresh", []string{"INBOX", "UNREAD"}, testMail{from: "new@example.com", to: a.Email, subject: "Fresh",
+		msgID: "fresh@example.com", body: "Just now", date: time.Now()})
+	g.record("messagesAdded", "fresh")
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := w.count(`SELECT count(*) FROM collab_messages WHERE account_id = $1 AND remote_id = 'fresh'`, a.ID); got != 1 {
+		t.Fatal("new mail waited behind the backlog")
+	}
+	if st := gmailStateOf(t, w.reload(a)); len(st.Backlog) != 2 {
+		t.Fatalf("backlog after the second pass: %d", len(st.Backlog))
+	}
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := w.count(`SELECT count(*) FROM collab_messages WHERE account_id = $1`, a.ID); got != 2*initialMax+2 {
+		t.Fatalf("after the backlog: %d messages, want %d", got, 2*initialMax+2)
+	}
+}
+
+func TestGmailSyncDeletedMailLeavesTheBacklog(t *testing.T) {
+	w := newWorld(t)
+	g := newFakeGmail(t)
+	w.useGmail(g)
+	a := w.account(w.agent, ProviderGoogle, VisibilityPrivate, Audience{})
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	g.burst("burst", initialMax+2, a.Email)
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	if st := gmailStateOf(t, w.reload(a)); !slices.Equal(st.Backlog, []string{"burst-0000", "burst-0001"}) {
+		t.Fatalf("backlog after the burst: %v", st.Backlog)
+	}
+	// Deleted before its turn: history says so, and it is gone from the backlog.
+	g.record("messagesDeleted", "burst-0000")
+	g.mu.Lock()
+	delete(g.msgs, "burst-0000")
+	g.gets = 0
+	g.mu.Unlock()
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	if st := gmailStateOf(t, w.reload(a)); len(st.Backlog) != 0 {
+		t.Fatalf("backlog after the delete: %v", st.Backlog)
+	}
+	if n := w.count(`SELECT count(*) FROM collab_messages WHERE account_id = $1 AND remote_id = 'burst-0000'`, a.ID); n != 0 || g.gets != 1 {
+		t.Fatalf("deleted message: %d stored, %d messages fetched", n, g.gets)
+	}
+	if got := w.count(`SELECT count(*) FROM collab_messages WHERE account_id = $1`, a.ID); got != initialMax+1 {
+		t.Fatalf("%d messages, want %d", got, initialMax+1)
+	}
+}
+
+func TestGmailSyncBacklogIsBounded(t *testing.T) {
+	w := newWorld(t)
+	g := newFakeGmail(t)
+	w.useGmail(g)
+	a := w.account(w.agent, ProviderGoogle, VisibilityPrivate, Audience{})
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	// A backlog already full: the oldest of it give way to this pass's new mail.
+	full := make([]string, gmailBacklogMax)
+	for i := range full {
+		full[i] = fmt.Sprintf("waiting-%04d", i) // gone at Gmail by now: nothing to fetch
+	}
+	st := gmailStateOf(t, w.reload(a))
+	st.Backlog = full
+	if err := w.s.saveAccountState(w.ctx, a, st); err != nil {
+		t.Fatal(err)
+	}
+	g.burst("burst", initialMax+3, a.Email)
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	got := gmailStateOf(t, w.reload(a)).Backlog
+	if len(got) != gmailBacklogMax || got[0] != "waiting-0003" || !slices.Equal(got[len(got)-3:], []string{"burst-0000", "burst-0001", "burst-0002"}) {
+		t.Fatalf("backlog: %d, %v ... %v", len(got), got[:2], got[len(got)-3:])
+	}
+}
+
+func TestGmailSyncResumesHistoryPagination(t *testing.T) {
+	w := newWorld(t)
+	g := newFakeGmail(t)
+	w.useGmail(g)
+	a := w.account(w.agent, ProviderGoogle, VisibilityPrivate, Audience{})
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	g.historyPageSize = 1
+	g.burst("page", gmailHistoryPagesPerPass+1, a.Email)
+	runStart := strconv.Itoa(g.history)
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := w.count(`SELECT count(*) FROM collab_messages WHERE account_id = $1`, a.ID); got != gmailHistoryPagesPerPass {
+		t.Fatalf("first pass imported %d messages, want %d", got, gmailHistoryPagesPerPass)
+	}
+	if st := gmailStateOf(t, w.reload(a)); st.HistoryID != "100" || st.PageToken == "" || st.RunHistoryID != runStart {
+		t.Fatalf("state after the first pass: %+v", st)
+	}
+
+	// Mail that arrives while the read goes on is read with the next one.
+	g.burst("late", 1, a.Email)
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	if st := gmailStateOf(t, w.reload(a)); st.HistoryID != runStart || st.PageToken != "" {
+		t.Fatalf("state after the read: %+v", st)
+	}
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := w.count(`SELECT count(*) FROM collab_messages WHERE account_id = $1`, a.ID); got != gmailHistoryPagesPerPass+2 {
+		t.Fatalf("imported %d messages, want %d", got, gmailHistoryPagesPerPass+2)
+	}
+}
+
+func TestGmailSyncRefusedPageTokenReadsAgain(t *testing.T) {
+	w := newWorld(t)
+	g := newFakeGmail(t)
+	w.useGmail(g)
+	a := w.account(w.agent, ProviderGoogle, VisibilityPrivate, Audience{})
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	g.burst("mail", 2, a.Email)
+	st := gmailStateOf(t, w.reload(a))
+	st.PageToken, st.RunHistoryID = "no-longer-valid", "100"
+	if err := w.s.saveAccountState(w.ctx, a, st); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	a = w.reload(a)
+	if st := gmailStateOf(t, a); a.Status != "active" || st.PageToken != "" || st.HistoryID != strconv.Itoa(g.history) {
+		t.Fatalf("after a refused page: %s %+v", a.Status, st)
+	}
+	if got := w.count(`SELECT count(*) FROM collab_messages WHERE account_id = $1`, a.ID); got != 2 {
+		t.Fatalf("imported %d messages, want 2", got)
+	}
+}
+
+func TestGmailSyncExpiredHistoryDuringAPagedRead(t *testing.T) {
+	w := newWorld(t)
+	g := newFakeGmail(t)
+	w.useGmail(g)
+	a := w.account(w.agent, ProviderGoogle, VisibilityPrivate, Audience{})
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	g.historyPageSize = 1
+	g.burst("page", gmailHistoryPagesPerPass+1, a.Email)
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	if st := gmailStateOf(t, w.reload(a)); st.PageToken == "" {
+		t.Fatalf("no saved page: %+v", st)
+	}
+	// Gmail no longer has the history the read started from: a first sync again.
+	g.mu.Lock()
+	g.gone = true
+	g.mu.Unlock()
+	if err := w.s.syncAccount(w.ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	a = w.reload(a)
+	if st := gmailStateOf(t, a); a.Status != "active" || st.PageToken != "" || st.RunHistoryID != "" || st.HistoryID != strconv.Itoa(g.history) {
+		t.Fatalf("after expired history: %s %+v", a.Status, st)
+	}
+	if got := w.count(`SELECT count(*) FROM collab_messages WHERE account_id = $1`, a.ID); got != gmailHistoryPagesPerPass+1 {
+		t.Fatalf("imported %d messages, want %d", got, gmailHistoryPagesPerPass+1)
 	}
 }
 

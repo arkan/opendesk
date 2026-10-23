@@ -20,7 +20,7 @@ Edit `/opt/opendesk/.env`, then run `/opt/opendesk/opendesk-ctl start` (it runs 
 opendesk checks its secrets at start and refuses to run when they are unsafe:
 
 - `AUTH_SECRET` shorter than 32 bytes, or empty. Only a development instance whose `APP_URL` and `API_URL` are both on `localhost` falls back to a public development secret.
-- `CREDENTIALS_KEY` missing or not 32 bytes, with the same localhost-only development fallback.
+- `CREDENTIALS_KEY` missing or not 32 bytes, with the same localhost-only development fallback, or a key in `CREDENTIALS_KEY_PREVIOUS` that is not 32 bytes.
 - In production, `COOKIE_SECURE=false` while `API_URL` is `https`.
 - In production, embedded NATS listening beyond `127.0.0.1` without `NATS_TOKEN`.
 - `OPENDESK_ROLE` other than `all`, `api` or `worker`.
@@ -92,11 +92,12 @@ See [Postgres and Neon](/self-hosting/postgres/).
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `AUTH_SECRET` | none (development on localhost: a public development secret) | At least 32 bytes. Signs every JWT. **Must be identical** in opendesk and the realtime gateway. |
-| `CREDENTIALS_KEY` | none (development on localhost: a public development key) | 32 bytes, hex or base64. Encrypts mailbox credentials, OAuth tokens, webhook secrets and TOTP secrets with AES-256-GCM. **Never change it**: existing credentials become unreadable. |
+| `CREDENTIALS_KEY` | none (development on localhost: a public development key) | 32 bytes, hex or base64. Encrypts mailbox credentials, OAuth tokens, webhook secrets and TOTP secrets with AES-256-GCM. **Change it only with the old key in `CREDENTIALS_KEY_PREVIOUS`**, as in [Replace CREDENTIALS_KEY](/self-hosting/hardening/#replace-credentials_key): on its own, a new key leaves existing credentials unreadable. |
+| `CREDENTIALS_KEY_PREVIOUS` | empty | Keys `CREDENTIALS_KEY` replaced, separated by commas, in the same format. Values they encrypted still decrypt, and a background pass encrypts them again with `CREDENTIALS_KEY`; remove this once the logs say it can be removed. |
 
 <Callout type="warning" title="Back up CREDENTIALS_KEY">
 
-Generate each with `openssl rand -hex 32`. `.env` holds the only copy of `CREDENTIALS_KEY`: back it up with the database, since a backup without it cannot decrypt stored credentials.
+Generate each with `openssl rand -hex 32`. `.env` holds the only copy of `CREDENTIALS_KEY`: back it up with the database, since a backup without it cannot decrypt stored credentials. After replacing the key, keep the old one for as long as you keep backups taken with it.
 
 </Callout>
 

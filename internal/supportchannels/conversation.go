@@ -3,6 +3,7 @@ package supportchannels
 import (
 	"bytes"
 	"context"
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/useopendesk/opendesk/internal/ai"
 	"github.com/useopendesk/opendesk/internal/auth"
+	"github.com/useopendesk/opendesk/internal/crypto"
 	"github.com/useopendesk/opendesk/internal/db"
 	"github.com/useopendesk/opendesk/internal/domain"
 	"github.com/useopendesk/opendesk/internal/helpdesk/tickets"
@@ -45,6 +47,9 @@ type conversationAction struct {
 	Value       string `json:"value,omitempty"`
 	Subject     string `json:"subject,omitempty"`
 	Description string `json:"description,omitempty"`
+	Direct      bool   `json:"direct,omitempty"`
+	// Nonce binds a preview's Confirm and Cancel controls to this action alone.
+	Nonce string `json:"nonce,omitempty"`
 }
 
 type conversationTarget struct {
@@ -58,48 +63,34 @@ type conversationState struct {
 	PendingExpires *time.Time
 }
 
-func (s *Service) converse(ctx context.Context, p *auth.Principal, connectionID, tid uuid.UUID, includeNotes bool, in channel.Inbound) (string, error) {
+func (s *Service) converse(ctx context.Context, p *auth.Principal, connectionID, tid uuid.UUID, includeNotes bool, in channel.Inbound) (channel.Message, error) {
 	return s.converseWithTarget(ctx, p, connectionID, conversationTarget{TicketID: &tid}, includeNotes, in)
 }
 
-func (s *Service) converseCreate(ctx context.Context, p *auth.Principal, connectionID uuid.UUID, teamID *uuid.UUID, in channel.Inbound) (string, error) {
+func (s *Service) converseCreate(ctx context.Context, p *auth.Principal, connectionID uuid.UUID, teamID *uuid.UUID, in channel.Inbound) (channel.Message, error) {
 	return s.converseWithTarget(ctx, p, connectionID, conversationTarget{TeamID: teamID}, false, in)
 }
 
-func (s *Service) converseWithTarget(ctx context.Context, p *auth.Principal, connectionID uuid.UUID, target conversationTarget, includeNotes bool, in channel.Inbound) (string, error) {
+func (s *Service) converseWithTarget(ctx context.Context, p *auth.Principal, connectionID uuid.UUID, target conversationTarget, includeNotes bool, in channel.Inbound) (channel.Message, error) {
 	processingID := uuid.New()
 	state, err := s.claimConversation(ctx, p.WorkspaceID, connectionID, processingID, in)
 	if err != nil {
-		return "", err
+		return channel.Message{}, err
 	}
 	defer s.releaseConversation(connectionID, processingID, in)
 	input := strings.TrimSpace(in.Text)
 	if input == "" {
 		if target.TicketID == nil {
-			return "Tell me the subject and a short description of the ticket you want to create.", nil
+			return plainChannelMessage("Tell me the subject and a short description of the ticket you want to create."), nil
 		}
-		return "What would you like me to do with this ticket?", nil
+		return plainChannelMessage("What would you like me to do with this ticket?"), nil
 	}
-	if state.Pending != nil && state.PendingExpires != nil && time.Now().Before(*state.PendingExpires) {
-		switch confirmation(input) {
-		case "confirm":
-			action := *state.Pending
-			state.Pending, state.PendingExpires = nil, nil
-			answer, err := s.applyAndSaveConversation(ctx, p, connectionID, processingID, target, in, action, state, true)
-			if errors.Is(err, errPendingActionGone) {
-				return "There isn't a change waiting for confirmation.", nil
-			}
-			return answer, err
-		case "cancel":
-			answer := "Cancelled. I didn't change the ticket."
-			if state.Pending.Command == "create_ticket" {
-				answer = "Cancelled. I didn't create the ticket."
-			}
-			state.Pending, state.PendingExpires = nil, nil
-			state.Turns = appendTurns(state.Turns, input, answer)
-			return answer, s.saveConversation(ctx, p.WorkspaceID, connectionID, processingID, in, state)
+	if pendingLive(state) {
+		switch verb := confirmation(input); verb {
+		case "confirm", "cancel":
+			return s.settle(ctx, p, connectionID, processingID, target, in, state, verb)
 		default:
-			return "I still have a change waiting. Reply `confirm` to apply it or `cancel` to discard it.", nil
+			return stillWaiting(state.Pending.Nonce), nil
 		}
 	}
 	state.Pending, state.PendingExpires = nil, nil
@@ -107,16 +98,17 @@ func (s *Service) converseWithTarget(ctx context.Context, p *auth.Principal, con
 	settings, err := s.ai.WorkspaceAI(ctx, p.WorkspaceID)
 	if err != nil || !settings.Assistant {
 		if target.TicketID == nil {
-			return "Ollie isn't available for this workspace. Create the ticket in opendesk instead.", nil
+			return plainChannelMessage("Ollie isn't available for this workspace. Create the ticket in opendesk instead."), nil
 		}
-		return "Ollie isn't available for this workspace. You can still use reply, note, assign, status and priority commands.", nil
+		return plainChannelMessage("Ollie isn't available for this workspace. You can still use reply, note, assign, status and priority commands."), nil
 	}
 	action, answer, err := s.interpretConversation(ctx, p, target, includeNotes, state.Turns, input)
 	if err != nil {
-		return "", fmt.Errorf("%w: %v", errConversationUnavailable, err)
+		return channel.Message{}, fmt.Errorf("%w: %v", errConversationUnavailable, err)
 	}
 	if action != nil {
 		if needsConfirmation(*action) {
+			action.Nonce = newNonce()
 			now := time.Now().Add(pendingActionTTL)
 			state.Pending, state.PendingExpires = action, &now
 			answer = actionConfirmation(*action)
@@ -129,7 +121,116 @@ func (s *Service) converseWithTarget(ctx context.Context, p *auth.Principal, con
 	}
 	answer = clip(answer, 3500)
 	state.Turns = appendTurns(state.Turns, input, answer)
-	return answer, s.saveConversation(ctx, p.WorkspaceID, connectionID, processingID, in, state)
+	message := plainChannelMessage(answer)
+	if state.Pending != nil {
+		message = confirmationChannelMessage(answer, state.Pending.Nonce)
+	}
+	return message, s.saveConversation(ctx, p.WorkspaceID, connectionID, processingID, in, state)
+}
+
+func pendingLive(state conversationState) bool {
+	return state.Pending != nil && state.PendingExpires != nil && time.Now().Before(*state.PendingExpires)
+}
+
+func stillWaiting(nonce string) channel.Message {
+	return confirmationChannelMessage("I still have a change waiting. Reply `confirm` to apply it or `cancel` to discard it.", nonce)
+}
+
+// settle applies or discards the pending action, in one transaction with
+// consuming it, so two confirmations cannot apply it twice.
+func (s *Service) settle(ctx context.Context, p *auth.Principal, connectionID, processingID uuid.UUID, target conversationTarget, in channel.Inbound, state conversationState, verb string) (channel.Message, error) {
+	action := *state.Pending
+	state.Pending, state.PendingExpires = nil, nil
+	in.Text = verb
+	if verb == "confirm" {
+		answer, err := s.applyAndSaveConversation(ctx, p, connectionID, processingID, target, in, action, state, true)
+		if errors.Is(err, errPendingActionGone) {
+			return plainChannelMessage(nothingWaiting), nil
+		}
+		return answer, err
+	}
+	answer := "Cancelled. I didn't change the ticket."
+	if action.Command == "create_ticket" {
+		answer = "Cancelled. I didn't create the ticket."
+	}
+	state.Turns = appendTurns(state.Turns, verb, answer)
+	return plainChannelMessage(answer), s.saveConversation(ctx, p.WorkspaceID, connectionID, processingID, in, state)
+}
+
+const nothingWaiting = "There isn't a change waiting for confirmation."
+
+// pendingAnswer is what a Confirm or Cancel control did.
+type pendingAnswer int
+
+const (
+	pendingSettled  pendingAnswer = iota // applied or discarded; the answer is posted in the thread
+	pendingGone                          // nothing with that nonce waits; its buttons are removed
+	pendingNotYours                      // the change waits for someone else; their buttons stay
+)
+
+// settleControl answers a Confirm or Cancel button without the model. The
+// button's value is its preview's nonce, so a stale or someone else's preview
+// cannot apply the change that waits now.
+func (s *Service) settleControl(ctx context.Context, p *auth.Principal, connectionID uuid.UUID, target conversationTarget, in channel.Inbound) (channel.Message, pendingAnswer, error) {
+	processingID := uuid.New()
+	state, err := s.claimConversation(ctx, p.WorkspaceID, connectionID, processingID, in)
+	if err != nil {
+		return channel.Message{}, pendingGone, err
+	}
+	defer s.releaseConversation(connectionID, processingID, in)
+	nonce := strings.TrimSpace(in.Value)
+	if !pendingLive(state) || nonce == "" || subtle.ConstantTimeCompare([]byte(state.Pending.Nonce), []byte(nonce)) != 1 {
+		var other bool
+		if nonce != "" {
+			if err := s.d.DB.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM support_channel_conversations
+				WHERE connection_id=$1 AND external_channel_id=$2 AND external_thread_id=$3 AND external_user_id<>$4
+				AND pending_action->>'nonce'=$5 AND pending_expires_at>now())`,
+				connectionID, in.ExternalChannelID, in.ExternalThreadID, in.ExternalUserID, nonce).Scan(&other); err != nil {
+				return channel.Message{}, pendingGone, err
+			}
+		}
+		if other {
+			return plainChannelMessage("Only the person who asked for this change can confirm or cancel it."), pendingNotYours, nil
+		}
+		return plainChannelMessage("That change isn't waiting for confirmation anymore."), pendingGone, nil
+	}
+	message, err := s.settle(ctx, p, connectionID, processingID, target, in, state, in.Command)
+	return message, pendingSettled, err
+}
+
+// previewClose asks for confirmation before a ticket card closes the ticket.
+// It refuses while another change waits, as Ollie does. ok is false when it
+// refused; the message then says why.
+func (s *Service) previewClose(ctx context.Context, p *auth.Principal, connectionID uuid.UUID, in channel.Inbound) (channel.Message, bool, error) {
+	processingID := uuid.New()
+	state, err := s.claimConversation(ctx, p.WorkspaceID, connectionID, processingID, in)
+	if err != nil {
+		return channel.Message{}, false, err
+	}
+	defer s.releaseConversation(connectionID, processingID, in)
+	if pendingLive(state) {
+		return plainChannelMessage("Another change is waiting for your confirmation. Confirm or cancel it first."), false, nil
+	}
+	action := conversationAction{Command: "status", Value: domain.StatusClosed, Direct: true, Nonce: newNonce()}
+	expires := time.Now().Add(pendingActionTTL)
+	state.Pending, state.PendingExpires = &action, &expires
+	answer := actionConfirmation(action)
+	state.Turns = appendTurns(state.Turns, "close the ticket", answer)
+	if err := s.saveConversation(ctx, p.WorkspaceID, connectionID, processingID, in, state); err != nil {
+		return channel.Message{}, false, err
+	}
+	return confirmationChannelMessage(answer, action.Nonce), true, nil
+}
+
+func newNonce() string { return crypto.RandomToken(12) }
+
+func plainChannelMessage(text string) channel.Message { return channel.Message{Text: clip(text, 3500)} }
+
+func confirmationChannelMessage(text, nonce string) channel.Message {
+	return channel.Message{Text: clip(text, 3500), Actions: []channel.Action{
+		{Command: "confirm", Value: nonce, Label: "Confirm", Style: "primary"},
+		{Command: "cancel", Value: nonce, Label: "Cancel", Style: "danger"},
+	}}
 }
 
 func (s *Service) interpretConversation(ctx context.Context, p *auth.Principal, target conversationTarget, includeNotes bool, history []conversationTurn, input string) (*conversationAction, string, error) {
@@ -419,7 +520,7 @@ func (s *Service) saveConversationWith(ctx context.Context, q db.Querier, wid, c
 	return err
 }
 
-func (s *Service) applyAndSaveConversation(ctx context.Context, p *auth.Principal, connectionID, processingID uuid.UUID, target conversationTarget, in channel.Inbound, action conversationAction, state conversationState, requirePending bool) (string, error) {
+func (s *Service) applyAndSaveConversation(ctx context.Context, p *auth.Principal, connectionID, processingID uuid.UUID, target conversationTarget, in channel.Inbound, action conversationAction, state conversationState, requirePending bool) (channel.Message, error) {
 	var answer string
 	err := s.d.DB.Tx(ctx, func(tx pgx.Tx) error {
 		if requirePending {
@@ -438,11 +539,10 @@ func (s *Service) applyAndSaveConversation(ctx context.Context, p *auth.Principa
 				return errPendingActionGone
 			}
 		}
-		// Ollie chose this change and the agent asked for it, so it runs with the
-		// agent's role and checks and is attributed to Ollie on their behalf, like
-		// every other assistant action (auth.Principal.Assistant).
+		// Model-selected changes are attributed to Ollie on the agent's behalf.
+		// Explicit commands remain the linked agent's own action.
 		ollie := *p
-		ollie.Assistant = true
+		ollie.Assistant = !action.Direct
 		if action.Command == "create_ticket" {
 			body := ""
 			if action.Description != "" {
@@ -466,7 +566,7 @@ func (s *Service) applyAndSaveConversation(ctx context.Context, p *auth.Principa
 		state.Turns = appendTurns(state.Turns, in.Text, answer)
 		return s.saveConversationWith(ctx, tx, p.WorkspaceID, connectionID, processingID, in, state)
 	})
-	return answer, err
+	return plainChannelMessage(answer), err
 }
 
 func (s *Service) releaseConversation(connectionID, processingID uuid.UUID, in channel.Inbound) {

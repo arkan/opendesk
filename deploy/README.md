@@ -233,7 +233,8 @@ over generic IMAP.
 Terraform generated `AUTH_SECRET`, `CREDENTIALS_KEY`, `HELP_PROXY_SECRET`,
 `INBOUND_SECRET`, `NATS_TOKEN`, `SECRET_KEY_BASE` and the two database URLs into
 Secrets Manager as `opendesk/production/<KEY>`. **Never regenerate
-`CREDENTIALS_KEY`**: it encrypts every stored mailbox credential.
+`CREDENTIALS_KEY`** without the old key in `CREDENTIALS_KEY_PREVIOUS` first: it
+encrypts every stored mailbox credential (`terraform/README.md`).
 
 Give the email worker the inbound secret, and the help worker the help proxy
 secret:

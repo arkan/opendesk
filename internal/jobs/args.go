@@ -402,3 +402,10 @@ type SeedTestWorkspaceArgs struct {
 }
 
 func (SeedTestWorkspaceArgs) Kind() string { return "admin.seed_test_workspace" }
+
+// ResealArgs re-encrypts sealed values that a previous CREDENTIALS_KEY sealed with the
+// current one (internal/sealed). Runs while CREDENTIALS_KEY_PREVIOUS is set, one at a time.
+// Owner: app (internal/sealed).
+type ResealArgs struct{}
+
+func (ResealArgs) Kind() string { return "sealed.reseal" }

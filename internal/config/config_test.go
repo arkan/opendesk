@@ -274,3 +274,28 @@ func TestEnvDefault(t *testing.T) {
 		t.Fatal("unknown OPENDESK_ENV accepted")
 	}
 }
+
+func TestCredentialsKeyPrevious(t *testing.T) {
+	productionEnv(t)
+	c, err := Load()
+	if err != nil || len(c.CredentialsKeyPrevious) != 0 {
+		t.Fatalf("unset: %v %d", err, len(c.CredentialsKeyPrevious))
+	}
+	hexKey := strings.Repeat("cd", 32)
+	b64Key := "ZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWZlZmVmZWY=" // 32 bytes
+	t.Setenv("CREDENTIALS_KEY_PREVIOUS", " "+hexKey+" , "+b64Key+",")
+	if c, err = Load(); err != nil || len(c.CredentialsKeyPrevious) != 2 ||
+		string(c.CredentialsKeyPrevious[1]) != strings.Repeat("ef", 16) {
+		t.Fatalf("two keys: %v %d", err, len(c.CredentialsKeyPrevious))
+	}
+	t.Setenv("CREDENTIALS_KEY_PREVIOUS", hexKey+",not-a-key")
+	if _, err := Load(); err == nil || !strings.Contains(err.Error(), "CREDENTIALS_KEY_PREVIOUS (key 2)") ||
+		strings.Contains(err.Error(), hexKey) {
+		t.Fatalf("bad key: %v", err)
+	}
+	// The current key and repeats are dropped, so a key can be listed before it is replaced.
+	t.Setenv("CREDENTIALS_KEY_PREVIOUS", strings.Repeat("ab", 32)+","+hexKey+","+hexKey)
+	if c, err = Load(); err != nil || len(c.CredentialsKeyPrevious) != 1 {
+		t.Fatalf("current and repeated keys: %v %d", err, len(c.CredentialsKeyPrevious))
+	}
+}

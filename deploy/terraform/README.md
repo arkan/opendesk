@@ -226,7 +226,15 @@ go through Deploy.
 - **Images are immutable and tagged by commit SHA.** The repositories keep the
   last 30.
 - **Secrets never rotate on their own.** A new `CREDENTIALS_KEY` makes every
-  stored mailbox credential unreadable; never taint `random_id.credentials_key`.
+  stored mailbox credential unreadable unless the old key is in
+  `CREDENTIALS_KEY_PREVIOUS` first. To replace it: store the current value with
+  `scripts/put-secret.sh CREDENTIALS_KEY_PREVIOUS`, add it to `optional_secrets`
+  and deploy; then replace `random_id.credentials_key` and deploy again. Until
+  the roll finishes, tasks still on the old key cannot open what the new ones
+  write. Once the worker logs that `CREDENTIALS_KEY_PREVIOUS` can be removed,
+  take it out of `optional_secrets` (docs: self-hosting/hardening, "Replace
+  CREDENTIALS_KEY"). Never replace `random_id.credentials_key` before that first
+  deploy.
 - **Sizes** are variables (`variables.tf`, "Sizes"): the defaults are the launch
   size, one of each. The database's size and high availability are settings in
   PlanetScale, changed online.

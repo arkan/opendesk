@@ -191,7 +191,9 @@ Errors, logging, data
   (`httpx.Error`, a provider's own refusal) reach a client; anything else is a logged 500.
 - Outside a development instance on localhost there are no built-in secrets: `AUTH_SECRET`
   and `CREDENTIALS_KEY` are required.
-- Mailbox credentials, OAuth tokens, webhook secrets, TOTP secrets: AES-GCM via `d.Box`.
+- Mailbox credentials, OAuth tokens, webhook secrets, TOTP secrets: AES-GCM via `d.Box`. Every
+  column that stores `d.Box` output is in `internal/sealed.Columns`, so a replaced
+  `CREDENTIALS_KEY` (`CREDENTIALS_KEY_PREVIOUS`) re-encrypts it.
 - Security events are audit-logged: login, failed login, 2FA changes, password change,
   member and role changes, API key and webhook changes, mailbox and integration connect/disconnect.
 - Users can delete their account and owners their workspace (data removed, not hidden).

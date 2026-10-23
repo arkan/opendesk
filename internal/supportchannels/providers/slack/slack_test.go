@@ -5,12 +5,15 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/useopendesk/opendesk/internal/supportchannels/channel"
 )
 
 func TestDiscoverReturnsOnlyJoinedActiveChannels(t *testing.T) {
@@ -120,5 +123,72 @@ func TestParseRootMentionStartsConversationThread(t *testing.T) {
 	e := got.Events[0]
 	if e.Command != "chat" || e.ExternalThreadID != "20.2" || e.Text != "create a ticket for the broken printer" || !e.Directed {
 		t.Fatalf("event = %+v", e)
+	}
+}
+
+func TestParseBlockActions(t *testing.T) {
+	payload := `{"type":"block_actions","trigger_id":"T9","response_url":"https://hooks.slack.com/actions/T/1/x","team":{"id":"TEAM"},"user":{"id":"U1"},"channel":{"id":"C1"},"container":{"message_ts":"10.1","thread_ts":"10.1"},"actions":[{"action_id":"opendesk:status","selected_option":{"value":"pending"}}]}`
+	body := []byte(url.Values{"payload": {payload}}.Encode())
+	result, err := (Adapter{}).Parse(http.Header{"Content-Type": []string{"application/x-www-form-urlencoded"}}, body)
+	if err != nil || len(result.Events) != 1 {
+		t.Fatalf("parse: %+v, %v", result, err)
+	}
+	event := result.Events[0]
+	if event.EventID != "T9" || event.Command != "status" || event.Value != "pending" || event.ExternalThreadID != "10.1" || event.SourceMessageID != "10.1" || event.Respond == "" || !result.Control {
+		t.Fatalf("event: %+v", event)
+	}
+
+	payload = `{"type":"block_actions","trigger_id":"T10","team":{"id":"TEAM"},"user":{"id":"U1"},"channel":{"id":"C1"},"message":{"ts":"11.1","text":"I'll close this ticket."},"container":{"message_ts":"11.1","thread_ts":"10.1"},"actions":[{"action_id":"opendesk:confirm","value":"n0nce"}]}`
+	body = []byte(url.Values{"payload": {payload}}.Encode())
+	result, err = (Adapter{}).Parse(http.Header{"Content-Type": []string{"application/x-www-form-urlencoded"}}, body)
+	if err != nil || result.Events[0].Command != "confirm" || result.Events[0].Value != "n0nce" || result.Events[0].SourceMessageID != "11.1" || result.Events[0].SourceText != "I'll close this ticket." {
+		t.Fatalf("confirm: %+v, %v", result.Events, err)
+	}
+
+	// The link button, and any action that isn't one of opendesk's controls, is
+	// acknowledged without a command.
+	for _, action := range []string{"opendesk:open", "opendesk:delete", "someone_elses"} {
+		payload = `{"type":"block_actions","trigger_id":"T11","team":{"id":"TEAM"},"user":{"id":"U1"},"channel":{"id":"C1"},"container":{"message_ts":"10.1"},"actions":[{"action_id":"` + action + `"}]}`
+		body = []byte(url.Values{"payload": {payload}}.Encode())
+		result, err = (Adapter{}).Parse(http.Header{"Content-Type": []string{"application/x-www-form-urlencoded"}}, body)
+		if err != nil || len(result.Events) != 0 {
+			t.Fatalf("%s: %+v, %v", action, result, err)
+		}
+	}
+}
+
+func TestOpenButtonHasItsOwnActionID(t *testing.T) {
+	payload := ticketPayload("C1", "", channel.Ticket{Number: 42, Subject: "Printer", URL: "https://app.test/t/42"})
+	blocks := payload["blocks"].([]any)
+	elements := blocks[2].(map[string]any)["elements"].([]any)
+	open := elements[len(elements)-1].(map[string]any)
+	if open["url"] != "https://app.test/t/42" || open["action_id"] != "opendesk:open" {
+		t.Fatalf("open button: %#v", open)
+	}
+}
+
+func TestRespondOnlyToSlackHooks(t *testing.T) {
+	var got map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&got)
+	}))
+	defer server.Close()
+	a := Adapter{BaseURL: server.URL}
+	if err := a.Respond(context.Background(), server.Client(), nil, server.URL+"/actions/1", "That ticket is not available."); err != nil {
+		t.Fatal(err)
+	}
+	if got["response_type"] != "ephemeral" || got["text"] != "That ticket is not available." {
+		t.Fatalf("response: %#v", got)
+	}
+	if err := (Adapter{}).Respond(context.Background(), server.Client(), nil, server.URL+"/actions/1", "x"); err == nil {
+		t.Fatal("answered through a URL that isn't Slack's")
+	}
+}
+
+func TestTicketPayloadHasNativeControls(t *testing.T) {
+	payload := ticketPayload("C1", "", channel.Ticket{Number: 42, Subject: "Printer", Customer: "Rae", Assignee: "Jo", Status: "open", Priority: "high", URL: "https://app.test/t/42"})
+	blocks, ok := payload["blocks"].([]any)
+	if !ok || len(blocks) != 3 {
+		t.Fatalf("blocks: %#v", payload["blocks"])
 	}
 }

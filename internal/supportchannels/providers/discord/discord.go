@@ -47,8 +47,12 @@ func (a Adapter) call(ctx context.Context, c *http.Client, token, method, path s
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode/100 != 2 {
+		var refusal struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(io.LimitReader(resp.Body, 1<<16)).Decode(&refusal)
 		io.Copy(io.Discard, resp.Body)
-		return &statusError{code: resp.StatusCode}
+		return &statusError{code: resp.StatusCode, api: refusal.Code}
 	}
 	if out != nil {
 		return json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(out)
@@ -57,10 +61,18 @@ func (a Adapter) call(ctx context.Context, c *http.Client, token, method, path s
 	return nil
 }
 
-// statusError is a Discord API answer outside 2xx.
-type statusError struct{ code int }
+// statusError is a Discord API answer outside 2xx, with Discord's own error
+// code when it sent one.
+type statusError struct{ code, api int }
 
 func (e *statusError) Error() string { return fmt.Sprintf("discord: status %d", e.code) }
+
+// archived reports Discord refusing an edit in an archived thread (50083). The
+// message keeps its last state; the next post to the thread unarchives it.
+func archived(err error) bool {
+	var se *statusError
+	return errors.As(err, &se) && se.api == 50083
+}
 
 func (a Adapter) Validate(ctx context.Context, c *http.Client, cr map[string]string) (channel.Account, error) {
 	if cr["bot_token"] == "" || cr["public_key"] == "" || cr["guild_id"] == "" {
@@ -219,16 +231,19 @@ func (Adapter) Verify(h http.Header, body []byte, cr map[string]string) error {
 }
 func (Adapter) Parse(_ http.Header, body []byte) (channel.WebhookResult, error) {
 	var x struct {
-		ID        string `json:"id"`
-		GuildID   string `json:"guild_id"`
-		ChannelID string `json:"channel_id"`
-		Type      int    `json:"type"`
-		Member    struct {
+		ID            string `json:"id"`
+		ApplicationID string `json:"application_id"`
+		Token         string `json:"token"`
+		GuildID       string `json:"guild_id"`
+		ChannelID     string `json:"channel_id"`
+		Type          int    `json:"type"`
+		Member        struct {
 			User struct{ ID string } `json:"user"`
 		} `json:"member"`
 		Data struct {
-			Name     string `json:"name"`
-			CustomID string `json:"custom_id"`
+			Name     string   `json:"name"`
+			CustomID string   `json:"custom_id"`
+			Values   []string `json:"values"`
 			Options  []struct {
 				Name  string
 				Value any
@@ -242,11 +257,14 @@ func (Adapter) Parse(_ http.Header, body []byte) (channel.WebhookResult, error) 
 	if x.Type == 1 {
 		return channel.WebhookResult{Status: http.StatusOK, ContentType: "application/json", Body: []byte(`{"type":1}`)}, nil
 	}
-	cmd := x.Data.Name
-	if x.Data.CustomID != "" {
-		cmd = x.Data.CustomID
+	respond := ""
+	if x.ApplicationID != "" && x.Token != "" {
+		respond = x.ApplicationID + "/" + x.Token
 	}
-	cmd = strings.TrimPrefix(cmd, "opendesk:")
+	if x.Type == 3 {
+		return parseComponent(x.ID, x.GuildID, x.ChannelID, x.Member.User.ID, x.Data.CustomID, x.Data.Values, x.Message.ID, respond), nil
+	}
+	cmd := x.Data.Name
 	var text string
 	for _, o := range x.Data.Options {
 		if o.Name == "text" || o.Name == "value" {
@@ -260,11 +278,40 @@ func (Adapter) Parse(_ http.Header, body []byte) (channel.WebhookResult, error) 
 		cmd = "chat"
 	}
 	return channel.WebhookResult{
-		Events:      []channel.Inbound{{EventID: x.ID, AccountID: x.GuildID, ExternalChannelID: x.ChannelID, ExternalThreadID: x.ChannelID, ExternalUserID: x.Member.User.ID, Command: cmd, Text: text, Value: text, Directed: true}},
+		Events:      []channel.Inbound{{EventID: x.ID, AccountID: x.GuildID, ExternalChannelID: x.ChannelID, ExternalThreadID: x.ChannelID, ExternalUserID: x.Member.User.ID, Command: cmd, Text: text, Value: text, Directed: true, Respond: respond}},
 		Status:      http.StatusOK,
 		ContentType: "application/json",
 		Body:        []byte(`{"type":4,"data":{"content":"Command received.","flags":64}}`),
 	}, nil
+}
+
+// controls are the custom ids opendesk's own components send.
+var controls = map[string]bool{"assign_self": true, "status": true, "priority": true, "confirm": true, "cancel": true}
+
+// parseComponent reads a button or select on a ticket card or confirmation
+// preview. It is acknowledged without a visible answer (type 6): the card's
+// edit, or a private follow-up, is the feedback.
+func parseComponent(id, guild, channelID, user, customID string, values []string, message, respond string) channel.WebhookResult {
+	result := channel.WebhookResult{Status: http.StatusOK, ContentType: "application/json", Body: []byte(`{"type":6}`)}
+	cmd, ok := strings.CutPrefix(customID, "opendesk:")
+	value := ""
+	if before, after, found := strings.Cut(cmd, ":"); found {
+		cmd, value = before, after
+	}
+	if !ok || !controls[cmd] {
+		return result
+	}
+	if len(values) > 0 {
+		value = values[0]
+	}
+	text := value
+	if cmd == "confirm" || cmd == "cancel" {
+		text = cmd
+	}
+	result.Control = true
+	result.Events = []channel.Inbound{{EventID: id, AccountID: guild, ExternalChannelID: channelID, ExternalThreadID: channelID, ExternalUserID: user,
+		Command: cmd, Text: text, Value: value, Directed: true, SourceMessageID: message, Respond: respond}}
+	return result
 }
 func (a Adapter) CreateThread(ctx context.Context, c *http.Client, cr map[string]string, destination string, t channel.Ticket) (channel.Thread, error) {
 	name := fmt.Sprintf("%d-%s", t.Number, t.Subject)
@@ -275,10 +322,13 @@ func (a Adapter) CreateThread(ctx context.Context, c *http.Client, cr map[string
 	if err := a.call(ctx, c, cr["bot_token"], http.MethodPost, "/channels/"+destination+"/threads", map[string]any{"name": name, "type": 11, "auto_archive_duration": 1440}, &th); err != nil {
 		return channel.Thread{}, err
 	}
-	if err := a.Post(ctx, c, cr, th.ID, render(t)); err != nil {
+	var root struct {
+		ID string `json:"id"`
+	}
+	if err := a.call(ctx, c, cr["bot_token"], http.MethodPost, "/channels/"+th.ID+"/messages", ticketPayload(t), &root); err != nil {
 		return channel.Thread{}, err
 	}
-	return channel.Thread{ID: th.ID, ChannelID: th.ID}, nil
+	return channel.Thread{ID: th.ID, RootID: root.ID, ChannelID: th.ID}, nil
 }
 func (a Adapter) Post(ctx context.Context, c *http.Client, cr map[string]string, thread, text string) error {
 	if thread == "" {
@@ -288,8 +338,113 @@ func (a Adapter) Post(ctx context.Context, c *http.Client, cr map[string]string,
 		"content": clip(text, 1900), "allowed_mentions": map[string]any{"parse": []string{}}, "flags": 4,
 	}, nil)
 }
-func (a Adapter) Update(context.Context, *http.Client, map[string]string, string, channel.Ticket) error {
+func (a Adapter) Update(ctx context.Context, c *http.Client, cr map[string]string, root string, t channel.Ticket) error {
+	err := a.call(ctx, c, cr["bot_token"], http.MethodPatch, "/channels/"+cr["channel_id"]+"/messages/"+root, ticketPayload(t), nil)
+	if archived(err) {
+		return nil
+	}
+	return err
+}
+
+func (a Adapter) PostInteractive(ctx context.Context, c *http.Client, cr map[string]string, thread string, message channel.Message) (channel.MessageRef, error) {
+	if thread == "" {
+		thread = cr["channel_id"]
+	}
+	var out struct {
+		ID string `json:"id"`
+	}
+	err := a.call(ctx, c, cr["bot_token"], http.MethodPost, "/channels/"+thread+"/messages", interactivePayload(message), &out)
+	return channel.MessageRef{ID: out.ID}, err
+}
+
+// ClearActions removes the message's components and leaves its content.
+func (a Adapter) ClearActions(ctx context.Context, c *http.Client, cr map[string]string, in channel.Inbound) error {
+	if in.SourceMessageID == "" {
+		return nil
+	}
+	err := a.call(ctx, c, cr["bot_token"], http.MethodPatch, "/channels/"+cr["channel_id"]+"/messages/"+in.SourceMessageID, map[string]any{"components": []any{}}, nil)
+	if archived(err) {
+		return nil
+	}
+	return err
+}
+
+// Respond sends an ephemeral follow-up to the interaction. The handle is the
+// application id and the interaction's token, which authorizes the follow-up
+// and so never appears in an error.
+func (a Adapter) Respond(ctx context.Context, c *http.Client, _ map[string]string, handle, text string) error {
+	appID, token, ok := strings.Cut(handle, "/")
+	if text == "" || !ok || appID == "" || token == "" || strings.ContainsAny(appID, "/?#") || strings.ContainsAny(token, "/?#") {
+		return nil
+	}
+	b, _ := json.Marshal(map[string]any{"content": clip(text, 1900), "flags": 64, "allowed_mentions": map[string]any{"parse": []string{}}})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, a.endpoint("/webhooks/"+appID+"/"+token), bytes.NewReader(b))
+	if err != nil {
+		return errors.New("discord follow-up: invalid interaction")
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := c.Do(req)
+	if err != nil {
+		return errors.New("discord follow-up: request failed")
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<16))
+	if resp.StatusCode/100 != 2 {
+		return &statusError{code: resp.StatusCode}
+	}
 	return nil
+}
+
+func ticketPayload(t channel.Ticket) map[string]any {
+	return map[string]any{
+		"content": "", "allowed_mentions": map[string]any{"parse": []string{}},
+		"embeds": []any{map[string]any{
+			"title": fmt.Sprintf("#%d %s", t.Number, clip(t.Subject, 220)), "url": t.URL,
+			"description": fmt.Sprintf("**Customer**\n%s\n\n**Assignee**\n%s", clip(t.Customer, 300), clip(t.Assignee, 300)),
+			"fields": []any{
+				map[string]any{"name": "Status", "value": strings.ReplaceAll(t.Status, "_", " "), "inline": true},
+				map[string]any{"name": "Priority", "value": t.Priority, "inline": true},
+			},
+		}},
+		"components": []any{
+			map[string]any{"type": 1, "components": []any{
+				map[string]any{"type": 2, "style": 1, "label": "Assign to me", "custom_id": "opendesk:assign_self"},
+				map[string]any{"type": 2, "style": 5, "label": "Open in opendesk", "url": t.URL},
+			}},
+			map[string]any{"type": 1, "components": []any{discordSelect("Status", "opendesk:status", []string{"open", "pending", "on_hold", "solved", "closed"})}},
+			map[string]any{"type": 1, "components": []any{discordSelect("Priority", "opendesk:priority", []string{"low", "normal", "high", "urgent"})}},
+		},
+	}
+}
+
+func discordSelect(label, id string, values []string) map[string]any {
+	options := make([]any, 0, len(values))
+	for _, value := range values {
+		options = append(options, map[string]any{"label": strings.ReplaceAll(value, "_", " "), "value": value})
+	}
+	return map[string]any{"type": 3, "custom_id": id, "placeholder": label, "options": options}
+}
+
+func interactivePayload(message channel.Message) map[string]any {
+	payload := map[string]any{"content": clip(message.Text, 1900), "allowed_mentions": map[string]any{"parse": []string{}}, "components": []any{}}
+	if len(message.Actions) > 0 {
+		buttons := make([]any, 0, len(message.Actions))
+		for _, action := range message.Actions {
+			style := 2
+			if action.Style == "primary" {
+				style = 3
+			} else if action.Style == "danger" {
+				style = 4
+			}
+			id := "opendesk:" + action.Command
+			if action.Value != "" {
+				id += ":" + action.Value
+			}
+			buttons = append(buttons, map[string]any{"type": 2, "style": style, "label": action.Label, "custom_id": id})
+		}
+		payload["components"] = []any{map[string]any{"type": 1, "components": buttons}}
+	}
+	return payload
 }
 
 func render(t channel.Ticket) string {

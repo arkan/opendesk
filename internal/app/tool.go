@@ -46,7 +46,7 @@ func BuildTool(ctx context.Context, cfg *config.Config, log *slog.Logger) (*deps
 	if err != nil {
 		return fail(err)
 	}
-	box, err := crypto.NewBox(cfg.CredentialsKey)
+	box, err := crypto.NewBox(cfg.CredentialsKey, cfg.CredentialsKeyPrevious...)
 	if err != nil {
 		return fail(err)
 	}

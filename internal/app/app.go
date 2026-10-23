@@ -53,6 +53,7 @@ import (
 	"github.com/useopendesk/opendesk/internal/natsx"
 	"github.com/useopendesk/opendesk/internal/plan"
 	"github.com/useopendesk/opendesk/internal/push"
+	"github.com/useopendesk/opendesk/internal/sealed"
 	"github.com/useopendesk/opendesk/internal/storage"
 	"github.com/useopendesk/opendesk/internal/supportchannels"
 	"github.com/useopendesk/opendesk/internal/version"
@@ -128,7 +129,7 @@ func Build(ctx context.Context, cfg *config.Config, log *slog.Logger) (*deps.Dep
 	if err != nil {
 		return nil, nil, err
 	}
-	box, err := crypto.NewBox(cfg.CredentialsKey)
+	box, err := crypto.NewBox(cfg.CredentialsKey, cfg.CredentialsKeyPrevious...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -150,6 +151,11 @@ func Build(ctx context.Context, cfg *config.Config, log *slog.Logger) (*deps.Dep
 	workers := river.NewWorkers()
 	river.AddWorker(workers, &events.PruneWorker{Pool: database.Direct, Retention: cfg.EventRetention})
 	periodic := []*river.PeriodicJob{events.PrunePeriodic()}
+	// Values a previous CREDENTIALS_KEY sealed are re-encrypted with the current one.
+	river.AddWorker(workers, &sealed.Worker{Q: database.Pool, Box: box, Log: log, RelayServing: cfg.PushRelayServe})
+	if box.Rotating() {
+		periodic = append(periodic, sealed.Periodic())
+	}
 	for _, a := range areas {
 		a.registerWorkers(d, workers)
 		periodic = append(periodic, a.periodic(d)...)

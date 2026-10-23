@@ -2,8 +2,9 @@
 # <name>/<env>/<KEY>, all encrypted with the one customer-managed key.
 #
 # Generated secrets are created once from the random provider and never
-# rotate on their own: a new CREDENTIALS_KEY would make every stored mailbox
-# credential unreadable, and a new AUTH_SECRET signs everyone out.
+# rotate on their own: a new CREDENTIALS_KEY makes every stored mailbox
+# credential unreadable unless the old one is in CREDENTIALS_KEY_PREVIOUS first
+# (deploy/terraform/README.md), and a new AUTH_SECRET signs everyone out.
 #
 # Operator-supplied secrets (OAuth client secrets, Turnstile, PostHog, Stripe
 # keys and price ids, the OpenRouter, Anthropic and Voyage API keys, the APNs key, the
@@ -67,6 +68,8 @@ locals {
     # Collab mail accounts in their own Google project and Entra app.
     "COLLAB_GOOGLE_CLIENT_SECRET",
     "COLLAB_MICROSOFT_CLIENT_SECRET",
+    # Keys CREDENTIALS_KEY replaced, while stored values move to the current one.
+    "CREDENTIALS_KEY_PREVIOUS",
   ])
 
   all_keys = setunion(

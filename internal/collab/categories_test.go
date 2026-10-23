@@ -91,7 +91,7 @@ func (g *fakeGraph) addWithCategories(id, conv, folder string, m testMail, cats 
 	g.add(id, conv, folder, true, m)
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	list := g.pending[folder]
+	list := g.changes[folder]
 	list[len(list)-1]["categories"] = cats
 	if g.cats.onMsg == nil {
 		g.cats.onMsg = map[string][]string{}
