@@ -2,7 +2,7 @@ import { i18n } from "@/i18n";
 import type { ParseKeys } from "i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, TextInput } from "@/components/ui/input";
@@ -223,7 +223,7 @@ const ok = timingSafeEqual(expected, v1) && Math.abs(Date.now() / 1000 - Number(
           <CopyField multiline value={`OD-Signature: t=<unix>,v1=<hex hmac_sha256(secret, "<t>.<body>")>`} />
           <CopyField multiline value={verify} />
           <p className="text-[12px] text-fg-3">
-            {ui("deliveriesAlsoInclude")} <span className="mono text-fg-2">OD-Event-Id</span> {ui("and")} <span className="mono text-fg-2">OD-Event-Type</span>{ui("useTheEventIdToIgnoreRetriesYouVe")}
+            <Trans t={ui} i18nKey="deliveryHeaders" components={{ code: <span className="mono text-fg-2" /> }} />
           </p>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { AlertDialog as A } from "radix-ui";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { Button } from "./button";
@@ -61,7 +61,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             {pending?.typeToConfirm && (
               <div className="mt-4 flex flex-col gap-1.5">
                 <label className="text-xs text-fg-3">
-                  {ui("type")} <span className="mono font-medium text-fg">{pending.typeToConfirm}</span> {ui("toConfirm")}
+                  <Trans t={ui} i18nKey="typeToConfirm" components={{ value: <span className="mono font-medium text-fg">{pending.typeToConfirm}</span> }} />
                 </label>
                 <TextInput autoFocus value={typed} onChange={(e) => setTyped(e.target.value)} aria-label={ui("confirmationText")} />
               </div>
