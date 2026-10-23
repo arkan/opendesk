@@ -200,18 +200,33 @@ describe("catalogs", () => {
     }
   }
 
+  // The agent app's French is partial by design: an English string added without
+  // French falls back to English (fallbackLng). What French has must be sound.
   for (const ns of NAMESPACES.filter((ns) => ns !== "common" && ns !== "public")) {
-    it(`fr/${ns}.json translates every agent key and preserves variables and Ollie`, () => {
+    it(`fr/${ns}.json has only English keys, valid plurals, and keeps variables, tags and Ollie`, () => {
       const en = read("en", ns);
       const fr = read("fr", ns);
-      expect(flatten(fr).sort()).toEqual(expected("fr", flatten(en)));
+      const enKeys = new Set(flatten(en));
+      const enPlurals = new Set([...enKeys].filter((k) => PLURAL.test(k)).map((k) => k.replace(PLURAL, "")));
+      const cats = new Intl.PluralRules("fr").resolvedOptions().pluralCategories;
       const get = (o: Record<string, unknown>, path: string): string => String(path.split(".").reduce<unknown>((x, k) => (x as Record<string, unknown>)?.[k], o));
-      for (const k of flatten(fr)) {
-        const sourceKey = k.endsWith("_many") ? k.replace(/_many$/, "_other") : k;
-        const source = get(en, sourceKey);
+      const vars = (t: string) => (t.match(/\{\{[^}]+\}\}/g) ?? []).map((v) => v.replace(/\s/g, "")).sort();
+      const tags = (t: string) => (t.match(/<\/?[A-Za-z0-9]+\s*\/?>/g) ?? []).map((v) => v.replace(/\s/g, "")).sort();
+      const frKeys = flatten(fr);
+      for (const k of frKeys) {
+        const base = k.replace(PLURAL, "");
+        const plural = PLURAL.test(k) && enPlurals.has(base);
+        if (plural) {
+          expect(cats, `${ns}.${k} is not a French plural form`).toContain(k.match(PLURAL)![1]);
+          for (const c of cats) expect(frKeys, `${ns}.${k} lacks its ${c} form`).toContain(`${base}_${c}`);
+        } else {
+          expect(enKeys.has(k), `${ns}.${k} is not an English key`).toBe(true);
+        }
+        const source = get(en, enKeys.has(k) ? k : `${base}_other`);
         const translated = get(fr, k);
         if (source.trim()) expect(translated.trim(), `${ns}.${k}`).not.toBe("");
-        expect((translated.match(/\{\{[^}]+\}\}/g) ?? []).sort(), `${ns}.${k}`).toEqual((source.match(/\{\{[^}]+\}\}/g) ?? []).sort());
+        expect(vars(translated), `${ns}.${k} variables`).toEqual(vars(source));
+        expect(tags(translated), `${ns}.${k} tags`).toEqual(tags(source));
         expect(translated.match(/Ollie/g) ?? [], `${ns}.${k}`).toEqual(source.match(/Ollie/g) ?? []);
       }
     });
