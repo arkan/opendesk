@@ -1,9 +1,12 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { i18n } from "@/i18n";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n, loadAgentCatalogs } from "@/i18n";
 import { OnboardingSteps } from "./OnboardingSteps";
 import { oauthErrorMessage, PasswordInput, StrengthMeter } from "./parts";
+
+// The agent app loads its French catalogs before rendering (the root route's loader).
+beforeAll(() => loadAgentCatalogs("fr"));
 
 vi.mock("@/lib/password-strength", () => ({
   usePasswordStrength: () => ({ score: 1, warning: "This is a commonly used password." }),

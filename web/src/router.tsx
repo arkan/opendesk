@@ -11,6 +11,7 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import type { QueryClient } from "@tanstack/react-query";
+import { isPublicPath, loadAgentCatalogs } from "./i18n";
 import { RootLayout } from "./app/RootLayout";
 import { AppLayout } from "./app/AppLayout";
 import { AuthLayout } from "./app/AuthLayout";
@@ -63,6 +64,9 @@ const addMode = (v: unknown) => (v === "1" || v === 1 || v === true ? "1" : unde
 // ─── Root ──────────────────────────────────────────────────────────────────
 
 const rootRoute = createRootRouteWithContext<RouterContext>()({
+  // The agent app's catalogs in a language other than English load before its
+  // first page renders; public pages load their own (src/i18n/index.ts).
+  loader: ({ location }) => (isPublicPath(location.pathname) ? undefined : loadAgentCatalogs()),
   component: RootLayout,
   notFoundComponent: NotFound,
   errorComponent: RouteError,

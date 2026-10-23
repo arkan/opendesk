@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { i18n, matchLocale, pickAgentLocale, pickLocale, resetLocale, RTL, setLocale, SUPPORTED } from "./index";
+import { i18n, intlLocale, isPublicPath, loadAgentCatalogs, matchLocale, pickAgentLocale, pickLocale, resetLocale, RTL, setLocale, SUPPORTED } from "./index";
 import { NAMESPACES } from "./resources";
 
 const files = import.meta.glob<Record<string, unknown>>("./locales/*/*.json", { eager: true, import: "default" });
@@ -56,6 +56,75 @@ describe("pickLocale", () => {
   });
 });
 
+describe("loading", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    resetLocale();
+  });
+
+  it("boots with common only and keeps the agent catalogs off public pages", async () => {
+    expect(i18n.options.ns).toEqual(["common"]);
+    await setLocale("fr", ["public", "common"]);
+    expect(i18n.hasResourceBundle("fr", "public")).toBe(true);
+    for (const ns of NAMESPACES.filter((ns) => ns !== "common" && ns !== "public")) expect(i18n.hasResourceBundle("fr", ns), ns).toBe(false);
+  });
+
+  it("tells public routes from the agent app's", () => {
+    expect(isPublicPath("/csat")).toBe(true);
+    expect(isPublicPath("/csat/abc")).toBe(true);
+    expect(isPublicPath("/help/acme/articles/x")).toBe(true);
+    expect(isPublicPath("/inbox/unassigned")).toBe(false);
+    expect(isPublicPath("/helpers")).toBe(false);
+    expect(isPublicPath("/login")).toBe(false);
+  });
+
+  it("loads every agent catalog in the agent language, and nothing for English", async () => {
+    await loadAgentCatalogs("en");
+    expect(i18n.hasResourceBundle("fr", "inbox")).toBe(false);
+    await loadAgentCatalogs("fr");
+    for (const ns of NAMESPACES) expect(i18n.hasResourceBundle("fr", ns), ns).toBe(true);
+  });
+
+  it("falls back to English for a key French does not have yet", async () => {
+    i18n.addResourceBundle("en", "fallbackProbe", { old: "Old", added: "Only in English" });
+    i18n.addResourceBundle("fr", "fallbackProbe", { old: "Ancien" });
+    await i18n.changeLanguage("fr");
+    expect(i18n.t("old" as never, { ns: "fallbackProbe" })).toBe("Ancien");
+    expect(i18n.t("added" as never, { ns: "fallbackProbe" })).toBe("Only in English");
+  });
+});
+
+describe("intlLocale", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    resetLocale();
+  });
+
+  it("keeps the browser's region when it speaks the active language", async () => {
+    vi.spyOn(navigator, "languages", "get").mockReturnValue(["fr-CA", "en-US"]);
+    await i18n.changeLanguage("fr");
+    expect(intlLocale()).toBe("fr-CA");
+    vi.spyOn(navigator, "languages", "get").mockReturnValue(["de-DE", "fr-CH"]);
+    expect(intlLocale()).toBe("fr-CH");
+    vi.spyOn(navigator, "languages", "get").mockReturnValue(["de-DE"]);
+    expect(intlLocale()).toBe("fr");
+  });
+
+  it("uses the page language on public pages, with a matching region only", async () => {
+    vi.spyOn(navigator, "languages", "get").mockReturnValue(["zh-TW", "pt-BR"]);
+    await setLocale("zh-CN", ["common"]);
+    expect(intlLocale()).toBe("zh-CN");
+    await setLocale("pt", ["common"]);
+    expect(intlLocale()).toBe("pt-BR");
+  });
+
+  it("formats an English agent app in the browser's locale", async () => {
+    vi.spyOn(navigator, "language", "get").mockReturnValue("de-DE");
+    await i18n.changeLanguage("en");
+    expect(intlLocale()).toBe("de-DE");
+  });
+});
+
 describe("agent language", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -73,6 +142,7 @@ describe("agent language", () => {
 
   it("loads French agent catalogs and restores them after a public page", async () => {
     vi.spyOn(navigator, "languages", "get").mockReturnValue(["fr-FR"]);
+    await loadAgentCatalogs();
     await i18n.changeLanguage(pickAgentLocale());
     expect(i18n.t("nav.inbox", { ns: "shell" })).toBe("Boîte de réception");
     await setLocale("ar", ["public", "common"]);

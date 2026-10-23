@@ -1,12 +1,15 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { i18n } from "@/i18n";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { i18n, loadAgentCatalogs } from "@/i18n";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { channelItems, priorityItems, severityItems, statusItems } from "@/components/settings2/pickers";
 import { presets, rangeLabel } from "@/components/reports/RangePicker";
 import { VolumeLegend, VolumeTable } from "@/components/reports/VolumeChart";
 import { ChannelIcon, PriorityIcon, PriorityPill, SentimentIcon, SeverityChip, SeverityPill, SlaPill, SpamIcon, StatusIcon, StatusPill, slaState } from ".";
+
+// The agent app loads its French catalogs before rendering (the root route's loader).
+beforeAll(() => loadAgentCatalogs("fr"));
 
 let container: HTMLDivElement;
 let root: Root;

@@ -1,7 +1,10 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { i18n } from "@/i18n";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { i18n, loadAgentCatalogs } from "@/i18n";
 import { localNames, tagState } from "./catalog";
 import { matchSnippets, SNIPPETS } from "./snippets";
+
+// The agent app loads its French catalogs before rendering (the root route's loader).
+beforeAll(() => loadAgentCatalogs("fr"));
 
 describe("snippets", () => {
   afterEach(async () => { await i18n.changeLanguage("en"); });

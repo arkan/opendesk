@@ -1,8 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, expect, it } from "vitest";
-import { i18n } from "@/i18n";
+import { afterEach, beforeAll, expect, it } from "vitest";
+import { i18n, loadAgentCatalogs } from "@/i18n";
 import { Calendar, DateField } from "./date-picker";
 import { SearchInput } from "./input";
+
+// The agent app loads its French catalogs before rendering (the root route's loader).
+beforeAll(() => loadAgentCatalogs("fr"));
 
 afterEach(async () => { await i18n.changeLanguage("en"); });
 
