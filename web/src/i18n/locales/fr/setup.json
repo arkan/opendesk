@@ -6,12 +6,12 @@
     "remove_title": "Retirer la photo ?",
     "remove_body": "{{name}} affichera des initiales à la place.",
     "remove_confirm": "Retirer la photo",
-    "hint": "PNG, JPEG, WebP ou GIF, jusqu'à 5 Mo.",
-    "drop": "Déposez la photo pour l'importer",
-    "bad_type": "Ce fichier n'est pas une image utilisable. Essayez PNG, JPEG, WebP ou GIF.",
+    "hint": "PNG, JPEG, WebP ou GIF, jusqu’à 5 Mo.",
+    "drop": "Déposez la photo pour l’importer",
+    "bad_type": "Ce fichier n’est pas une image utilisable. Essayez PNG, JPEG, WebP ou GIF.",
     "too_big": "Cette image dépasse 5 Mo. Essayez une image plus petite.",
     "unreadable": "Impossible de lire cette image. Essayez un autre fichier.",
-    "failed": "Impossible d'importer la photo. Réessayez.",
+    "failed": "Impossible d’importer la photo. Réessayez.",
     "crop_title": "Recadrer la photo",
     "crop_description": "Faites glisser la photo pour la positionner et utilisez le curseur pour zoomer.",
     "crop_area": "Zone de recadrage. Les touches fléchées déplacent la photo, les touches plus et moins règlent le zoom.",
@@ -24,12 +24,12 @@
     "uploaded": "Photo mise à jour",
     "too_large_px": "Cette image est trop grande. Utilisez une image de moins de 4096 pixels de chaque côté.",
     "refresh": "Actualiser",
-    "refreshing": "Recherche d'une nouvelle image",
+    "refreshing": "Recherche d’une nouvelle image",
     "source_oauth": "Depuis votre compte Google ou GitHub",
     "source_gravatar": "Depuis Gravatar",
-    "source_domain": "Depuis le site web de l'entreprise",
+    "source_domain": "Depuis le site web de l’entreprise",
     "source_widget": "Depuis le widget de chat",
-    "hint_logo": "PNG, JPEG, WebP ou GIF, jusqu'à 5 Mo. Les logos larges conviennent mieux."
+    "hint_logo": "PNG, JPEG, WebP ou GIF, jusqu’à 5 Mo. Les logos larges conviennent mieux."
   },
   "checklist": {
     "title": "Première configuration",
@@ -37,12 +37,12 @@
     "progress_label": "{{done}} étapes terminées sur {{total}}",
     "dismiss": "Ignorer",
     "done_title": "Tout est prêt",
-    "done_body": "Votre espace de travail est prêt pour l'équipe.",
+    "done_body": "Votre espace de travail est prêt pour l’équipe.",
     "open": "Ouvrir la liste des étapes de configuration",
     "step_done": "Terminé",
     "step_todo": "À faire",
     "needs_admin": "Un administrateur effectue cette configuration",
-    "needs_ai": "Activez l'IA dans les paramètres pour essayer cette fonction"
+    "needs_ai": "Activez l’IA dans les paramètres pour essayer cette fonction"
   },
   "availability": {
     "label": "Disponibilité",

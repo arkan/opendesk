@@ -15,7 +15,7 @@
   "searchPeople": "Rechercher un nom, un e-mail ou une entreprise",
   "searchCompanies": "Rechercher des entreprises ou des domaines",
   "filteredBy": "Filtré par",
-  "clearCompany": "Effacer le filtre d'entreprise",
+  "clearCompany": "Effacer le filtre d’entreprise",
   "clearSearch": "Effacer la recherche",
   "cancel": "Annuler",
   "retry": "Réessayer",
@@ -37,7 +37,7 @@
     "tickets": "Tickets",
     "blocked": "Bloqués",
     "matching": "correspondant à vos filtres",
-    "inDirectory": "dans l'annuaire",
+    "inDirectory": "dans l’annuaire",
     "represented": "représentées",
     "fromThesePeople": "de ces personnes",
     "blockedHint": "directement dirigés vers les indésirables",
@@ -65,7 +65,7 @@
     "phone": "Téléphone",
     "company": "Entreprise",
     "domain": "Domaine",
-    "domainHint": "Les contacts dont l'adresse e-mail utilise ce domaine peuvent être associés à l'entreprise.",
+    "domainHint": "Les contacts dont l’adresse e-mail utilise ce domaine peuvent être associés à l’entreprise.",
     "notes": "Notes",
     "notesHint": "Visibles par votre équipe sur chaque ticket de ce contact.",
     "externalId": "Identifiant externe",
@@ -77,7 +77,7 @@
     "title": "Aucun contact pour le moment",
     "description": "Les contacts sont créés lorsque les clients vous écrivent par e-mail ou par chat. Vous pouvez aussi les ajouter vous-même.",
     "noMatch": "Aucun contact correspondant",
-    "noMatchHint": "Essayez un autre nom, e-mail ou nom d'entreprise.",
+    "noMatchHint": "Essayez un autre nom, e-mail ou nom d’entreprise.",
     "companiesTitle": "Aucune entreprise pour le moment",
     "companiesDescription": "Regroupez les contacts par organisation.",
     "noCompanyMatch": "Aucune entreprise correspondante",
@@ -94,14 +94,14 @@
     "addName": "Ajoutez un nom."
   },
   "drawer": {
-    "overview": "Vue d'ensemble",
+    "overview": "Vue d’ensemble",
     "tickets": "Tickets",
     "people": "Personnes",
     "edit": "Modifier",
     "editNotes": "Modifier les notes",
     "save": "Enregistrer les modifications",
     "delete": "Supprimer",
-    "copyEmail": "Copier l'adresse e-mail",
+    "copyEmail": "Copier l’adresse e-mail",
     "addNote": "Ajoutez une note que votre équipe verra sur chaque ticket",
     "noNotes": "Aucune note",
     "noTickets": "Aucun ticket pour le moment",
@@ -114,14 +114,14 @@
     "discard": "Abandonner",
     "discardBody": "Vos modifications de ce contact seront perdues.",
     "discardCompany": "Vos modifications de cette entreprise seront perdues.",
-    "pictureRefresh": "Recherche d'une nouvelle image. Elle apparaîtra ici dès qu'elle sera trouvée."
+    "pictureRefresh": "Recherche d’une nouvelle image. Elle apparaîtra ici dès qu’elle sera trouvée."
   },
   "confirm": {
     "deleteTitle": "Supprimer {{name}} ?",
     "deleteBody": "Ses tickets sont conservés, mais sa fiche de contact et ses notes sont supprimées.",
     "deleteConfirm": "Supprimer le contact",
     "deleteCompanyBody": "Les personnes sont conservées, mais ne sont plus liées à cette entreprise.",
-    "deleteCompanyConfirm": "Supprimer l'entreprise"
+    "deleteCompanyConfirm": "Supprimer l’entreprise"
   },
   "toast": {
     "created": "Contact créé",
@@ -134,13 +134,13 @@
   "labels": {
     "add": "Ajouter une étiquette",
     "edit": "Étiquettes",
-    "saveFailed": "Impossible d'enregistrer cette modification"
+    "saveFailed": "Impossible d’enregistrer cette modification"
   },
   "clearFilters": "Effacer les filtres",
   "tips": {
-    "spelling": "Vérifiez l'orthographe",
+    "spelling": "Vérifiez l’orthographe",
     "emailOrDomain": "Essayez une adresse e-mail ou un domaine",
-    "tryDomain": "Essayez le domaine de l'adresse e-mail, comme acme.com",
+    "tryDomain": "Essayez le domaine de l’adresse e-mail, comme acme.com",
     "automatic": "Les contacts sont créés automatiquement à partir des e-mails et du chat",
     "search": "pour rechercher partout",
     "domains": "Les entreprises regroupent les contacts par domaine de messagerie"

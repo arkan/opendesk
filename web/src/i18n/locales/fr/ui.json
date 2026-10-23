@@ -20,30 +20,30 @@
   "solved": "Résolus",
   "day": "Jour",
   "adminsOnly": "Réservé aux administrateurs",
-  "askAWorkspaceAdminIfYouNeedToChange": "Demandez à un administrateur de l'espace de travail de modifier",
+  "askAWorkspaceAdminIfYouNeedToChange": "Demandez à un administrateur de l’espace de travail de modifier",
   "signInAgain": "Se reconnecter",
   "private": "Privé",
   "allEvents": "Tous les événements",
   "webhookActive": "Webhook actif",
   "deliveriesAlsoInclude": "Les envois incluent aussi",
   "and": "et",
-  "useTheEventIdToIgnoreRetriesYouVe": ". Utilisez l'identifiant de l'événement pour ignorer les nouvelles tentatives déjà traitées.",
+  "useTheEventIdToIgnoreRetriesYouVe": ". Utilisez l’identifiant de l’événement pour ignorer les nouvelles tentatives déjà traitées.",
   "preview": "Aperçu",
   "noSubject": "Sans objet",
   "testEmailSent": "E-mail de test envoyé",
   "searchRecentTickets": "Rechercher des tickets récents",
   "noTicketsYet": "Aucun ticket pour le moment",
-  "sampleData": "Données d'exemple",
+  "sampleData": "Données d’exemple",
   "desktop": "Ordinateur",
   "phone": "Téléphone",
   "sendTest": "Envoyer un test",
   "subject": "Objet",
-  "emailPreview": "Aperçu de l'e-mail",
-  "theVisualEditorKeepsTextLinksListsAndImages": "L'éditeur visuel conserve le texte, les liens, les listes et les images. Les tableaux, les styles intégrés et la mise en page de ce HTML seront supprimés.",
-  "switchToTheVisualEditor": "Passer à l'éditeur visuel ?",
+  "emailPreview": "Aperçu de l’e-mail",
+  "theVisualEditorKeepsTextLinksListsAndImages": "L’éditeur visuel conserve le texte, les liens, les listes et les images. Les tableaux, les styles intégrés et la mise en page de ce HTML seront supprimés.",
+  "switchToTheVisualEditor": "Passer à l’éditeur visuel ?",
   "switchAndSimplify": "Basculer et simplifier",
   "visual": "Visuel",
-  "scriptsFormsAndRemoteStylesAreRemovedWhenYou": "Les scripts, formulaires et styles distants sont supprimés à l'enregistrement.",
+  "scriptsFormsAndRemoteStylesAreRemovedWhenYou": "Les scripts, formulaires et styles distants sont supprimés à l’enregistrement.",
   "forAVariableOr": "pour une variable ou",
   "forLogicLikeIfAndLoops": "pour des conditions et des boucles.",
   "templateGuide": "Guide des modèles",
@@ -114,7 +114,7 @@
   "eventCount_many": "{{count}} événements",
   "httpsUrl": "Utilisez une URL en https://.",
   "fullUrl": "Saisissez une URL complète, par exemple https://example.com/hooks/opendesk.",
-  "someone": "Quelqu'un",
+  "someone": "Quelqu’un",
   "system": "Système",
   "copied": "Copié",
   "copy": "Copier",
@@ -143,7 +143,7 @@
     },
     "unless": {
       "label": "Afficher seulement si vide",
-      "description": "L'inverse de if."
+      "description": "L’inverse de if."
     },
     "case": {
       "label": "Choisir selon la valeur",
@@ -151,7 +151,7 @@
     },
     "for": {
       "label": "Énumérer chaque élément",
-      "description": "Répète une partie pour chaque élément d'une liste, comme les étiquettes."
+      "description": "Répète une partie pour chaque élément d’une liste, comme les étiquettes."
     },
     "assign": {
       "label": "Nommer une valeur",
@@ -162,7 +162,7 @@
       "description": "Conserve un bloc entier pour le réutiliser."
     },
     "comment": {
-      "label": "Note pour l'équipe",
+      "label": "Note pour l’équipe",
       "description": "Ne parvient jamais au client."
     },
     "raw": {
@@ -172,7 +172,7 @@
   },
   "apiKey": "Clé API",
   "html": "HTML",
-  "previewFailed": "Impossible d'afficher l'aperçu.",
+  "previewFailed": "Impossible d’afficher l’aperçu.",
   "eventCount_one": "{{count}} événement",
   "eventCount_other": "{{count}} événements",
   "allGroupEvents": "Tous les événements : {{group}}",

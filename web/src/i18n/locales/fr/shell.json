@@ -14,8 +14,8 @@
     "expand": "Développer la barre latérale",
     "open": "Ouvrir la navigation",
     "waiting_one": "{{count}} client attend dans le chat en direct, depuis {{time}} au maximum. Ouvrez la conversation.",
-    "waiting_other": "{{count}} clients attendent dans le chat en direct, depuis {{time}} au maximum. Ouvrez la conversation dont l'attente est la plus longue.",
-    "waiting_many": "{{count}} clients attendent dans le chat en direct, depuis {{time}} au maximum. Ouvrez la conversation dont l'attente est la plus longue.",
+    "waiting_other": "{{count}} clients attendent dans le chat en direct, depuis {{time}} au maximum. Ouvrez la conversation dont l’attente est la plus longue.",
+    "waiting_many": "{{count}} clients attendent dans le chat en direct, depuis {{time}} au maximum. Ouvrez la conversation dont l’attente est la plus longue.",
     "waitingShort_one": "{{count}} en attente dans le chat",
     "waitingShort_other": "{{count}} en attente dans le chat",
     "waitingShort_many": "{{count}} en attente dans le chat",
@@ -29,21 +29,21 @@
     "privateTeam": "Équipe privée",
     "teamCounts": "{{unassigned}} non attribués, {{open}} ouverts",
     "manageTeams": "Gérer les équipes",
-    "switchTeam": "Changer d'équipe",
+    "switchTeam": "Changer d’équipe",
     "teamHint": "Équipe"
   },
   "workspaces": {
     "title": "Espaces de travail",
     "create": "Créer un espace de travail",
-    "settings": "Paramètres de l'espace de travail",
+    "settings": "Paramètres de l’espace de travail",
     "current": "Espace de travail actuel",
     "noneYet": "Aucun espace de travail pour le moment",
     "addAccount": "Ajouter un compte"
   },
   "suspended": {
     "title": "Cet espace de travail est suspendu",
-    "body": "Un administrateur de cette instance opendesk a suspendu {{name}}. Sa boîte de réception, son chat en direct et son centre d'aide sont en pause. Aucune donnée n'a été supprimée.",
-    "contact": "Contactez l'assistance pour le rétablir.",
+    "body": "Un administrateur de cette instance opendesk a suspendu {{name}}. Sa boîte de réception, son chat en direct et son centre d’aide sont en pause. Aucune donnée n’a été supprimée.",
+    "contact": "Contactez l’assistance pour le rétablir.",
     "open": "Ouvrir {{name}}",
     "signOut": "Se déconnecter"
   },
@@ -60,7 +60,7 @@
     "logout": "Se déconnecter",
     "logoutAll": "Se déconnecter de tous les comptes"
   },
-  "breadcrumb": "Fil d'Ariane",
+  "breadcrumb": "Fil d’Ariane",
   "search": {
     "open": "Recherche et commandes",
     "label": "Rechercher"
@@ -95,27 +95,27 @@
       "replied": "{{who}} a répondu",
       "repliedAnon": "Le client a répondu",
       "threadReplied": "{{who}} a répondu à votre conversation parallèle",
-      "threadRepliedAnon": "Quelqu'un a répondu à votre conversation parallèle",
+      "threadRepliedAnon": "Quelqu’un a répondu à votre conversation parallèle",
       "sla": "SLA non respecté",
       "handoff": "{{who}} a demandé à parler à une personne",
       "handoffAnon": "Un client a demandé à parler à une personne",
       "other": "Notification",
-      "capReached": "Ollie a atteint le plafond mensuel de l'agent",
-      "capReachedUsd": "Ollie a atteint le plafond mensuel de {{cap}} de l'agent",
+      "capReached": "Ollie a atteint le plafond mensuel de l’agent",
+      "capReachedUsd": "Ollie a atteint le plafond mensuel de {{cap}} de l’agent",
       "balanceLow": "Le solde IA est bientôt épuisé",
       "balanceLowUsd": "Le solde IA est bientôt épuisé : {{remaining}} restants",
       "balanceOut": "Le solde IA est épuisé : Ollie est en pause",
       "rechargeFailed": "La recharge automatique a échoué et est désactivée",
-      "keyRejected": "Votre fournisseur IA a refusé la clé de l'espace de travail",
-      "keyNoFunds": "Votre compte chez le fournisseur IA n'a plus de fonds",
-      "someone": "Quelqu'un",
+      "keyRejected": "Votre fournisseur IA a refusé la clé de l’espace de travail",
+      "keyNoFunds": "Votre compte chez le fournisseur IA n’a plus de fonds",
+      "someone": "Quelqu’un",
       "teamJoined": "{{who}} a rejoint {{team}}",
-      "teamJoinedPrivate": "{{who}} a rejoint l'équipe privée {{team}} et peut désormais voir ses tickets",
+      "teamJoinedPrivate": "{{who}} a rejoint l’équipe privée {{team}} et peut désormais voir ses tickets",
       "teamJoinedAnon": "{{who}} a rejoint une équipe que vous dirigez",
       "importDone": "Votre import {{source}} est terminé",
       "importDoneCounts": "Votre import {{source}} est terminé : {{counts}}",
       "importCredentials": "Votre import {{source}} nécessite de nouveaux identifiants",
-      "importFailed": "Votre import {{source}} s'est arrêté",
+      "importFailed": "Votre import {{source}} s’est arrêté",
       "importTickets_one": "{{count}} ticket",
       "importTickets_other": "{{count}} tickets",
       "importTickets_many": "{{count}} tickets",
@@ -126,7 +126,7 @@
       "importSource": "historique"
     },
     "hold": {
-      "paused": "En pause jusqu'à {{when}} : aucune notification par e-mail, sur téléphone ou sur ordinateur",
+      "paused": "En pause jusqu’à {{when}} : aucune notification par e-mail, sur téléphone ou sur ordinateur",
       "unsubscribed": "Les e-mails de notification sont désactivés ici : vous vous êtes désabonné",
       "emailOff": "Les e-mails de notification sont désactivés",
       "turnOn": "Activer"
@@ -136,27 +136,27 @@
     "toggleSidebar": "Afficher ou masquer la barre latérale",
     "goMine": "Aller à mes tickets",
     "goReports": "Aller aux rapports",
-    "switchWorkspace": "Ouvrir l'espace de travail 1 à 9"
+    "switchWorkspace": "Ouvrir l’espace de travail 1 à 9"
   },
   "route": {
     "loading": "Chargement",
     "notFoundTitle": "Introuvable",
-    "notFoundBody": "Cet élément a peut-être été supprimé ou vous n'y avez pas accès.",
+    "notFoundBody": "Cet élément a peut-être été supprimé ou vous n’y avez pas accès.",
     "errorTitle": "Impossible de charger cette page",
-    "chunkBody": "Une partie de l'application n'a pas été téléchargée, souvent parce qu'une nouvelle version est disponible. Rechargez la page pour la récupérer.",
+    "chunkBody": "Une partie de l’application n’a pas été téléchargée, souvent parce qu’une nouvelle version est disponible. Rechargez la page pour la récupérer.",
     "reload": "Recharger",
     "retry": "Réessayer",
     "toInbox": "Aller à la boîte de réception",
     "pageNotFound": "Page introuvable",
     "pageNotFoundBody": "Le lien est peut-être incorrect ou la page a été déplacée.",
-    "home": "Aller à l'accueil"
+    "home": "Aller à l’accueil"
   },
   "helpRedirect": {
-    "title": "Les centres d'aide ont leur propre adresse",
-    "body": "Ce lien de centre d'aide pointe vers l'application, mais les centres d'aide sont servis par l'API. Ouvrez-le depuis les paramètres du centre d'aide de la marque.",
-    "devBody": "Les centres d'aide sont générés par l'API, pas par ce serveur de développement. Ce lien nécessite donc une API en cours d'exécution.",
-    "devTip": "En mode simulation, aucune API ne peut le générer. Ouvrez les paramètres du centre d'aide de la marque pour voir son adresse.",
-    "openApi": "Ouvrir sur l'API"
+    "title": "Les centres d’aide ont leur propre adresse",
+    "body": "Ce lien de centre d’aide pointe vers l’application, mais les centres d’aide sont servis par l’API. Ouvrez-le depuis les paramètres du centre d’aide de la marque.",
+    "devBody": "Les centres d’aide sont générés par l’API, pas par ce serveur de développement. Ce lien nécessite donc une API en cours d’exécution.",
+    "devTip": "En mode simulation, aucune API ne peut le générer. Ouvrez les paramètres du centre d’aide de la marque pour voir son adresse.",
+    "openApi": "Ouvrir sur l’API"
   },
   "connection": {
     "lost": "Connexion perdue. Reconnexion en cours ; les modifications seront synchronisées au retour de la connexion.",
@@ -168,15 +168,15 @@
     "oauthWaiting": "Continuez dans votre navigateur. Vous serez connecté ici une fois la procédure terminée.",
     "oauthCancel": "Annuler",
     "oauthTimeout": "La connexion a pris trop de temps. Recommencez.",
-    "oauthBrowser": "Votre navigateur ne s'est pas ouvert. Réessayez.",
+    "oauthBrowser": "Votre navigateur ne s’est pas ouvert. Réessayez.",
     "inBrowserTitle": "La suite se passe dans votre navigateur",
-    "inBrowserBody": "La connexion ouvre cette page dans votre navigateur pour terminer l'authentification auprès de {{name}}. La connexion apparaîtra ici une fois terminée.",
+    "inBrowserBody": "La connexion ouvre cette page dans votre navigateur pour terminer l’authentification auprès de {{name}}. La connexion apparaîtra ici une fois terminée.",
     "inBrowserOpened": "Ouvert dans votre navigateur. Terminez la procédure là-bas pour voir la connexion ici.",
     "continueInBrowser": "Continuer dans le navigateur",
     "updateReady": "opendesk {{version}} est prêt.",
     "updateReadyHint": "Redémarrez pour mettre à jour.",
-    "updateDownloading": "Téléchargement d'opendesk {{version}}",
-    "updateDownloadingPlain": "Téléchargement d'une mise à jour",
+    "updateDownloading": "Téléchargement d’opendesk {{version}}",
+    "updateDownloadingPlain": "Téléchargement d’une mise à jour",
     "updateRestart": "Redémarrer",
     "updateNotes": "Nouveautés",
     "updateLater": "Plus tard"
@@ -188,7 +188,7 @@
     "addSubtitleMany": "Connectez-vous à un autre compte opendesk. Vous restez connecté à vos {{count}} comptes ici.",
     "back": "Retour à {{name}}",
     "backPlain": "Retour à opendesk",
-    "limit": "Ce navigateur est connecté à {{count}} comptes, sa capacité maximale. Déconnectez-vous d'un compte pour en ajouter un autre.",
+    "limit": "Ce navigateur est connecté à {{count}} comptes, sa capacité maximale. Déconnectez-vous d’un compte pour en ajouter un autre.",
     "switching": "Passage à {{email}}",
     "paletteSwitch": "Passer à {{workspace}} avec {{email}}",
     "paletteAdd": "Ajouter un compte",
@@ -196,8 +196,8 @@
     "reauthAs": "Se connecter avec {{email}}"
   },
   "signIn": {
-    "popupWaiting": "Terminez la connexion avec {{name}} dans la fenêtre qui s'est ouverte.",
-    "popupBlocked": "Votre navigateur a bloqué la fenêtre {{name}}. Autorisez les fenêtres contextuelles depuis la barre d'adresse pour y terminer la connexion.",
+    "popupWaiting": "Terminez la connexion avec {{name}} dans la fenêtre qui s’est ouverte.",
+    "popupBlocked": "Votre navigateur a bloqué la fenêtre {{name}}. Autorisez les fenêtres contextuelles depuis la barre d’adresse pour y terminer la connexion.",
     "popupThisTab": "Continuer dans cet onglet",
     "changePassword": "Votre mot de passe figure dans une liste de mots de passe divulgués ou est plus court que la longueur désormais requise. Choisissez-en un nouveau."
   }

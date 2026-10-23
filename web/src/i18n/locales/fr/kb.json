@@ -2,8 +2,8 @@
   "title": "Base de connaissances",
   "newArticle": "Nouvel article",
   "writeArticle": "Rédiger un article",
-  "viewHelpCenter": "Voir le centre d'aide",
-  "helpCenterSettings": "Paramètres du centre d'aide",
+  "viewHelpCenter": "Voir le centre d’aide",
+  "helpCenterSettings": "Paramètres du centre d’aide",
   "collections": "Collections",
   "newCollection": "Nouvelle collection",
   "allArticles": "Tous les articles",
@@ -31,7 +31,7 @@
     "inCollections_other": "dans {{count}} collections",
     "inCollections_many": "dans {{count}} collections",
     "published": "Publiés",
-    "live": "en ligne dans le centre d'aide",
+    "live": "en ligne dans le centre d’aide",
     "drafts": "Brouillons",
     "notLive": "non visibles par les clients",
     "views": "Vues",
@@ -57,10 +57,10 @@
   },
   "empty": {
     "title": "Aucun article pour le moment",
-    "description": "Rédigez vos réponses une seule fois et partagez-les par message, dans le widget de chat et dans votre centre d'aide.",
+    "description": "Rédigez vos réponses une seule fois et partagez-les par message, dans le widget de chat et dans votre centre d’aide.",
     "noDrafts": "Aucun brouillon",
     "noMatch": "Aucun article correspondant",
-    "noMatchHint": "Essayez d'autres mots ou effacez les filtres.",
+    "noMatchHint": "Essayez d’autres mots ou effacez les filtres.",
     "noMatchFor": "Aucun résultat pour « {{q}} ».",
     "noDraftsHint": "Tous les articles ici sont publiés. Les brouillons apparaissent à mesure que vous les rédigez.",
     "collectionTitle": "Cette collection est vide"
@@ -87,7 +87,7 @@
     "namePlaceholder": "Premiers pas",
     "nameRequired": "Ajoutez un nom.",
     "description": "Description",
-    "descriptionHint": "Affichée sous le titre de la collection dans votre centre d'aide.",
+    "descriptionHint": "Affichée sous le titre de la collection dans votre centre d’aide.",
     "saved": "Collection enregistrée"
   },
   "toast": {
@@ -105,45 +105,45 @@
     "published": "Publication",
     "updated": "Mise à jour",
     "url": "URL",
-    "urlHint": "L'adresse de cet article dans votre centre d'aide. La modifier rend les anciens liens invalides."
+    "urlHint": "L’adresse de cet article dans votre centre d’aide. La modifier rend les anciens liens invalides."
   },
   "editor": {
     "notFound": "Article introuvable",
-    "uploadFailed": "Impossible d'importer l'image",
+    "uploadFailed": "Impossible d’importer l’image",
     "moveTo": "Déplacer vers une collection",
     "unsaved": "Modifications non enregistrées",
     "savedAgo": "Enregistré {{when}}",
-    "openInHelp": "Ouvrir dans le centre d'aide",
+    "openInHelp": "Ouvrir dans le centre d’aide",
     "view": "Voir",
-    "saveLiveHint": "Enregistrer les modifications de l'article en ligne",
+    "saveLiveHint": "Enregistrer les modifications de l’article en ligne",
     "saveDraftHint": "Enregistrer sans publier",
     "save": "Enregistrer",
     "saveDraft": "Enregistrer le brouillon",
     "publish": "Publier",
     "more": "Autres actions",
     "unpublish": "Dépublier",
-    "deletePublished": "Il disparaît immédiatement de votre centre d'aide.",
+    "deletePublished": "Il disparaît immédiatement de votre centre d’aide.",
     "deleteDraft": "Ce brouillon sera définitivement supprimé.",
     "deleteTitle": "Supprimer {{title}} ?",
-    "deleteArticle": "Supprimer l'article",
-    "saveFirst": "Enregistrez d'abord pour supprimer",
-    "titlePlaceholder": "Titre de l'article",
-    "excerptPlaceholder": "Un résumé en une ligne pour les résultats de recherche et le centre d'aide",
-    "uploading": "Importation de l'image",
+    "deleteArticle": "Supprimer l’article",
+    "saveFirst": "Enregistrez d’abord pour supprimer",
+    "titlePlaceholder": "Titre de l’article",
+    "excerptPlaceholder": "Un résumé en une ligne pour les résultats de recherche et le centre d’aide",
+    "uploading": "Importation de l’image",
     "bodyPlaceholder": "Commencez à rédiger. Utilisez des titres pour faciliter la lecture rapide.",
     "advanced": "Avancé",
     "leaveTitle": "Quitter sans enregistrer ?",
-    "leaveBody": "Vos modifications de cet article n'ont pas été enregistrées.",
+    "leaveBody": "Vos modifications de cet article n’ont pas été enregistrées.",
     "keepEditing": "Continuer à modifier",
     "discard": "Abandonner les modifications",
     "saving": "Enregistrement"
   },
   "clearFilters": "Effacer les filtres",
   "tips": {
-    "spelling": "Vérifiez l'orthographe",
+    "spelling": "Vérifiez l’orthographe",
     "fewerWords": "Essayez moins de mots ou des termes plus généraux",
     "collections": "Regroupez les articles en collections",
-    "publish": "Publiez l'article pour l'afficher dans votre centre d'aide"
+    "publish": "Publiez l’article pour l’afficher dans votre centre d’aide"
   },
   "brand": {
     "label": "Marque",
@@ -152,9 +152,9 @@
     "search": "Rechercher des marques",
     "filter": "Marque : {{value}}",
     "filterHint": "Ses propres articles et les articles partagés",
-    "collectionHint": "Les centres d'aide qui affichent cette collection. L'option Toutes les marques la partage avec chaque marque.",
-    "articleHint": "Les centres d'aide qui affichent cet article.",
+    "collectionHint": "Les centres d’aide qui affichent cette collection. L’option Toutes les marques la partage avec chaque marque.",
+    "articleHint": "Les centres d’aide qui affichent cet article.",
     "fromCollection": "Suit sa collection, {{name}}.",
-    "only": "Uniquement dans le centre d'aide de {{name}}"
+    "only": "Uniquement dans le centre d’aide de {{name}}"
   }
 }

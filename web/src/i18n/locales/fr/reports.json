@@ -11,9 +11,9 @@
   },
   "empty": {
     "title": "Rien à rapporter pour le moment",
-    "description": "Les rapports se remplissent à l'arrivée des tickets. Les chiffres derrière cette carte sont des données d'exemple.",
-    "sample": "Données d'exemple",
-    "sampleHint": "Un aperçu de cette page après l'arrivée de tickets. Aucun de ces chiffres n'est réel."
+    "description": "Les rapports se remplissent à l’arrivée des tickets. Les chiffres derrière cette carte sont des données d’exemple.",
+    "sample": "Données d’exemple",
+    "sampleHint": "Un aperçu de cette page après l’arrivée de tickets. Aucun de ces chiffres n’est réel."
   },
   "unit": {
     "tickets_one": "{{count}} ticket",
@@ -90,7 +90,7 @@
     "share": "Part",
     "firstResponse": "Première réponse",
     "emptyTitle": "Aucun ticket résolu",
-    "emptyDescription": "Les agents apparaissent ici dès qu'ils résolvent des tickets sur cette période."
+    "emptyDescription": "Les agents apparaissent ici dès qu’ils résolvent des tickets sur cette période."
   },
   "response": {
     "title": "Délais de réponse",
@@ -117,7 +117,7 @@
     "caption": "Tickets créés, résolus et ouverts, et délai de première réponse, par équipe",
     "team": "Équipe",
     "hidden": "Les équipes privées dont vous ne faites pas partie ne figurent pas ici. Les totaux ci-dessus incluent leurs tickets.",
-    "emptyTitle": "Aucune activité d'équipe sur cette période",
+    "emptyTitle": "Aucune activité d’équipe sur cette période",
     "emptyDescription": "Les équipes apparaissent ici dès que leurs tickets arrivent ou sont résolus."
   },
   "byBrand": {

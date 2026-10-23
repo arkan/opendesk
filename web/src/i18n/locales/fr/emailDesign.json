@@ -1,6 +1,6 @@
 {
   "title": "Apparence des e-mails",
-  "description": "L'apparence de tous les e-mails aux clients : réponses, réponses automatiques et enquête de satisfaction. Chaque marque a sa propre apparence.",
+  "description": "L’apparence de tous les e-mails aux clients : réponses, réponses automatiques et enquête de satisfaction. Chaque marque a sa propre apparence.",
   "brand": "Marque",
   "docs": "Guide des modèles",
   "tabs": {
@@ -8,18 +8,18 @@
     "csat": "E-mail de satisfaction",
     "variables": "Variables"
   },
-  "readOnly": "Seuls les administrateurs peuvent modifier l'apparence des e-mails.",
+  "readOnly": "Seuls les administrateurs peuvent modifier l’apparence des e-mails.",
   "default": "Par défaut",
   "customized": "Personnalisée",
   "reset": "Rétablir les valeurs par défaut",
   "resetLayoutConfirm": "La mise en page redevient sobre, sans logo ni pied de page, avec une citation du message précédent.",
-  "resetCsatConfirm": "L'e-mail de satisfaction reprend le texte intégré par défaut.",
+  "resetCsatConfirm": "L’e-mail de satisfaction reprend le texte intégré par défaut.",
   "resetTitle": "Rétablir les valeurs par défaut ?",
   "resetDone": "Valeurs par défaut rétablies",
   "saved": "Apparence des e-mails enregistrée",
   "layout": {
     "mode": "Mise en page",
-    "modeHint": "Le mode simple convient à la plupart des équipes. Le HTML personnalisé vous donne accès à tout le corps de l'e-mail.",
+    "modeHint": "Le mode simple convient à la plupart des équipes. Le HTML personnalisé vous donne accès à tout le corps de l’e-mail.",
     "simple": "Simple",
     "custom": "HTML personnalisé",
     "style": "Style",
@@ -29,10 +29,10 @@
     "brandedHint": "Une carte avec votre logo et une ligne de couleur.",
     "logo": "Afficher le logo",
     "logoHint": "Le logo de la marque en haut de chaque e-mail.",
-    "noLogo": "Cette marque n'a pas encore de logo.",
+    "noLogo": "Cette marque n’a pas encore de logo.",
     "addLogo": "En ajouter un",
-    "accent": "Couleur d'accent",
-    "accentHint": "Les liens, la ligne de couleur de la marque et les boutons de l'enquête.",
+    "accent": "Couleur d’accent",
+    "accentHint": "Les liens, la ligne de couleur de la marque et les boutons de l’enquête.",
     "useBrand": "Couleur de la marque",
     "accentInvalid": "Utilisez une couleur comme #2563EB.",
     "font": "Police",
@@ -42,31 +42,31 @@
       "serif": "Georgia"
     },
     "footer": "Pied de page",
-    "footerHint": "Les petites mentions sous chaque e-mail, comme votre adresse ou un lien vers le centre d'aide. Accepte les variables.",
+    "footerHint": "Les petites mentions sous chaque e-mail, comme votre adresse ou un lien vers le centre d’aide. Accepte les variables.",
     "footerPlaceholder": "Acme Inc, 1 Market Street, San Francisco",
     "customHtml": "HTML de la mise en page",
-    "customHint": "Tout le corps de l'e-mail. opendesk insère le message à l'emplacement de {{content}}, la signature à {{signature}} et les messages précédents à {{history}}.",
+    "customHint": "Tout le corps de l’e-mail. opendesk insère le message à l’emplacement de {{content}}, la signature à {{signature}} et les messages précédents à {{history}}.",
     "history": "Messages précédents",
     "historyHint": "Cités sous chaque réponse pour que les clients gardent le contexte. Les notes ne sont jamais incluses.",
     "historyNone": "Ne pas citer",
     "historyLast": "Le message précédent",
     "historyAll": "Toute la conversation",
-    "historyHeader": "Ligne d'introduction de la citation",
+    "historyHeader": "Ligne d’introduction de la citation",
     "historyHeaderHint": "Au-dessus de chaque message cité. Utilisez {{author}} et {{date}}."
   },
   "csat": {
-    "off": "Les enquêtes de satisfaction sont désactivées. Cet e-mail n'est donc pas encore envoyé.",
+    "off": "Les enquêtes de satisfaction sont désactivées. Cet e-mail n’est donc pas encore envoyé.",
     "turnOn": "Les activer",
     "subject": "Objet",
-    "subjectHint": "Le numéro du ticket est ajouté s'il est absent pour regrouper les réponses dans le même fil.",
+    "subjectHint": "Le numéro du ticket est ajouté s’il est absent pour regrouper les réponses dans le même fil.",
     "body": "E-mail",
-    "bodyHint": "Doit inclure {{survey}}, à l'emplacement des cinq boutons d'évaluation."
+    "bodyHint": "Doit inclure {{survey}}, à l’emplacement des cinq boutons d’évaluation."
   },
   "variables": {
     "title": "Variables",
     "description": "Cliquez sur une variable pour copier sa balise. Tous les modèles acceptent toutes les variables ; une valeur non applicable reste vide.",
     "logic": "Logique",
-    "logicHint": "Affichez uniquement les parties pertinentes, choisissez selon une valeur et répétez pour chaque élément d'une liste. Cliquez sur un exemple pour le copier.",
+    "logicHint": "Affichez uniquement les parties pertinentes, choisissez selon une valeur et répétez pour chaque élément d’une liste. Cliquez sur un exemple pour le copier.",
     "helpers": "Fonctions auxiliaires",
     "helpersHint": "Les filtres modifient une valeur : ajoutez-les après un |, les uns après les autres.",
     "copy": "Copier",
@@ -78,7 +78,7 @@
     }
   },
   "loadError": {
-    "title": "L'apparence des e-mails n'a pas pu être chargée",
+    "title": "L’apparence des e-mails n’a pas pu être chargée",
     "description": "Un problème est survenu lors du chargement des e-mails de cette marque. Réessayez dans un instant.",
     "retry": "Réessayer"
   }
