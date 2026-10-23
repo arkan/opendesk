@@ -39,6 +39,8 @@
     "emptyTitle": "Aucune boîte mail pour le moment",
     "emptyBody": "Transférez votre adresse de support depuis n'importe quel fournisseur, puis choisissez comment envoyer les réponses.",
     "never": "Jamais synchronisée",
+    "noMail": "Aucun courrier pour le moment",
+    "quiet": "Aucun courrier depuis {{count}} jours",
     "instant": "Instantané",
     "syncedAgo": "Synchronisée {{when}}",
     "actionsFor": "Actions pour {{email}}",
@@ -54,7 +56,7 @@
     "colConnection": "Connexion",
     "colTeam": "Équipe",
     "colStatus": "Statut",
-    "colSynced": "Dernière synchronisation",
+    "colSynced": "Dernier courrier",
     "emptyTips": {
       "forward": "Le transfert fonctionne avec tous les fournisseurs",
       "team": "Chaque boîte mail peut acheminer les tickets vers une équipe"
@@ -135,6 +137,15 @@
     "lastSynced": "Dernière synchronisation",
     "never": "Jamais",
     "forwardingInstant": "Le courrier transféré arrive dès son envoi.",
+    "lastReceived": "Dernier courrier reçu",
+    "lastReceivedHint": "Le courrier arrivé à cette adresse par n’importe quelle voie, y compris celui qui n’est pas devenu un ticket.",
+    "noMail": "Aucun courrier pour le moment",
+    "quietNeverTitle": "Aucun courrier n’est encore arrivé",
+    "quietTitle_one": "Aucun courrier depuis {{count}} jour",
+    "quietTitle_other": "Aucun courrier depuis {{count}} jours",
+    "quietTitle_many": "Aucun courrier depuis {{count}} jours",
+    "quietForwarding": "Si des clients écrivent à {{email}}, vérifiez que cette adresse transfère toujours vers l’adresse ci-dessous, puis envoyez un test depuis une autre adresse.",
+    "quietConnected": "Si des clients écrivent à {{email}}, testez la connexion et reconnectez la boîte mail si l’accès a été révoqué.",
     "account": "Compte",
     "accountHint": "Connecté avec {{provider}}. Reconnectez-le si l'accès a été révoqué ou le mot de passe modifié.",
     "accountHintNoImap": "Connecté avec {{provider}}. Une reconnexion autorise uniquement l'envoi ; le courrier arrivera ensuite par transfert.",
@@ -600,12 +611,12 @@
       "slack": {
         "description": "Reproduisez les tickets par e-mail dans des fils Slack et traitez-les en parlant à Ollie.",
         "setup": "Créez une application Slack avec les autorisations de bot chat:write, app_mentions:read, channels:read et groups:read, installez-la, puis collez son jeton de bot et son secret de signature. Après la connexion, opendesk affiche les deux réglages à terminer dans Slack.",
-        "steps": [
-          "Dans votre application Slack, ouvrez Event Subscriptions, activez-le et collez l'adresse ci-dessus comme Request URL.",
-          "Dans Subscribe to bot events, ajoutez app_mention et enregistrez.",
-          "Ouvrez Slash Commands, créez /opendesk et utilisez la même adresse comme Request URL.",
-          "Invitez le bot dans chaque canal où vous acheminez des tickets : /invite @your-bot."
-        ],
+        "steps": {
+          "0": "Dans votre application Slack, ouvrez Event Subscriptions, activez-le et collez l'adresse ci-dessus comme Request URL.",
+          "1": "Dans Subscribe to bot events, ajoutez app_mention et enregistrez.",
+          "2": "Ouvrez Slash Commands, créez /opendesk et utilisez la même adresse comme Request URL.",
+          "3": "Invitez le bot dans chaque canal où vous acheminez des tickets : /invite @your-bot."
+        },
         "noChannels": "Le bot n'est encore dans aucun canal. Invitez-le avec /invite @your-bot dans Slack, puis actualisez."
       },
       "discord": {
@@ -673,6 +684,50 @@
       "hide": "Masquer",
       "generic": "Saisissez cette adresse dans les paramètres du fournisseur comme destination de ses événements.",
       "waiting": "Le statut passe à Connecté lorsque le fournisseur envoie son premier événement. Mentionnez le bot dans un canal pour en envoyer un."
+    }
+  },
+  "aliases": {
+    "title": "Alias",
+    "hint": "D’autres adresses qui distribuent leur courrier dans cette boîte mail, comme help@ ou le hello@ d’un projet annexe. Chacune fonctionne comme une boîte mail à part entière, avec son propre nom d’expéditeur, sa signature, son équipe et sa marque. Les alias sont gratuits avec chaque offre et ne comptent pas comme des boîtes mail. Jusqu’à 20.",
+    "identities": "Chaque alias",
+    "edit": "Modifier {{alias}}",
+    "badgeSelf": "Envoie en son nom",
+    "badgeVia": "Répond depuis {{email}}",
+    "openTickets": "Voir ses tickets",
+    "senderName": "Nom de l’expéditeur",
+    "senderNameHint": "Ce que {mailbox} affiche dans le nom d’expéditeur. Vide, utilise celui de la boîte mail.",
+    "team": "Les nouveaux tickets vont à",
+    "brand": "Marque",
+    "brandHint": "Les nouveaux tickets adressés à cet alias prennent les e-mails, le centre d’aide et l’enquête de cette marque.",
+    "signature": "Signature",
+    "signatureLabel": "Signature pour {{alias}}",
+    "signaturePlaceholder": "Vide, utilise la signature de l’équipe ou de la boîte mail",
+    "signatureHint": "Les réponses au courrier de cet alias la portent, avant celle de l’équipe et celle de la boîte mail.",
+    "sendAs": {
+      "label": "Réponses",
+      "smtp": "Partent de cette adresse.",
+      "system": "Partent de {{sender}} et renvoient les réponses à cette adresse.",
+      "gmailVerified": "Partent de cette adresse. Gmail l’indique comme une adresse d’envoi possible.",
+      "gmailUnverified": "Partent de {{email}} et renvoient les réponses à cette adresse. Gmail ne l’indique pas comme une adresse d’envoi possible.",
+      "gmailClaimed": "Partent de cette adresse, puisque Gmail peut envoyer en son nom.",
+      "replyTo": "Partent de {{email}} et renvoient les réponses à cette adresse.",
+      "gmailClaim": "Gmail peut envoyer au nom de cette adresse",
+      "gmailHow": "Ajoutez-la d’abord dans Gmail : Paramètres > Comptes et importation > Envoyer des e-mails en tant que. Activez ensuite cette option.",
+      "microsoft": "Partent de cette adresse quand Microsoft l’autorise, sinon de {{email}}.",
+      "microsoftRefused": "Microsoft a refusé d’envoyer au nom de cette adresse : elles partent donc de {{email}} et renvoient les réponses à celle-ci.",
+      "tryAgain": "Réessayer"
+    },
+    "gmail": {
+      "title": "Depuis Gmail",
+      "hint": "Les autres adresses au nom desquelles {{account}} peut envoyer dans Gmail. Ajoutez-en une pour recevoir son courrier et y répondre ici.",
+      "checkedAt": "Vérifié {{when}}.",
+      "check": "Vérifier à nouveau",
+      "checked": "Adresses d’envoi de Gmail vérifiées",
+      "add": "Ajouter",
+      "addLabel": "Ajouter {{email}} comme alias",
+      "pending": "En attente de confirmation dans Gmail",
+      "none": "Gmail n’indique aucune autre adresse.",
+      "sendOnly": "Google ne partage pas les autres adresses d’envoi de ce compte avec une connexion en envoi seul. Ajoutez-les ci-dessus à la main."
     }
   }
 }

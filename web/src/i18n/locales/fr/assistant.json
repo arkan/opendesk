@@ -14,6 +14,8 @@
   "stop": "Arrêter",
   "placeholder": "Interrogez {{name}} sur votre file…",
   "send": "Envoyer",
+  "showMore": "Afficher plus",
+  "showLess": "Afficher moins",
   "thinking": "{{name}} réfléchit",
   "hello": "Bonjour, je suis {{name}}.",
   "helloSub": "Je peux consulter votre file, expliquer un ticket, extraire des chiffres et préparer des modifications. Rien ne change tant que vous ne l’avez pas approuvé.",

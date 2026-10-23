@@ -67,6 +67,12 @@
   },
   "newTicket": "Nouveau ticket",
   "notifications": {
+    "allow": {
+      "title": "Soyez prévenu des nouveaux tickets et des réponses.",
+      "hint": "Autorisez les notifications pour qu’elles vous parviennent quand opendesk est en arrière-plan.",
+      "allow": "Autoriser les notifications",
+      "later": "Plus tard"
+    },
     "title": "Notifications",
     "unread": "Notifications, {{count}} non lues",
     "markAll": "Tout marquer comme lu",

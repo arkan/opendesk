@@ -496,7 +496,20 @@
     "addRecipient": "Ajoutez un destinataire",
     "sideSent": "Envoyé à {{to}}. Vous répondez à nouveau au client.",
     "sideSentAndMarked": "Envoyé à {{to}} et ticket marqué {{status}}",
-    "threadFailed": "Impossible d'envoyer le message de la conversation parallèle"
+    "threadFailed": "Impossible d'envoyer le message de la conversation parallèle",
+    "repliesTo": "réponses à {{address}}"
+  },
+  "sharedDraft": {
+    "label": "Brouillon partagé",
+    "inComposer": "Brouillon de {{name}}, {{when}}",
+    "inComposerHint": "Modifiez-le et envoyez-le en votre nom",
+    "waiting": "{{name}} a rédigé une réponse, {{when}}",
+    "use": "Utiliser",
+    "discard": "Supprimer",
+    "discardFailed": "Impossible de supprimer le brouillon",
+    "replaceTitle": "Remplacer votre texte ?",
+    "replaceBody": "Le brouillon de {{name}} remplace le texte que vous avez rédigé.",
+    "replaceConfirm": "Remplacer"
   },
   "message": {
     "from": "Message de {{name}}",
@@ -773,17 +786,5 @@
     "nothingElse": "Rien d'autre ne change.",
     "back": "Retour aux équipes",
     "move": "Déplacer"
-  },
-  "sharedDraft": {
-    "label": "Brouillon partagé",
-    "inComposer": "Brouillon de {{name}}, {{when}}",
-    "inComposerHint": "Modifiez-le et envoyez-le en votre nom",
-    "waiting": "{{name}} a rédigé une réponse, {{when}}",
-    "use": "Utiliser",
-    "discard": "Supprimer",
-    "discardFailed": "Impossible de supprimer le brouillon",
-    "replaceTitle": "Remplacer votre texte ?",
-    "replaceBody": "Le brouillon de {{name}} remplace le texte que vous avez rédigé.",
-    "replaceConfirm": "Remplacer"
   }
 }

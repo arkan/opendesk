@@ -294,6 +294,8 @@
     "searchTimezones": "Rechercher des fuseaux horaires",
     "language": "Langue des clients",
     "languageHint": "Le centre d'aide, l'enquête de satisfaction et le widget de chat suivent la langue du navigateur de chaque visiteur. Cette langue sert de repli quand la leur n'est pas prise en charge.",
+    "languageFixed": "Utiliser pour tous les visiteurs",
+    "languageFixedHint": "Afficher le centre d’aide, l’enquête de satisfaction et le widget de chat en {{language}} pour tous les visiteurs, quelle que soit la langue de leur navigateur. Si une marque a sa propre langue, celle-ci est utilisée.",
     "searchLanguages": "Rechercher des langues",
     "helpCenter": "Centre d'aide",
     "helpCenterHint": "Un site public regroupant les articles publiés de votre base de connaissances.",
@@ -327,9 +329,7 @@
     "gravatar": "Images Gravatar",
     "gravatarHint": "Envoie à Gravatar une empreinte des adresses e-mail des contacts pour rechercher leurs images.",
     "domainLogos": "Logos des entreprises",
-    "domainLogosHint": "Récupère le logo de chaque entreprise sur son site web.",
-    "languageFixed": "Utiliser pour tous les visiteurs",
-    "languageFixedHint": "Afficher le centre d’aide, l’enquête de satisfaction et le widget de chat en {{language}} pour tous les visiteurs, quelle que soit la langue de leur navigateur. Si une marque a sa propre langue, celle-ci est utilisée."
+    "domainLogosHint": "Récupère le logo de chaque entreprise sur son site web."
   },
   "display": {
     "title": "Statuts et priorités",
@@ -535,7 +535,7 @@
       },
       "customer_replied": {
         "label": "Réponses des clients",
-        "hint": "Sur les tickets qui vous sont attribués"
+        "hint": "Sur les tickets qui vous sont attribués, et sur ceux qui ne sont encore attribués à personne"
       },
       "thread_replied": {
         "label": "Réponses aux conversations parallèles",
@@ -630,5 +630,12 @@
     "preview": "Aperçu",
     "previewOther": "L'aperçu utilise votre nom et vos coordonnées pour l'expéditeur.",
     "saved": "Profil enregistré"
+  },
+  "signatureEditor": {
+    "block": "Signature",
+    "edit": "Modifier la signature",
+    "remove": "Retirer la signature",
+    "preview": "Aperçu",
+    "none": "Aucune signature"
   }
 }
